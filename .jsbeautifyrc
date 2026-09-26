@@ -1,0 +1,10 @@
+{
+  "html": {
+    "indent_size": 2,
+    "wrap_line_length": 180,
+    "wrap_attributes": "force-aligned",
+    "wrap_attributes_min_attrs": 2,
+    "templating": ["angular"],
+    "end_with_newline": true
+  }
+}

@@ -1,0 +1,46 @@
+@use 'tailwindcss';
+@use '@angular/material' as mat;
+
+html {
+  @include mat.theme(
+    (
+      color: (
+        primary: mat.$spring-green-palette,
+        tertiary: mat.$cyan-palette,
+        theme-type: color-scheme,
+      ),
+      typography: (
+        system-ui,
+        sans-serif,
+      ),
+      density: 0,
+    )
+  );
+
+  color-scheme: light;
+  min-height: 100%;
+}
+
+body {
+  min-width: 20rem;
+  min-height: 100%;
+  margin: 0;
+  background: var(--mat-sys-surface);
+  color: var(--mat-sys-on-surface);
+  font-family: system-ui, sans-serif;
+}
+
+app-root {
+  display: block;
+  min-height: 100dvh;
+}
+
+.admin-sidebar {
+  color-scheme: dark;
+  background: var(--mat-sys-primary-container);
+  color: var(--mat-sys-on-primary-container);
+}
+
+.admin-navigation-active {
+  background: var(--mat-sys-secondary-container) !important;
+}

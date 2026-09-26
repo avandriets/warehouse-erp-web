@@ -1,0 +1,91 @@
+{
+  "name": "warehouse-admin-ui",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "projectType": "application",
+  "sourceRoot": "apps/warehouse-admin-ui/src",
+  "tags": ["type:app", "scope:admin"],
+  "targets": {
+    "build": {
+      "options": {
+        "browser": "apps/warehouse-admin-ui/src/main.ts",
+        "tsConfig": "apps/warehouse-admin-ui/tsconfig.app.json",
+        "inlineStyleLanguage": "scss",
+        "assets": [
+          {
+            "glob": "**/*",
+            "input": "apps/warehouse-admin-ui/public"
+          }
+        ],
+        "styles": ["apps/warehouse-admin-ui/src/styles.scss"],
+        "outputPath": "dist/apps/warehouse-admin-ui",
+        "index": "apps/warehouse-admin-ui/src/index.html"
+      },
+      "configurations": {
+        "production": {
+          "budgets": [
+            {
+              "type": "initial",
+              "maximumWarning": "750kB",
+              "maximumError": "1MB"
+            },
+            {
+              "type": "anyComponentStyle",
+              "maximumWarning": "4kB",
+              "maximumError": "8kB"
+            }
+          ],
+          "outputHashing": "all"
+        },
+        "development": {
+          "optimization": false,
+          "extractLicenses": false,
+          "sourceMap": true
+        }
+      },
+      "defaultConfiguration": "production",
+      "executor": "@nx/angular:application"
+    },
+    "serve": {
+      "options": {
+        "port": 4301,
+        "proxyConfig": "proxy.conf.json"
+      },
+      "configurations": {
+        "production": {
+          "buildTarget": "warehouse-admin-ui:build:production"
+        },
+        "development": {
+          "buildTarget": "warehouse-admin-ui:build:development"
+        }
+      },
+      "defaultConfiguration": "development",
+      "executor": "@angular/build:dev-server"
+    },
+    "test": {
+      "executor": "@nx/angular:unit-test",
+      "options": {
+        "tsConfig": "apps/warehouse-admin-ui/tsconfig.spec.json",
+        "watch": false,
+        "buildTarget": "warehouse-admin-ui:build:development"
+      }
+    },
+    "lint": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "eslint \"apps/warehouse-admin-ui/**/*.ts\" \"apps/warehouse-admin-ui/**/*.html\" --no-error-on-unmatched-pattern"
+      }
+    },
+    "typecheck": {
+      "executor": "nx:run-commands",
+      "options": {
+        "commands": ["ngc -p apps/warehouse-admin-ui/tsconfig.app.json --noEmit", "tsc -p apps/warehouse-admin-ui/tsconfig.spec.json --noEmit"],
+        "parallel": false
+      }
+    }
+  },
+  "cli": {
+    "cache": {
+      "enabled": false
+    }
+  }
+}

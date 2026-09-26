@@ -1,0 +1,34 @@
+{
+  "compileOnSave": false,
+  "compilerOptions": {
+    "strict": true,
+    "noImplicitOverride": true,
+    "noPropertyAccessFromIndexSignature": true,
+    "noImplicitReturns": true,
+    "noFallthroughCasesInSwitch": true,
+    "skipLibCheck": true,
+    "isolatedModules": true,
+    "experimentalDecorators": true,
+    "importHelpers": true,
+    "target": "ES2022",
+    "module": "preserve",
+    "baseUrl": ".",
+    "paths": {
+      "@warehouse/auth": ["libs/auth/src/index.ts"],
+      "@warehouse/shared": ["libs/shared/src/index.ts"],
+      "@warehouse/access-management": ["./libs/access-management/src/index.ts"],
+      "@warehouse/access-management/feature/dashboard": ["./libs/access-management/feature/dashboard/src/index.ts"],
+      "@warehouse/access-management/feature/users": ["./libs/access-management/feature/users/src/index.ts"],
+      "@warehouse/access-management/feature/roles": ["./libs/access-management/feature/roles/src/index.ts"],
+      "@warehouse/access-management/data-access": ["./libs/access-management/data-access/src/index.ts"],
+      "@warehouse/access-management/ui": ["./libs/access-management/ui/src/index.ts"],
+      "@warehouse/access-management/util": ["./libs/access-management/util/src/index.ts"]
+    }
+  },
+  "angularCompilerOptions": {
+    "enableI18nLegacyMessageIdFormat": false,
+    "strictInjectionParameters": true,
+    "strictInputAccessModifiers": true,
+    "strictTemplates": true
+  }
+}

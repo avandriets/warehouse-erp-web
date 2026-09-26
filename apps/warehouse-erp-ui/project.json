@@ -1,0 +1,91 @@
+{
+  "name": "warehouse-erp-ui",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "projectType": "application",
+  "sourceRoot": "apps/warehouse-erp-ui/src",
+  "tags": ["type:app", "scope:warehouse"],
+  "targets": {
+    "build": {
+      "options": {
+        "browser": "apps/warehouse-erp-ui/src/main.ts",
+        "tsConfig": "apps/warehouse-erp-ui/tsconfig.app.json",
+        "inlineStyleLanguage": "scss",
+        "assets": [
+          {
+            "glob": "**/*",
+            "input": "apps/warehouse-erp-ui/public"
+          }
+        ],
+        "styles": ["apps/warehouse-erp-ui/src/styles.scss"],
+        "outputPath": "dist/apps/warehouse-erp-ui",
+        "index": "apps/warehouse-erp-ui/src/index.html"
+      },
+      "configurations": {
+        "production": {
+          "budgets": [
+            {
+              "type": "initial",
+              "maximumWarning": "500kB",
+              "maximumError": "1MB"
+            },
+            {
+              "type": "anyComponentStyle",
+              "maximumWarning": "4kB",
+              "maximumError": "8kB"
+            }
+          ],
+          "outputHashing": "all"
+        },
+        "development": {
+          "optimization": false,
+          "extractLicenses": false,
+          "sourceMap": true
+        }
+      },
+      "defaultConfiguration": "production",
+      "executor": "@nx/angular:application"
+    },
+    "serve": {
+      "options": {
+        "port": 4300,
+        "proxyConfig": "proxy.conf.json"
+      },
+      "configurations": {
+        "production": {
+          "buildTarget": "warehouse-erp-ui:build:production"
+        },
+        "development": {
+          "buildTarget": "warehouse-erp-ui:build:development"
+        }
+      },
+      "defaultConfiguration": "development",
+      "executor": "@angular/build:dev-server"
+    },
+    "test": {
+      "executor": "@nx/angular:unit-test",
+      "options": {
+        "tsConfig": "apps/warehouse-erp-ui/tsconfig.spec.json",
+        "watch": false,
+        "buildTarget": "warehouse-erp-ui:build:development"
+      }
+    },
+    "lint": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "eslint \"apps/warehouse-erp-ui/**/*.ts\" \"apps/warehouse-erp-ui/**/*.html\" --no-error-on-unmatched-pattern"
+      }
+    },
+    "typecheck": {
+      "executor": "nx:run-commands",
+      "options": {
+        "commands": ["ngc -p apps/warehouse-erp-ui/tsconfig.app.json --noEmit", "tsc -p apps/warehouse-erp-ui/tsconfig.spec.json --noEmit"],
+        "parallel": false
+      }
+    }
+  },
+  "cli": {
+    "cache": {
+      "enabled": false
+    }
+  }
+}

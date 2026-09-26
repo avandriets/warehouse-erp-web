@@ -1,0 +1,18 @@
+node_modules
+dist
+out-tsc
+.angular
+coverage
+
+# Generated and machine-maintained files
+openapi.json
+package-lock.json
+
+# HTML is formatted by js-beautify
+**/*.html
+
+.nx
+
+# Official Nx agent artifacts: preserve upstream formatting.
+.agents/
+.codex/agents/

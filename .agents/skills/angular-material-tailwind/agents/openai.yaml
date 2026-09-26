@@ -1,0 +1,4 @@
+interface:
+  display_name: "Angular Material + Tailwind"
+  short_description: "Build Material UIs with Tailwind layout"
+  default_prompt: "Build or update this Angular UI using Angular Material for interactive components and Tailwind CSS for layout and spacing."

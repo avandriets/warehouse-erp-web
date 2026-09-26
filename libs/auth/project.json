@@ -1,0 +1,21 @@
+{
+  "name": "auth",
+  "projectType": "library",
+  "sourceRoot": "libs/auth/src",
+  "tags": ["type:data-access", "scope:shared"],
+  "targets": {
+    "lint": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "eslint \"libs/auth/**/*.ts\" \"libs/auth/**/*.html\" --no-error-on-unmatched-pattern"
+      }
+    },
+    "typecheck": {
+      "executor": "nx:run-commands",
+      "options": {
+        "commands": ["tsc -p libs/auth/tsconfig.json --noEmit"],
+        "parallel": false
+      }
+    }
+  }
+}

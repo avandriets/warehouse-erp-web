@@ -1,0 +1,94 @@
+<mat-sidenav-container class="min-h-dvh bg-[var(--mat-sys-surface)]">
+  <mat-sidenav #sidenav
+               [mode]="compact() ? 'over' : 'side'"
+               [opened]="!compact()"
+               class="admin-sidebar w-72">
+    <div class="flex min-h-full flex-col px-4 py-6">
+      <a routerLink="/"
+         class="flex items-center gap-3 rounded-xl px-3 py-2 text-[var(--mat-sys-on-primary-container)] no-underline"
+         (click)="selectSection()">
+        <span class="grid size-11 place-items-center rounded-xl bg-[var(--mat-sys-primary)] text-lg font-black text-[var(--mat-sys-on-primary)]"
+              aria-hidden="true">W</span>
+        <span class="min-w-0">
+          <strong class="block truncate text-lg tracking-tight">Warehouse ERP</strong>
+          <span class="block text-xs tracking-widest text-[var(--mat-sys-on-primary-container)] uppercase opacity-75">Administrator</span>
+        </span>
+      </a>
+
+      <p class="mt-10 px-4 text-xs font-semibold tracking-widest text-[var(--mat-sys-on-primary-container)] uppercase opacity-80">Workspace</p>
+      <nav aria-label="Administration sections">
+        <mat-nav-list>
+          <a mat-list-item
+             routerLink="/"
+             routerLinkActive="admin-navigation-active"
+             [routerLinkActiveOptions]="{ exact: true }"
+             (click)="selectSection()">
+            <span matListItemTitle
+                  class="font-semibold">Overview</span>
+            <span matListItemLine>Administration home</span>
+          </a>
+          @for (item of navigation; track item.path) {
+            @if (auth.can(item.permission)) {
+              <a mat-list-item
+                 [routerLink]="item.path"
+                 routerLinkActive="admin-navigation-active"
+                 (click)="selectSection()">
+                <span matListItemTitle
+                      class="font-semibold">{{ item.title }}</span>
+                <span matListItemLine>{{ item.description }}</span>
+              </a>
+            }
+          }
+        </mat-nav-list>
+      </nav>
+
+      <div class="mt-auto flex items-center gap-2 px-4 pt-10 text-xs text-[var(--mat-sys-on-primary-container)] opacity-75">
+        <span class="size-2 rounded-full bg-[var(--mat-sys-primary)]"
+              aria-hidden="true"></span>
+        ERP control panel
+      </div>
+    </div>
+  </mat-sidenav>
+
+  <mat-sidenav-content class="min-h-dvh">
+    <mat-toolbar class="sticky top-0 z-20 border-b border-[var(--mat-sys-outline-variant)] bg-[var(--mat-sys-surface)] px-4! sm:px-6!">
+      @if (compact()) {
+        <button mat-icon-button
+                type="button"
+                aria-label="Open navigation"
+                (click)="toggleNavigation()">
+          <span class="flex size-5 flex-col justify-center gap-1"
+                aria-hidden="true">
+            <span class="h-0.5 w-5 rounded bg-current"></span>
+            <span class="h-0.5 w-5 rounded bg-current"></span>
+            <span class="h-0.5 w-5 rounded bg-current"></span>
+          </span>
+        </button>
+      }
+
+      <span class="ml-2 text-sm font-medium text-[var(--mat-sys-on-surface-variant)] sm:ml-0">System management</span>
+      <span class="flex-1"></span>
+
+      @if (auth.isLoading$ | async) {
+        <span class="text-sm text-[var(--mat-sys-on-surface-variant)]"
+              role="status">Checking session…</span>
+      } @else if (auth.isAuthenticated$ | async) {
+        @if (auth.user$ | async; as user) {
+          <span class="mr-3 hidden max-w-64 truncate text-sm text-[var(--mat-sys-on-surface-variant)] sm:inline">{{ user.name ?? user.email }}</span>
+        }
+        <button mat-stroked-button
+                type="button"
+                (click)="auth.logout()">Sign out</button>
+      } @else {
+        <button mat-flat-button
+                type="button"
+                (click)="login()">Sign in</button>
+      }
+    </mat-toolbar>
+
+    <main id="content"
+          class="mx-auto w-full max-w-[90rem] p-4 sm:p-6 lg:p-10">
+      <router-outlet />
+    </main>
+  </mat-sidenav-content>
+</mat-sidenav-container>

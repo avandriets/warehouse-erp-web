@@ -1,0 +1,185 @@
+<header class="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
+  <div>
+    <p class="mb-2 text-xs font-bold tracking-[0.18em] text-emerald-700 uppercase">Access management</p>
+    <h1 class="m-0 text-3xl font-bold tracking-tight text-stone-900 sm:text-4xl">Users</h1>
+    <p class="mt-3 text-sm leading-6 text-stone-600">Employee accounts and ERP access.</p>
+  </div>
+  <button mat-flat-button
+          type="button"
+          (click)="open()"
+          [disabled]="saving()">Add user</button>
+</header>
+
+@if (error()) {
+  <div class="mt-5 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800"
+       role="alert">{{ error() }}</div>
+}
+@if (notice()) {
+  <div class="mt-5 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800"
+       role="status">
+    {{ notice() }}
+  </div>
+}
+
+<mat-card appearance="outlined"
+          class="mt-7 overflow-hidden">
+  <mat-card-content class="grid gap-4 p-4! md:grid-cols-[minmax(0,1fr)_14rem_auto] md:items-center md:p-6!">
+    <mat-form-field appearance="outline"
+                    subscriptSizing="dynamic"
+                    class="w-full">
+      <mat-label>Search this page</mat-label>
+      <input matInput
+             name="query"
+             [(ngModel)]="query"
+             placeholder="Enter a name or email" />
+    </mat-form-field>
+    <mat-form-field appearance="outline"
+                    subscriptSizing="dynamic"
+                    class="w-full">
+      <mat-label>Status</mat-label>
+      <mat-select name="filter"
+                  [(ngModel)]="filter"
+                  (ngModelChange)="changeFilter()">
+        <mat-option value="">All users</mat-option>
+        <mat-option value="INVITED">Invited</mat-option>
+        <mat-option value="PENDING_APPROVAL">Pending approval</mat-option>
+        <mat-option value="ACTIVE">Active</mat-option>
+        <mat-option value="SUSPENDED">Suspended</mat-option>
+      </mat-select>
+    </mat-form-field>
+    <button mat-stroked-button
+            type="button"
+            (click)="load()"
+            [disabled]="loading()">Refresh</button>
+  </mat-card-content>
+
+  @if (loading()) {
+    <div class="grid min-h-52 place-items-center border-t border-stone-200"
+         role="status"
+         aria-label="Loading users">
+      <mat-spinner diameter="36" />
+    </div>
+  } @else {
+    <div class="overflow-x-auto border-t border-stone-200">
+      <table mat-table
+             [dataSource]="visibleUsers()"
+             class="w-full">
+        <ng-container matColumnDef="display_name">
+          <th mat-header-cell
+              *matHeaderCellDef>Name</th>
+          <td mat-cell
+              *matCellDef="let user">{{ user.display_name ?? '—' }}</td>
+        </ng-container>
+        <ng-container matColumnDef="email">
+          <th mat-header-cell
+              *matHeaderCellDef>Email</th>
+          <td mat-cell
+              *matCellDef="let user">{{ user.email ?? '—' }}</td>
+        </ng-container>
+        <ng-container matColumnDef="status">
+          <th mat-header-cell
+              *matHeaderCellDef>Status</th>
+          <td mat-cell
+              *matCellDef="let user"><am-status-badge [value]="user.status" /></td>
+        </ng-container>
+        <ng-container matColumnDef="actions">
+          <th mat-header-cell
+              *matHeaderCellDef>Actions</th>
+          <td mat-cell
+              *matCellDef="let user">
+            <div class="flex flex-wrap gap-1">
+              <button mat-button
+                      type="button"
+                      (click)="open(user)"
+                      [disabled]="saving()">Edit</button>
+              <button mat-button
+                      type="button"
+                      (click)="changeStatus(user)"
+                      [disabled]="saving()">
+                {{ user.status === 'ACTIVE' ? 'Suspend' : 'Activate' }}
+              </button>
+              <button mat-button
+                      type="button"
+                      (click)="selected.set(user)">Access</button>
+            </div>
+          </td>
+        </ng-container>
+        <tr mat-header-row
+            *matHeaderRowDef="displayedColumns"></tr>
+        <tr mat-row
+            *matRowDef="let row; columns: displayedColumns"></tr>
+        <tr class="mat-row"
+            *matNoDataRow>
+          <td class="mat-cell px-6 py-14 text-center text-sm text-stone-500"
+              [attr.colspan]="displayedColumns.length">No users found</td>
+        </tr>
+      </table>
+    </div>
+  }
+
+  <mat-card-actions class="flex flex-col gap-3 border-t border-stone-200 px-4! py-3! sm:flex-row sm:justify-between sm:px-6!">
+    <span class="text-xs text-stone-600">Page {{ offset / pageSize + 1 }} · Records: {{ users().length }}</span>
+    <div class="flex gap-2">
+      <button mat-stroked-button
+              type="button"
+              [disabled]="loading() || offset === 0"
+              (click)="page(-1)">Previous</button>
+      <button mat-stroked-button
+              type="button"
+              [disabled]="loading() || users().length < pageSize"
+              (click)="page(1)">Next</button>
+    </div>
+  </mat-card-actions>
+</mat-card>
+
+@if (editor()) {
+  <mat-card appearance="outlined"
+            class="mt-6"
+            aria-labelledby="user-editor-title">
+    <mat-card-header><mat-card-title id="user-editor-title">{{ editing ? 'Edit user' : 'New user' }}</mat-card-title></mat-card-header>
+    <mat-card-content class="pt-5!">
+      <form #form="ngForm"
+            (ngSubmit)="save()">
+        <fieldset [disabled]="saving()">
+          <div class="grid gap-4 md:grid-cols-2">
+            <mat-form-field appearance="outline"
+                            subscriptSizing="dynamic"
+                            class="w-full">
+              <mat-label>Email</mat-label>
+              <input matInput
+                     type="email"
+                     name="email"
+                     [(ngModel)]="model.email"
+                     required
+                     email
+                     maxlength="320" />
+            </mat-form-field>
+            <mat-form-field appearance="outline"
+                            subscriptSizing="dynamic"
+                            class="w-full">
+              <mat-label>Name</mat-label>
+              <input matInput
+                     name="displayName"
+                     [(ngModel)]="model.display_name"
+                     maxlength="255" />
+            </mat-form-field>
+          </div>
+        </fieldset>
+        <div class="mt-6 flex flex-wrap gap-3">
+          <button mat-flat-button
+                  type="submit"
+                  [disabled]="form.invalid || saving()">{{ saving() ? 'Saving…' : 'Save' }}</button>
+          <button mat-stroked-button
+                  type="button"
+                  (click)="editor.set(false)"
+                  [disabled]="saving()">Cancel</button>
+        </div>
+      </form>
+    </mat-card-content>
+  </mat-card>
+}
+
+@if (selected(); as user) {
+  <am-user-access [user]="user"
+                  (closed)="selected.set(null)" />
+}
