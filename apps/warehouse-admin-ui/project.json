@@ -37,6 +37,12 @@
           "outputHashing": "all"
         },
         "development": {
+          "fileReplacements": [
+            {
+              "replace": "apps/warehouse-admin-ui/src/environments/environment.ts",
+              "with": "apps/warehouse-admin-ui/src/environments/environment.development.ts"
+            }
+          ],
           "optimization": false,
           "extractLicenses": false,
           "sourceMap": true
@@ -78,7 +84,10 @@
     "typecheck": {
       "executor": "nx:run-commands",
       "options": {
-        "commands": ["ngc -p apps/warehouse-admin-ui/tsconfig.app.json --noEmit", "tsc -p apps/warehouse-admin-ui/tsconfig.spec.json --noEmit"],
+        "commands": [
+          "ngc -p apps/warehouse-admin-ui/tsconfig.app.json --noEmit",
+          "tsc -p apps/warehouse-admin-ui/tsconfig.spec.json --noEmit"
+        ],
         "parallel": false
       }
     }

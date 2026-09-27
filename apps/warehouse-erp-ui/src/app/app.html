@@ -6,9 +6,9 @@
     <p class="eyebrow">Warehouse ERP</p>
     <h1 id="page-title">Warehouse management</h1>
 
-    @if (auth.isLoading$ | async) {
+    @if (auth.loading()) {
       <p class="status">Checking your session…</p>
-    } @else if (auth.error$ | async; as error) {
+    } @else if (auth.error(); as error) {
       <div class="error"
            role="alert">
         <strong>Unable to sign in</strong>
@@ -17,8 +17,8 @@
       <button class="primary"
               type="button"
               (click)="logIn()">Try again</button>
-    } @else if (auth.isAuthenticated$ | async) {
-      @if (auth.user$ | async; as user) {
+    } @else if (auth.authenticated()) {
+      @if (auth.user(); as user) {
         <div class="profile">
           @if (user.picture) {
             <img [src]="user.picture"

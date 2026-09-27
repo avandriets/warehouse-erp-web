@@ -1,0 +1,5 @@
+<span class="inline-flex rounded-full px-2.5 py-1 text-xs font-semibold"
+      [class.bg-emerald-100]="positive()"
+      [class.text-emerald-800]="positive()"
+      [class.bg-amber-100]="!positive()"
+      [class.text-amber-800]="!positive()">{{ label() }}</span>

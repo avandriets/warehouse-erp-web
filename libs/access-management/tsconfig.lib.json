@@ -9,7 +9,6 @@
   },
   "include": [
     "src/**/*.ts",
-    "feature/dashboard/src/**/*.ts",
     "feature/users/src/**/*.ts",
     "feature/roles/src/**/*.ts",
     "data-access/src/**/*.ts",

@@ -3,7 +3,7 @@ import { makeEnvironmentProviders } from '@angular/core';
 import type { AccessManagementConfig } from '@warehouse/access-management/util';
 import { ACCESS_MANAGEMENT_CONFIG } from '@warehouse/access-management/util';
 
-export { ACCESS_MANAGEMENT_ROUTES } from './lib/access-management.routes';
+export { ACCESS_MANAGEMENT_PAGES, ACCESS_MANAGEMENT_ROUTES } from './lib/access-management.routes';
 export type { AccessManagementConfig } from '@warehouse/access-management/util';
 
 export function provideAccessManagement(config: AccessManagementConfig): EnvironmentProviders {

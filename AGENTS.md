@@ -28,7 +28,7 @@
 
 - Use npm and the local Nx CLI. Read resolved project metadata with `npx nx show project <name> --json`.
 - `apps/warehouse-erp-ui` is the warehouse application (port 4300).
-- `apps/warehouse-admin-ui` is the thin administration shell (port 4301).
+- `apps/warehouse-admin-ui` is the thin administration runner application (port 4301).
 - `libs/access-management` is a publishable Angular package that owns users, roles, permissions, and their navigation routes.
 - `libs/auth` owns Auth0 integration, runtime auth configuration, the ERP profile, and permission guards.
 - `libs/shared` currently contains reusable utilities independent of the applications and Auth0. As shared code grows, split shared UI, data access, and types into libraries with matching type tags instead of turning this project into a mixed-purpose dumping ground.
@@ -37,12 +37,15 @@
 
 ## Architecture
 
-- Keep applications as thin runner/shell projects. They may bootstrap Angular, register application-wide providers, define top-level routes, render the application chrome, and compose feature libraries; they must not own domain workflows, business rules, feature state, or HTTP implementations.
+- Keep applications as thin runner projects. They may bootstrap Angular, register application-wide providers, define top-level routes, render the application layout, and compose feature libraries; they must not own domain workflows, business rules, feature state, or HTTP implementations.
 - Put business behavior in libraries. Scope-specific feature libraries own use-case orchestration and screens; data-access libraries own API clients and state; UI libraries own presentation; utility libraries own types and pure helpers.
-- A typical runner shell has a top taskbar with branding and login/logout or account actions, a left sidebar that links to the application's top-level sections, and a main `router-outlet` for feature content.
-- Treat sidebar entries as navigation configuration. Each section routes to a feature library instead of invoking domain behavior from the shell.
-- Lazy-load feature sections from libraries with standalone route arrays through `loadChildren`, or a standalone entry component through `loadComponent`. Keep only the shell and the essential landing route eager; do not introduce NgModules solely for lazy loading.
+- A typical application layout has a top taskbar with branding and login/logout or account actions, a left navigation area that links to the application's top-level sections, and a main `router-outlet` for feature content.
+- Use the APX UI layout composition as the application-layout reference, adapted to current standalone Angular: keep the root component as a minimal `router-outlet`; place the authenticated route chrome in an `AppLayout` route-level container; keep `AppHeader` and `AppNavigation` as focused presentation components; and render feature routes through the layout's nested outlet. Public routes such as login and access-denied pages stay outside the authenticated layout. Do not copy APX UI's deprecated NgModules, `fxLayout`, constructor injection, or legacy state patterns.
+- Treat navigation entries as configuration. Each section routes to a feature library instead of invoking domain behavior from the application layout.
+- Lazy-load feature sections from libraries with standalone route arrays through `loadChildren`, or a standalone entry component through `loadComponent`. Keep only the application layout and the essential landing route eager; do not introduce NgModules solely for lazy loading.
 - Keep shared code reusable across applications. Separate shared presentation components, cross-application data access, and cross-application types into focused libraries such as shared UI, shared data-access, and shared types/util projects. Access-management behavior belongs to `scope:access-management`; other domain behavior belongs to `scope:admin` or `scope:warehouse`, not `scope:shared`.
+- Keep cross-library wire types and their shared display metadata in `@warehouse/shared`. Define each value set once (for example, `UserStatus` and `USER_STATUS_LABELS`) and reuse it from auth and feature packages instead of duplicating unions or label maps.
+- Keep `@warehouse/shared` buildable because publishable libraries depend on its public API. Declare it as a package dependency or peer dependency instead of bypassing Nx buildable-library boundaries.
 - Extract cohesive features as they grow; do not create empty layers or a library for every component.
 - New libraries need one scope tag (`scope:admin`, `scope:access-management`, `scope:warehouse`, or `scope:shared`) and one type tag (`type:feature`, `type:ui`, `type:data-access`, or `type:util`).
 - Scope rules: admin can use access-management and shared libraries; access-management can use its own scope and shared libraries; warehouse can use warehouse and shared libraries; shared code can use only shared libraries.
@@ -50,9 +53,9 @@
 - Libraries must never import applications. Do not introduce cross-application imports or circular dependencies.
 - Use public library exports through `@warehouse/auth`, `@warehouse/shared`, and `@warehouse/access-management`; keep internal file imports within their own entry point.
 - Keep reusable interfaces, type aliases, and enums in a dedicated `types` directory. Each `types` directory must expose an `index.ts` barrel; import from that barrel or from the library's public entry point, never from an individual type file across directory or library boundaries.
-- Keep injectable Angular services in `services`, reusable presentation components in `components`, and route-level components that load data or coordinate a screen in `containers`. Each of these directories must expose an `index.ts` barrel; import through the closest barrel instead of reaching into an implementation file.
+- Keep injectable Angular services in `services`, reusable presentation components in `components`, and route-level components that load data or coordinate a screen in `containers`. Each collection directory (`services`, `components`, or `containers`) must expose one `index.ts` barrel; import through that collection barrel instead of reaching into an implementation file.
 - Keep `ACCESS_MANAGEMENT_ROUTES` in the primary `@warehouse/access-management` entry point. It is routing configuration for the package, not a secondary library or `routes` entry point.
-- The access-management package uses secondary entry points for `feature/dashboard`, `feature/users`, `feature/roles`, `data-access`, `ui`, and `util`. Do not expose implementation files directly.
+- The access-management package uses secondary entry points for `feature/users`, `feature/roles`, `data-access`, `ui`, and `util`. Do not expose implementation files directly.
 - Keep shared utilities small and free of domain-specific workflows. Keep HTTP requests and state out of reusable presentation components.
 - Enforce dependencies with `@nx/enforce-module-boundaries`; do not add exemptions to hide architectural violations.
 
@@ -70,13 +73,6 @@ libs/access-management/
 │   └── lib/
 │       └── access-management.routes.ts  # exported package route tree
 ├── feature/
-│   ├── dashboard/
-│   │   ├── ng-package.json              # secondary entry point
-│   │   └── src/
-│   │       ├── index.ts                 # secondary public API
-│   │       └── lib/containers/
-│   │           ├── index.ts
-│   │           └── access-management-dashboard.ts
 │   ├── users/
 │   │   ├── ng-package.json
 │   │   └── src/
@@ -85,11 +81,16 @@ libs/access-management/
 │   │           ├── users.routes.ts
 │   │           ├── components/
 │   │           │   ├── index.ts
-│   │           │   └── user-access.ts
+│   │           │   └── user-access/
+│   │           │       ├── user-access.html
+│   │           │       ├── user-access.spec.ts
+│   │           │       └── user-access.ts
 │   │           └── containers/
 │   │               ├── index.ts
-│   │               ├── users.ts
-│   │               └── users.html
+│   │               └── users/
+│   │                   ├── users.html
+│   │                   ├── users.spec.ts
+│   │                   └── users.ts
 │   └── roles/                           # follows the same shape as feature/users
 ├── data-access/
 │   ├── ng-package.json
@@ -97,14 +98,16 @@ libs/access-management/
 │       ├── index.ts
 │       └── lib/services/
 │           ├── index.ts
-│           └── access-management-api.ts
+│           └── access-management-api.service.ts
 ├── ui/
 │   ├── ng-package.json
 │   └── src/
 │       ├── index.ts
 │       └── lib/components/
 │           ├── index.ts
-│           └── status-badge.ts
+│           └── status-badge/
+│               ├── status-badge.html
+│               └── status-badge.ts
 └── util/
     ├── ng-package.json
     └── src/
@@ -133,6 +136,8 @@ libs/access-management/
 ### Public APIs and barrel imports
 
 - Every `components`, `containers`, `services`, `guards`, `providers`, and `types` directory must have an `index.ts` barrel.
+- Place each component and container with its co-located template in its own named subdirectory (for example, `components/status-badge/status-badge.ts` and `status-badge.html`).
+- Place barrels at collection boundaries only. Do not add an `index.ts` inside a directory that represents one component, container, service, guard, provider, or type; the parent collection barrel must export that item's implementation file directly (for example, `components/index.ts` exports `./app-header/app-header`).
 - Imports crossing a directory boundary must target the closest barrel. For example, a users container imports `UserAccess` from `../components`, not `../components/user-access`.
 - Imports crossing an entry-point boundary must use the package alias: `@warehouse/access-management/data-access`, `@warehouse/access-management/ui`, or `@warehouse/access-management/util`. Never reach into another entry point with a relative path.
 - Application code normally imports only `@warehouse/access-management`. Secondary entry points are primarily package-internal boundaries and optional advanced public APIs.
@@ -142,19 +147,19 @@ libs/access-management/
 ### Allowed dependency direction
 
 ```text
-admin shell ──> access-management primary API
+admin application layout ──> access-management primary API
                        │
                        └──lazy──> feature/* ──> data-access ──> util
                                              ├──> ui ─────────> util
                                              └───────────────> util
 ```
 
-- The shell owns application-wide authentication providers, permission guards, global Material theming, and top-level chrome. It must not import a feature's implementation files.
+- The application layout owns application-wide authentication providers, permission guards, global Material theming, and top-level chrome. It must not import a feature's implementation files.
 - Features may depend on `data-access`, `ui`, and `util`.
 - Data access may depend on `util`, but never on `feature` or `ui`.
 - UI may depend on `util`, but never on `feature` or `data-access`.
 - Util must not depend on the other domain layers.
-- Keep authentication outside the access-management package. The shell guards the package route before composing `ACCESS_MANAGEMENT_ROUTES`, keeping the domain package reusable.
+- Keep authentication outside the access-management package. The runner application guards the package route before composing `ACCESS_MANAGEMENT_ROUTES`, keeping the domain package reusable.
 
 When adding another publishable domain package, start with only the layers it needs, preserve this dependency direction, and use its domain name instead of copying `access-management` names literally. Do not create empty directories solely to mirror the example.
 
@@ -162,7 +167,9 @@ When adding another publishable domain package, start with only the layers it ne
 
 - Auth0 proves identity; the ERP backend owns account status, roles, permissions, and scope checks.
 - Use the shared auth providers and guard. Do not introduce authentication bypasses or persist tokens in localStorage.
-- Preserve the configured API allowlist for access tokens. Runtime `public/config.json` contains public SPA settings only.
+- Keep public build-time application settings in each app's `src/environments/environment.ts`, with environment-specific files selected through the app's Nx `fileReplacements`. Do not add runtime `config.json` loading unless deployment explicitly requires one build artifact to be configured after compilation.
+- Auth0 SPA `domain`, `clientId`, `audience`, and public API URL may live in environment files; never place client secrets, tokens, or other credentials there. Derive callback and logout URLs from `window.location.origin` in the auth provider rather than hard-coding application ports.
+- Preserve the configured API allowlist for access tokens.
 - Preserve API field names and enum values. Do not translate wire-format keys.
 - Account creation creates a local ERP user, not an Auth0 account or an invitation email.
 - Preserve immutable role codes and explicit Auth0 subject linking.
@@ -171,7 +178,12 @@ When adding another publishable domain package, start with only the layers it ne
 ## Validation and code style
 
 - Follow the existing ESLint rules from `nutrition-ui`, including explicit return types, type-only imports, import sorting, and accessible Angular templates.
+- Name application and library configuration files with the `.config.ts` suffix so they are distinct from components and runtime services (for example, `admin-navigation.config.ts`). Keep Angular's conventional `app.config.ts` bootstrap filename.
+- Name injectable Angular service files with the `.service.ts` suffix and their classes with the `Service` suffix (for example, `access-management-api.service.ts` exports `AccessManagementApiService`).
+- Keep backend transport in stateless API services. Authentication orchestration must call `IdentityApiService` for session-scoped `/identity/*` requests instead of injecting `HttpClient` directly; access-management administration endpoints remain in its data-access layer.
 - Order class members as follows: injected fields (`inject()`), inputs, outputs, private fields, protected fields, public fields, constructor, getters/setters, Angular lifecycle hooks, public methods, protected methods, and private methods. Keep lifecycle hooks in Angular invocation order: `ngOnChanges`, `ngOnInit`, `ngDoCheck`, `ngAfterContentInit`, `ngAfterContentChecked`, `ngAfterViewInit`, `ngAfterViewChecked`, `ngOnDestroy`. The local `warehouse/class-member-order` ESLint rule enforces this convention.
+- Order Angular template attributes by category: template references (`#ref`), structural directives, static attributes and attribute directives, property bindings (`[]`), two-way bindings (`[()]`), then event bindings (`()`). Preserve author order inside each category. Angular ESLint applies this ordering before `html-beautify` aligns wrapped attributes.
+- Always place Angular component templates in a co-located `.html` file and reference them with a relative `templateUrl`. Inline `template` declarations are forbidden even for one-line components; `@angular-eslint/component-max-inline-declarations` enforces a template limit of zero lines.
 - Prettier formats code; js-beautify formats external HTML. Use `npm run format`, not Prettier on HTML files.
 - Run `npm run check` for formatting, lint, and type checks. Run relevant Nx tests and builds for behavior changes.
 - After shared-library changes, validate affected consumers. `npm test` and `npm run build` cover both applications.
@@ -184,7 +196,7 @@ When adding another publishable domain package, start with only the layers it ne
 - Use Angular Material for interactive components and established patterns such as forms, buttons, tables, dialogs, menus, navigation, feedback, and overlays.
 - Use Tailwind CSS for layout, flexbox, grid, spacing, sizing, alignment, responsive presentation, and small visual adjustments.
 - Prefer templates built from Material components and Tailwind utilities. Do not create component `.scss` files or add `styleUrl` unless the design cannot be expressed clearly with those systems.
-- Keep Material theme generation, Tailwind imports, application-shell defaults, and unavoidable global overrides in global styles. Share theme definitions between applications when their design is the same.
+- Keep Material theme generation, Tailwind imports, application-layout defaults, and unavoidable global overrides in global styles. Share theme definitions between applications when their design is the same.
 - Customize Material only through public theming APIs, design tokens, component inputs, and host classes. Never depend on private implementation selectors such as `.mat-mdc-*`.
 - Use Tailwind responsive variants for visual changes. Use CDK `BreakpointObserver` only when a breakpoint changes component behavior or application logic.
 - Import only the standalone Material components or modules required by a feature. Do not create a catch-all Material module.

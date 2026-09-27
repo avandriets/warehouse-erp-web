@@ -1,0 +1,33 @@
+@let user = auth.user();
+
+<div class="flex min-h-dvh flex-col bg-[var(--mat-sys-surface)]">
+  <app-header [compact]="compact()"
+              [loading]="auth.loading()"
+              [authenticated]="auth.authenticated()"
+              [userName]="user?.name ?? user?.email ?? null"
+              (navigationToggle)="toggleNavigation()"
+              (signIn)="login()"
+              (signOut)="auth.logout()" />
+
+  <mat-sidenav-container class="min-h-0 flex-1 bg-[var(--mat-sys-surface)]" [autosize]="true">
+    <mat-sidenav #sidenav
+                 id="app-navigation-drawer"
+                 class="app-navigation-drawer"
+                 [style.--app-navigation-width]="collapsed() ? '4.5rem' : '18rem'"
+                 [mode]="compact() ? 'over' : 'side'"
+                 [opened]="!compact()">
+      <app-navigation [navigation]="navigation()"
+                      [collapsed]="collapsed()"
+                      [collapsible]="!compact()"
+                      (collapseToggle)="toggleNavigationCollapsed()"
+                      (sectionSelected)="selectSection()" />
+    </mat-sidenav>
+
+    <mat-sidenav-content>
+      <main id="content"
+            class="mx-auto w-full max-w-[90rem] p-4 sm:p-6 lg:p-10">
+        <router-outlet />
+      </main>
+    </mat-sidenav-content>
+  </mat-sidenav-container>
+</div>

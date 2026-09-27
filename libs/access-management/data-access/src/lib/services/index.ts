@@ -1,1 +1,1 @@
-export * from './access-management-api';
+export * from './access-management-api.service';

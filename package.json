@@ -13,8 +13,8 @@
     "lint:fix": "nx run-many -t lint --fix --skip-nx-cache",
     "format": "npm run lint:fix && npm run format:prettier && npm run format:html",
     "format:prettier": "prettier --write .",
-    "format:html": "html-beautify --replace \"apps/**/*.html\" \"libs/**/*.html\"",
-    "format:check": "prettier --check . && node scripts/check-html-format.mjs",
+    "format:html": "eslint \"apps/**/*.html\" \"libs/**/*.html\" --fix && html-beautify --replace \"apps/**/*.html\" \"libs/**/*.html\"",
+    "format:check": "prettier --check . && node scripts/check-html-format.mjs && eslint \"apps/**/*.html\" \"libs/**/*.html\"",
     "typecheck": "nx run-many -t typecheck",
     "check": "npm run format:check && npm run lint && npm run typecheck"
   },

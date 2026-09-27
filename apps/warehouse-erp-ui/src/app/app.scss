@@ -18,7 +18,9 @@
   place-items: center;
   padding: 2rem;
   box-sizing: border-box;
-  background: radial-gradient(circle at 15% 20%, rgb(73 166 126 / 18%), transparent 35%), linear-gradient(145deg, #f6f9f7, #e7efeb);
+  background:
+    radial-gradient(circle at 15% 20%, rgb(73 166 126 / 18%), transparent 35%),
+    linear-gradient(145deg, #f6f9f7, #e7efeb);
 }
 
 .card {

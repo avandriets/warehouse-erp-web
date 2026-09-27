@@ -14,7 +14,12 @@ export default tseslint.config(
   },
   {
     files: ['**/*.ts'],
-    extends: [eslint.configs.recommended, ...tseslint.configs.recommended, ...tseslint.configs.stylistic, ...angular.configs.tsRecommended],
+    extends: [
+      eslint.configs.recommended,
+      ...tseslint.configs.recommended,
+      ...tseslint.configs.stylistic,
+      ...angular.configs.tsRecommended,
+    ],
     processor: angular.processInlineTemplates,
     plugins: {
       '@nx': nx,
@@ -33,12 +38,24 @@ export default tseslint.config(
           enforceBuildableLibDependency: true,
           allow: [],
           depConstraints: [
-            { sourceTag: 'scope:admin', onlyDependOnLibsWithTags: ['scope:admin', 'scope:access-management', 'scope:shared'] },
-            { sourceTag: 'scope:access-management', onlyDependOnLibsWithTags: ['scope:access-management', 'scope:shared'] },
+            {
+              sourceTag: 'scope:admin',
+              onlyDependOnLibsWithTags: ['scope:admin', 'scope:access-management', 'scope:shared'],
+            },
+            {
+              sourceTag: 'scope:access-management',
+              onlyDependOnLibsWithTags: ['scope:access-management', 'scope:shared'],
+            },
             { sourceTag: 'scope:warehouse', onlyDependOnLibsWithTags: ['scope:warehouse', 'scope:shared'] },
             { sourceTag: 'scope:shared', onlyDependOnLibsWithTags: ['scope:shared'] },
-            { sourceTag: 'type:app', onlyDependOnLibsWithTags: ['type:feature', 'type:ui', 'type:data-access', 'type:util'] },
-            { sourceTag: 'type:feature', onlyDependOnLibsWithTags: ['type:feature', 'type:ui', 'type:data-access', 'type:util'] },
+            {
+              sourceTag: 'type:app',
+              onlyDependOnLibsWithTags: ['type:feature', 'type:ui', 'type:data-access', 'type:util'],
+            },
+            {
+              sourceTag: 'type:feature',
+              onlyDependOnLibsWithTags: ['type:feature', 'type:ui', 'type:data-access', 'type:util'],
+            },
             { sourceTag: 'type:ui', onlyDependOnLibsWithTags: ['type:ui', 'type:util'] },
             { sourceTag: 'type:data-access', onlyDependOnLibsWithTags: ['type:data-access', 'type:util'] },
             { sourceTag: 'type:util', onlyDependOnLibsWithTags: ['type:util'] },
@@ -59,6 +76,14 @@ export default tseslint.config(
           type: 'attribute',
           prefix: 'app',
           style: 'camelCase',
+        },
+      ],
+      '@angular-eslint/component-max-inline-declarations': [
+        'error',
+        {
+          template: 0,
+          styles: 1000,
+          animations: 1000,
         },
       ],
       '@typescript-eslint/consistent-type-imports': [
@@ -91,6 +116,20 @@ export default tseslint.config(
     files: ['**/*.html'],
     extends: [...angular.configs.templateRecommended, ...angular.configs.templateAccessibility],
     rules: {
+      '@angular-eslint/template/attributes-order': [
+        'error',
+        {
+          alphabetical: false,
+          order: [
+            'TEMPLATE_REFERENCE',
+            'STRUCTURAL_DIRECTIVE',
+            'ATTRIBUTE_BINDING',
+            'INPUT_BINDING',
+            'TWO_WAY_BINDING',
+            'OUTPUT_BINDING',
+          ],
+        },
+      ],
       '@angular-eslint/template/eqeqeq': ['error', { allowNullOrUndefined: true }],
     },
   },
@@ -113,8 +152,16 @@ export default tseslint.config(
         'error',
         { blankLine: 'always', prev: ['class', 'function', 'interface', 'type', 'enum'], next: '*' },
         { blankLine: 'always', prev: '*', next: ['class', 'function', 'interface', 'type', 'enum'] },
-        { blankLine: 'always', prev: { selector: 'ExportNamedDeclaration[declaration], ExportDefaultDeclaration[declaration]' }, next: '*' },
-        { blankLine: 'always', prev: '*', next: { selector: 'ExportNamedDeclaration[declaration], ExportDefaultDeclaration[declaration]' } },
+        {
+          blankLine: 'always',
+          prev: { selector: 'ExportNamedDeclaration[declaration], ExportDefaultDeclaration[declaration]' },
+          next: '*',
+        },
+        {
+          blankLine: 'always',
+          prev: '*',
+          next: { selector: 'ExportNamedDeclaration[declaration], ExportDefaultDeclaration[declaration]' },
+        },
       ],
       '@stylistic/no-multiple-empty-lines': ['error', { max: 1, maxEOF: 0 }],
     },

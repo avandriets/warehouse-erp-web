@@ -38,7 +38,13 @@
       "options": {
         "watch": false,
         "tsConfig": "libs/access-management/tsconfig.spec.json",
-        "include": ["src/**/*.spec.ts", "feature/**/*.spec.ts", "data-access/**/*.spec.ts", "ui/**/*.spec.ts", "util/**/*.spec.ts"]
+        "include": [
+          "src/**/*.spec.ts",
+          "feature/**/*.spec.ts",
+          "data-access/**/*.spec.ts",
+          "ui/**/*.spec.ts",
+          "util/**/*.spec.ts"
+        ]
       }
     },
     "lint": {

@@ -1,4 +1,6 @@
-export type UserStatus = 'INVITED' | 'PENDING_APPROVAL' | 'ACTIVE' | 'SUSPENDED';
+import type { UserStatus } from '@warehouse/shared';
+
+export type { UserStatus } from '@warehouse/shared';
 
 export interface UserRecord {
   id: string;

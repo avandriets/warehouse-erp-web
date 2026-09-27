@@ -1,25 +1,38 @@
 import { inject } from '@angular/core';
-import type { CanActivateFn } from '@angular/router';
+import { toObservable } from '@angular/core/rxjs-interop';
+import type { CanActivateFn, UrlTree } from '@angular/router';
 import { Router } from '@angular/router';
+import type { Observable } from 'rxjs';
 import { catchError, filter, map, of, switchMap, take } from 'rxjs';
 
-import { WarehouseAuth } from '../services';
+import { WarehouseAuthService } from '../services';
 
 export const permissionGuard: CanActivateFn = (route, state) => {
-  const auth = inject(WarehouseAuth);
+  const auth = inject(WarehouseAuthService);
   const router = inject(Router);
 
-  return auth.isLoading$.pipe(
+  const authorize = (): Observable<boolean | UrlTree> => {
+    if (!auth.authenticated()) {
+      return of(router.createUrlTree(['/login'], { queryParams: { returnTo: state.url } }));
+    }
+
+    return auth.loadCurrentUser().pipe(
+      map(user =>
+        user.status === 'ACTIVE' && (!route.data['permission'] || auth.can(route.data['permission']))
+          ? true
+          : router.createUrlTree(['/forbidden']),
+      ),
+      catchError(() => of(router.createUrlTree(['/forbidden']))),
+    );
+  };
+
+  if (!auth.loading()) {
+    return authorize();
+  }
+
+  return toObservable(auth.loading).pipe(
     filter(loading => !loading),
     take(1),
-    switchMap(() => auth.isAuthenticated$.pipe(take(1))),
-    switchMap(loggedIn => {
-      if (!loggedIn) return of(router.createUrlTree(['/login'], { queryParams: { returnTo: state.url } }));
-
-      return auth.loadUser().pipe(
-        map(user => (user.status === 'ACTIVE' && (!route.data['permission'] || auth.can(route.data['permission'])) ? true : router.createUrlTree(['/forbidden']))),
-        catchError(() => of(router.createUrlTree(['/forbidden']))),
-      );
-    }),
+    switchMap(authorize),
   );
 };

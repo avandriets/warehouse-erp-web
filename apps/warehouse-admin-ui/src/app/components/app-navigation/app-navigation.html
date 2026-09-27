@@ -1,0 +1,124 @@
+<div class="flex min-h-full flex-col py-5"
+     [class.px-2]="collapsed()"
+     [class.px-4]="!collapsed()">
+  <nav aria-label="Administration sections">
+    @for (item of navigation(); track $index) {
+      @if ('children' in item) {
+        <div routerLinkActive="app-navigation-group-active">
+          @if (!collapsed()) {
+            <button mat-button
+                    type="button"
+                    class="app-navigation-group w-full justify-start! px-3! h-14!"
+                    [attr.aria-expanded]="!closedGroups().has(item.id)"
+                    [attr.aria-controls]="'navigation-' + item.id"
+                    (click)="toggleGroup(item.id)">
+              <span class="flex w-full items-center gap-4 text-base">
+                <ng-container [ngTemplateOutlet]="icon"
+                              [ngTemplateOutletContext]="{ path: item.iconPath }" />
+                <span class="flex-1 text-left">{{ item.title }}</span>
+                <svg class="size-4 text-stone-400"
+                     viewBox="0 0 24 24"
+                     fill="none"
+                     stroke="currentColor"
+                     stroke-width="2"
+                     aria-hidden="true">
+                  <path [attr.d]="closedGroups().has(item.id) ? 'm9 5 7 7-7 7' : 'm5 9 7 7 7-7'" />
+                </svg>
+              </span>
+            </button>
+          }
+          <mat-nav-list [id]="'navigation-' + item.id"
+                        [hidden]="!collapsed() && closedGroups().has(item.id)"
+                        [attr.aria-label]="item.title">
+            @for (child of item.children; track child.path) {
+              <a mat-list-item
+                 class="app-navigation-link"
+                 routerLinkActive="app-navigation-active"
+                 ariaCurrentWhenActive="page"
+                 matTooltipPosition="right"
+                 [routerLink]="child.path"
+                 [routerLinkActiveOptions]="{ exact: child.exact }"
+                 [attr.aria-label]="child.title"
+                 [matTooltip]="child.title"
+                 [matTooltipDisabled]="!collapsed()"
+                 (click)="sectionSelected.emit()">
+                <ng-container [ngTemplateOutlet]="linkContent"
+                              [ngTemplateOutletContext]="{ item: child, nested: true }" />
+              </a>
+            }
+          </mat-nav-list>
+        </div>
+      } @else {
+        <mat-nav-list>
+          <a mat-list-item
+             class="app-navigation-link"
+             routerLinkActive="app-navigation-active"
+             ariaCurrentWhenActive="page"
+             matTooltipPosition="right"
+             [routerLink]="item.path"
+             [routerLinkActiveOptions]="{ exact: item.exact }"
+             [attr.aria-label]="item.title"
+             [matTooltip]="item.title"
+             [matTooltipDisabled]="!collapsed()"
+             (click)="sectionSelected.emit()">
+            <ng-container [ngTemplateOutlet]="linkContent"
+                          [ngTemplateOutletContext]="{ item, nested: false }" />
+          </a>
+        </mat-nav-list>
+      }
+    }
+  </nav>
+
+  <ng-template #icon
+               let-path="path">
+    <svg class="block size-6 shrink-0"
+         viewBox="0 0 24 24"
+         fill="none"
+         stroke="currentColor"
+         stroke-width="1.8"
+         stroke-linecap="round"
+         stroke-linejoin="round"
+         aria-hidden="true">
+      <path [attr.d]="path" />
+    </svg>
+  </ng-template>
+
+  <ng-template #linkContent
+               let-item="item"
+               let-nested="nested">
+    <span class="flex items-center gap-4"
+          [class.pl-10]="nested && !collapsed()">
+      @if (!nested || collapsed()) {
+        <ng-container [ngTemplateOutlet]="icon"
+                      [ngTemplateOutletContext]="{ path: item.iconPath }" />
+      }
+      @if (!collapsed()) {
+        <span class="text-base"
+              [class.font-medium]="!nested">{{ item.title }}</span>
+      }
+    </span>
+  </ng-template>
+
+  <div class="mt-auto flex flex-col gap-4 pt-10">
+    @if (collapsible()) {
+      <button mat-icon-button
+              type="button"
+              class="self-end"
+              aria-controls="app-navigation-drawer"
+              matTooltipPosition="right"
+              [attr.aria-label]="collapsed() ? 'Expand navigation' : 'Collapse navigation'"
+              [attr.aria-expanded]="!collapsed()"
+              [matTooltip]="collapsed() ? 'Expand navigation' : 'Collapse navigation'"
+              (click)="collapseToggle.emit()">
+        <svg class="size-6"
+             viewBox="0 0 24 24"
+             fill="none"
+             stroke="currentColor"
+             stroke-width="2"
+             aria-hidden="true">
+          <path [attr.d]="collapsed() ? 'm5 6 6 6-6 6 M13 6l6 6-6 6' : 'm19 6-6 6 6 6 M11 6l-6 6 6 6'" />
+        </svg>
+      </button>
+    }
+  </div>
+</div>

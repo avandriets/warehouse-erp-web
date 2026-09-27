@@ -25,7 +25,6 @@ export const routes: Routes = [
 
 The package also exposes these secondary entry points:
 
-- `@warehouse/access-management/feature/dashboard`
 - `@warehouse/access-management/feature/users`
 - `@warehouse/access-management/feature/roles`
 - `@warehouse/access-management/data-access`

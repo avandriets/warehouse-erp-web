@@ -1,0 +1,37 @@
+<main class="min-h-dvh p-4 sm:p-8">
+  <mat-card appearance="outlined"
+            class="mx-auto mt-6 max-w-2xl sm:mt-12">
+    <mat-card-header>
+      <mat-card-subtitle class="tracking-[0.18em]! text-emerald-700! uppercase">Warehouse ERP</mat-card-subtitle>
+      <mat-card-title class="mt-2! text-3xl! font-bold!">Admin panel</mat-card-title>
+    </mat-card-header>
+    <mat-card-content class="pt-4!">
+      <p class="m-0 text-sm leading-6 text-stone-600">Sign in to manage users, roles, and permissions.</p>
+      @if (auth.loading()) {
+        <div class="mt-6 flex items-center gap-3 text-sm text-stone-600"
+             role="status">
+          <mat-spinner diameter="24" />
+          Checking your session…
+        </div>
+      } @else {
+        @if (auth.error(); as error) {
+          <p class="mt-5 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800"
+             role="alert">
+            {{ error.message }}
+          </p>
+        }
+        <div class="mt-6">
+          @if (auth.authenticated()) {
+            <a mat-flat-button
+               routerLink="/">Open application</a>
+          } @else {
+            <button mat-flat-button
+                    type="button"
+                    (click)="login()">Sign in with Auth0
+            </button>
+          }
+        </div>
+      }
+    </mat-card-content>
+  </mat-card>
+</main>

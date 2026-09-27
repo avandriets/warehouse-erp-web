@@ -4,14 +4,14 @@ An Nx workspace with two thin Angular applications, shared authentication, and a
 
 ```text
 apps/warehouse-erp-ui    — original application, port 4300
-apps/warehouse-admin-ui  — administration shell, port 4301
+apps/warehouse-admin-ui  — administration runner application, port 4301
 libs/access-management   — publishable users, roles, and permissions package
 libs/auth                — Auth0, configuration, HTTP interceptor, ERP profile, and route guard
 libs/shared              — shared utilities, imported through @warehouse/shared
 ```
 
 The existing login, signup, and profile screen is preserved in `warehouse-erp-ui`.
-The admin shell composes `@warehouse/access-management`; its domain behavior stays in that package. The backend lives in the
+The admin application layout composes `@warehouse/access-management`; its domain behavior stays in that package. The backend lives in the
 sibling `warehouse-erp` repository and requires no changes for this migration.
 
 ## Getting started
@@ -37,14 +37,15 @@ If your environment limits the number of file watchers (`EMFILE`), run
 
 ## Auth0 and API
 
-Both applications load `public/config.json` before bootstrapping. These files contain
-public SPA settings, not secrets:
+Each application owns build-time settings in `src/environments/environment.ts` and uses
+`environment.development.ts` through the Nx build target's `fileReplacements`. Changes require a rebuild.
+These files contain public SPA settings, not secrets:
 
 - `domain`, `clientId`, `audience` — Auth0 values; the original application's settings are preserved.
 - `apiUrl` — defaults to `/api`; an absolute API URL can also be used.
 
 The shared import is `@warehouse/auth`. `provideWarehouseAuth(config)` configures Auth0 and
-HTTP client providers. `WarehouseAuth` provides login, signup, logout, and the ERP profile.
+HTTP client providers. `WarehouseAuthService` provides login, signup, logout, and the ERP profile.
 `permissionGuard` checks account status and permissions through `GET /api/identity/me`.
 The access token is attached only to requests under the configured `apiUrl`.
 The application does not store tokens in localStorage.
@@ -63,8 +64,7 @@ The development proxy forwards `/api` to `http://127.0.0.1:8100`, the backend's 
 If the backend runs on a different port, update `proxy.conf.json`.
 When calling an absolute `apiUrl` directly, add the frontend origin to the backend's
 `APP_CORS_ORIGINS`.
-In production, configure a reverse proxy for `/api`, serve the SPA's `index.html` for client-side
-routes, and provide an up-to-date `config.json` without long-lived caching.
+In production, configure a reverse proxy for `/api` and serve the SPA's `index.html` for client-side routes.
 The Angular development proxy is not included in production builds.
 
 ## Administration
@@ -139,7 +139,7 @@ into interface messages. The library does not depend on the applications or Auth
 
 ESLint enforces project dependencies using Nx scope and type tags:
 
-- The admin shell may use access-management and shared libraries; the access-management package may use only its own scope and shared libraries.
+- The admin application may use access-management and shared libraries; the access-management package may use only its own scope and shared libraries.
 - The warehouse application uses warehouse and shared libraries.
 - `auth` is shared data-access code and may depend on `shared` utilities.
 - `shared` cannot import `auth` or application code.

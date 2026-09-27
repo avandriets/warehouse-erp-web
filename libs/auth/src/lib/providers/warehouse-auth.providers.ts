@@ -7,26 +7,27 @@ import type { WarehouseAuthConfig } from '../types';
 
 export const AUTH_CONFIG = new InjectionToken<WarehouseAuthConfig>('Warehouse auth configuration');
 
-export async function loadAuthConfig(): Promise<WarehouseAuthConfig> {
-  const response = await fetch('/config.json');
-  if (!response.ok) throw new Error('Configuration unavailable');
-  const config = (await response.json()) as WarehouseAuthConfig;
-  if (![config.apiUrl, config.domain, config.clientId, config.audience].every(value => typeof value === 'string' && value.length > 0)) throw new Error('Invalid configuration');
-
-  return config;
-}
-
 export function provideWarehouseAuth(config: WarehouseAuthConfig): (Provider | EnvironmentProviders)[] {
-  const apiUrl = config.apiUrl.replace(/\/$/, '');
+  const { apiUrl: configuredApiUrl, ...auth0Config } = config;
+  const apiUrl = configuredApiUrl.replace(/\/$/, '');
+  const authorizationParams = {
+    ...auth0Config.authorizationParams,
+    redirect_uri: window.location.origin,
+  };
+  const httpInterceptor = {
+    allowedList: [apiUrl, `${apiUrl}/*`],
+  };
 
   return [
-    { provide: AUTH_CONFIG, useValue: { ...config, apiUrl } },
+    {
+      provide: AUTH_CONFIG,
+      useValue: { ...auth0Config, apiUrl, authorizationParams, httpInterceptor } satisfies WarehouseAuthConfig,
+    },
     provideHttpClient(withInterceptors([authHttpInterceptorFn])),
     provideAuth0({
-      domain: config.domain,
-      clientId: config.clientId,
-      authorizationParams: { audience: config.audience, redirect_uri: window.location.origin },
-      httpInterceptor: { allowedList: [`${apiUrl}/*`] },
+      ...auth0Config,
+      authorizationParams,
+      httpInterceptor,
     }),
   ];
 }

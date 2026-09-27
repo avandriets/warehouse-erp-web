@@ -1,6 +1,6 @@
+import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
-import { WarehouseAuth } from '@warehouse/auth';
-import { of } from 'rxjs';
+import { WarehouseAuthService } from '@warehouse/auth';
 
 import { App } from './app';
 
@@ -10,13 +10,14 @@ describe('App', () => {
       imports: [App],
       providers: [
         {
-          provide: WarehouseAuth,
+          provide: WarehouseAuthService,
           useValue: {
-            isLoading$: of(false),
-            isAuthenticated$: of(false),
-            user$: of(null),
-            error$: of(null),
-            loginWithRedirect: vi.fn(),
+            loading: signal(false),
+            authenticated: signal(false),
+            user: signal(null),
+            error: signal(null),
+            login: vi.fn(),
+            signup: vi.fn(),
             logout: vi.fn(),
           },
         },

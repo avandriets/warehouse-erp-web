@@ -1,4 +1,13 @@
-const lifecycleHooks = ['ngOnChanges', 'ngOnInit', 'ngDoCheck', 'ngAfterContentInit', 'ngAfterContentChecked', 'ngAfterViewInit', 'ngAfterViewChecked', 'ngOnDestroy'];
+const lifecycleHooks = [
+  'ngOnChanges',
+  'ngOnInit',
+  'ngDoCheck',
+  'ngAfterContentInit',
+  'ngAfterContentChecked',
+  'ngAfterViewInit',
+  'ngAfterViewChecked',
+  'ngOnDestroy',
+];
 
 const lifecycleRanks = new Map(lifecycleHooks.map((name, index) => [name, index]));
 
@@ -32,7 +41,8 @@ function accessibility(member) {
 
 function unwrapExpression(expression) {
   let current = expression;
-  while (['ChainExpression', 'TSAsExpression', 'TSNonNullExpression', 'TSTypeAssertion'].includes(current?.type)) current = current.expression;
+  while (['ChainExpression', 'TSAsExpression', 'TSNonNullExpression', 'TSTypeAssertion'].includes(current?.type))
+    current = current.expression;
 
   return current;
 }
@@ -90,7 +100,8 @@ function methodGroup(member) {
 }
 
 function classify(member) {
-  if (['PropertyDefinition', 'TSAbstractPropertyDefinition'].includes(member.type)) return { group: fieldGroup(member), detail: 0 };
+  if (['PropertyDefinition', 'TSAbstractPropertyDefinition'].includes(member.type))
+    return { group: fieldGroup(member), detail: 0 };
   if (['MethodDefinition', 'TSAbstractMethodDefinition'].includes(member.type)) return methodGroup(member);
 
   return null;

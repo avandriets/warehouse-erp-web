@@ -5,7 +5,7 @@ import type { ActivatedRouteSnapshot, RouterStateSnapshot, UrlTree } from '@angu
 import { provideRouter, Router } from '@angular/router';
 import { AuthService } from '@auth0/auth0-angular';
 import type { CurrentUser } from '@warehouse/auth';
-import { AUTH_CONFIG, permissionGuard, WarehouseAuth } from '@warehouse/auth';
+import { AUTH_CONFIG, permissionGuard, WarehouseAuthService } from '@warehouse/auth';
 import { apiError } from '@warehouse/shared';
 import type { Observable } from 'rxjs';
 import { firstValueFrom, of } from 'rxjs';
@@ -20,6 +20,8 @@ describe('shared authentication and permissions', () => {
   let sdk: {
     isLoading$: Observable<boolean>;
     isAuthenticated$: Observable<boolean>;
+    user$: Observable<null>;
+    error$: Observable<null>;
     loginWithRedirect: ReturnType<typeof vi.fn>;
     logout: ReturnType<typeof vi.fn>;
   };
@@ -27,6 +29,8 @@ describe('shared authentication and permissions', () => {
     sdk = {
       isLoading$: of(false),
       isAuthenticated$: of(true),
+      user$: of(null),
+      error$: of(null),
       loginWithRedirect: vi.fn(),
       logout: vi.fn(),
     };
@@ -46,7 +50,10 @@ describe('shared authentication and permissions', () => {
   function guard(): Promise<boolean | UrlTree> {
     return firstValueFrom(
       TestBed.runInInjectionContext(() =>
-        permissionGuard({ data: { permission: 'users.manage' } } as unknown as ActivatedRouteSnapshot, { url: '/users' } as RouterStateSnapshot),
+        permissionGuard(
+          { data: { permission: 'users.manage' } } as unknown as ActivatedRouteSnapshot,
+          { url: '/users' } as RouterStateSnapshot,
+        ),
       ) as Observable<boolean | UrlTree>,
     );
   }
@@ -60,7 +67,7 @@ describe('shared authentication and permissions', () => {
     const result = guard();
     http.expectOne('/api/identity/me').flush(user);
     expect(await result).toBe(true);
-    expect(TestBed.inject(WarehouseAuth).can('users.manage')).toBe(true);
+    expect(TestBed.inject(WarehouseAuthService).can('users.manage')).toBe(true);
   });
   it.each([
     { ...user, status: 'SUSPENDED' },
@@ -72,7 +79,7 @@ describe('shared authentication and permissions', () => {
     expect(TestBed.inject(Router).serializeUrl((await result) as UrlTree)).toBe('/forbidden');
   });
   it('fails closed and clears previously loaded permissions on API failure', async () => {
-    const auth = TestBed.inject(WarehouseAuth);
+    const auth = TestBed.inject(WarehouseAuthService);
     auth.currentUser = user;
     const result = guard();
     http.expectOne('/api/identity/me').flush({ detail: 'unavailable' }, { status: 503, statusText: 'Unavailable' });
@@ -80,7 +87,7 @@ describe('shared authentication and permissions', () => {
     expect(auth.can('users.manage')).toBe(false);
   });
   it('preserves return route and clears identity on logout', () => {
-    const auth = TestBed.inject(WarehouseAuth);
+    const auth = TestBed.inject(WarehouseAuthService);
     auth.login('/roles');
     expect(sdk.loginWithRedirect).toHaveBeenCalledWith({ appState: { target: '/roles' } });
     auth.currentUser = user;
