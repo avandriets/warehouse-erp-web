@@ -4,62 +4,35 @@
     <h1 class="m-0 text-3xl font-bold tracking-tight text-stone-900 sm:text-4xl">Roles and permissions</h1>
     <p class="mt-3 text-sm leading-6 text-stone-600">Permission sets for working in the ERP system.</p>
   </div>
-  <div pageActions>
+  <div pageActions
+       class="flex flex-wrap items-center gap-3">
     <button mat-flat-button
             type="button"
-            [disabled]="saving()"
+            [disabled]="saving() || loading()"
             (click)="open()">Add role</button>
+    <app-url-search class="block w-48"
+                    label="Search this page"
+                    placeholder="Enter a name or code" />
+    <am-roles-filter class="block w-28" />
+    <button mat-icon-button
+            type="button"
+            aria-label="Refresh roles"
+            title="Refresh"
+            [disabled]="saving() || loading()"
+            (click)="load()">
+      <mat-icon>refresh</mat-icon>
+    </button>
   </div>
   <div pageBody>
 
-    @if (error()) {
-      <div class="mt-5 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800"
-           role="alert">{{ error() }}</div>
-    }
-    @if (notice()) {
-      <div class="mt-5 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800"
-           role="status">
-        {{ notice() }}
-      </div>
-    }
-
     <mat-card appearance="outlined"
               class="mt-7 overflow-hidden">
-      <mat-card-content class="grid gap-4 p-4! md:grid-cols-[minmax(0,1fr)_14rem_auto] md:items-center md:p-6!">
-        <mat-form-field appearance="outline"
-                        subscriptSizing="dynamic"
-                        class="w-full">
-          <mat-label>Search this page</mat-label>
-          <input matInput
-                 name="query"
-                 placeholder="Enter a name or code"
-                 [(ngModel)]="query" />
-        </mat-form-field>
-        <mat-form-field appearance="outline"
-                        subscriptSizing="dynamic"
-                        class="w-full">
-          <mat-label>Status</mat-label>
-          <mat-select name="filter"
-                      [(ngModel)]="filter"
-                      (ngModelChange)="changeFilter()">
-            <mat-option value="">All roles</mat-option>
-            <mat-option value="true">Active</mat-option>
-            <mat-option value="false">Inactive</mat-option>
-          </mat-select>
-        </mat-form-field>
-        <button mat-stroked-button
-                type="button"
-                [disabled]="loading()"
-                (click)="load()">Refresh</button>
-      </mat-card-content>
-
-      @if (loading()) {
-        <div class="grid min-h-52 place-items-center border-t border-stone-200"
-             role="status"
-             aria-label="Loading roles">
-          <mat-spinner diameter="36" />
-        </div>
-      } @else {
+      <app-ui-state-container [state]="state()"
+                              [resolved]="data"
+                              [actionError]="actionError()"
+                              (actionErrorDismissed)="dismissActionError()"
+                              (retry)="load()" />
+      <ng-template #data>
         <div class="overflow-x-auto border-t border-stone-200">
           <table mat-table
                  class="w-full"
@@ -90,11 +63,15 @@
                 <div class="flex flex-wrap gap-1">
                   <button mat-button
                           type="button"
-                          [disabled]="saving()"
+                          [disabled]="saving() || loading()"
                           (click)="open(role)">Edit</button>
                   <button mat-button
                           type="button"
-                          (click)="selected.set(role)">Permissions</button>
+                          [disabled]="saving() || loading() || !role.active"
+                          (click)="deactivate(role)">Deactivate</button>
+                  <button mat-button
+                          type="button"
+                          (click)="openDetails(details, role)">Permissions</button>
                 </div>
               </td>
             </ng-container>
@@ -109,73 +86,15 @@
             </tr>
           </table>
         </div>
-      }
+      </ng-template>
     </mat-card>
 
-    @if (editor()) {
-      <mat-card appearance="outlined"
-                class="mt-6"
-                aria-labelledby="role-editor-title">
-        <mat-card-header><mat-card-title id="role-editor-title">{{ editing ? 'Edit role' : 'New role' }}</mat-card-title></mat-card-header>
-        <mat-card-content class="pt-5!">
-          <form #form="ngForm"
-                (ngSubmit)="save()">
-            <fieldset [disabled]="saving()">
-              <div class="grid gap-4 md:grid-cols-2">
-                @if (!editing) {
-                  <mat-form-field appearance="outline"
-                                  subscriptSizing="dynamic"
-                                  class="w-full">
-                    <mat-label>Code</mat-label>
-                    <input matInput
-                           name="code"
-                           required
-                           maxlength="64"
-                           pattern="[A-Za-z][A-Za-z0-9_]{1,63}"
-                           [(ngModel)]="model.code" />
-                  </mat-form-field>
-                }
-                <mat-form-field appearance="outline"
-                                subscriptSizing="dynamic"
-                                class="w-full">
-                  <mat-label>Name</mat-label>
-                  <input matInput
-                         name="name"
-                         required
-                         maxlength="255"
-                         [(ngModel)]="model.name" />
-                </mat-form-field>
-                <mat-form-field appearance="outline"
-                                subscriptSizing="dynamic"
-                                class="w-full md:col-span-2">
-                  <mat-label>Description</mat-label>
-                  <input matInput
-                         name="description"
-                         [(ngModel)]="model.description" />
-                </mat-form-field>
-                @if (editing) {
-                  <mat-checkbox name="active"
-                                [(ngModel)]="model.active">Active</mat-checkbox>
-                }
-              </div>
-            </fieldset>
-            <div class="mt-6 flex flex-wrap gap-3">
-              <button mat-flat-button
-                      type="submit"
-                      [disabled]="form.invalid || saving()">{{ saving() ? 'Saving…' : 'Save' }}</button>
-              <button mat-stroked-button
-                      type="button"
-                      [disabled]="saving()"
-                      (click)="editor.set(false)">Cancel</button>
-            </div>
-          </form>
-        </mat-card-content>
-      </mat-card>
-    }
-
-    @if (selected(); as role) {
-      <am-role-permissions [role]="role"
-                           (closed)="selected.set(null)" />
-    }
   </div>
 </app-page>
+<ng-template #details
+             let-role
+             let-dialogRef="dialogRef">
+  <h2 mat-dialog-title>Role permissions</h2>
+  <mat-dialog-content><am-role-permissions [role]="role"
+                         (closed)="dialogRef.close()" /></mat-dialog-content>
+</ng-template>

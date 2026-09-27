@@ -1,125 +1,136 @@
-import { Component, inject, signal } from '@angular/core';
-import { FormsModule } from '@angular/forms';
+import type { TemplateRef } from '@angular/core';
+import { Component, computed, DestroyRef, inject } from '@angular/core';
+import { takeUntilDestroyed, toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
-import { MatCheckboxModule } from '@angular/material/checkbox';
-import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatInputModule } from '@angular/material/input';
-import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
-import { MatSelectModule } from '@angular/material/select';
+import { MatDialog, MatDialogModule } from '@angular/material/dialog';
+import { MatIconModule } from '@angular/material/icon';
+import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatTableModule } from '@angular/material/table';
-import { AccessManagementApiService, accessManagementError } from '@warehouse/access-management/data-access';
+import { ActivatedRoute } from '@angular/router';
+import { RolesStore } from '@warehouse/access-management/data-access';
 import { StatusBadge } from '@warehouse/access-management/ui';
-import type { RoleCreate, RoleRecord, RoleUpdate } from '@warehouse/access-management/util';
-import { Page } from '@warehouse/shared';
+import type { RoleRecord } from '@warehouse/access-management/util';
+import { parseActive } from '@warehouse/access-management/util';
+import { ConfirmDialog, Page, UIStateContainerComponent, UrlSearch } from '@warehouse/shared';
+import { concatMap, distinctUntilChanged, filter, finalize, switchMap, tap } from 'rxjs';
 
-import { RolePermissions } from '../../components';
+import { RoleFormDialog, RolePermissions, RolesFilter } from '../../components';
 
 @Component({
+  providers: [RolesStore],
   imports: [
-    FormsModule,
     MatButtonModule,
     MatCardModule,
-    MatCheckboxModule,
-    MatFormFieldModule,
-    MatInputModule,
-    MatProgressSpinnerModule,
-    MatSelectModule,
     MatTableModule,
+    MatDialogModule,
+    MatIconModule,
+    UrlSearch,
+    RolesFilter,
     Page,
+    UIStateContainerComponent,
     RolePermissions,
     StatusBadge,
   ],
   templateUrl: './roles.html',
 })
 export class RolesPage {
-  private readonly api = inject(AccessManagementApiService);
-  private requestId = 0;
-  readonly roles = signal<RoleRecord[]>([]);
-  readonly loading = signal(false);
-  readonly saving = signal(false);
-  readonly error = signal('');
-  readonly notice = signal('');
-  readonly editor = signal(false);
-  readonly selected = signal<RoleRecord | null>(null);
+  private readonly dialog = inject(MatDialog);
+  private readonly snackBar = inject(MatSnackBar);
+  private readonly destroyRef = inject(DestroyRef);
+  private readonly route = inject(ActivatedRoute);
+  readonly store = inject(RolesStore);
+  private readonly params = toSignal(this.route.queryParamMap, { initialValue: this.route.snapshot.queryParamMap });
+  private readonly requestParams = computed(() => parseActive(this.params().get('active')));
+  readonly roles = this.store.entities;
+  readonly loading = this.store.loading;
+  readonly saving = this.store.saving;
+  readonly error = computed(() => this.store.actionError() ?? this.store.error() ?? '');
   readonly displayedColumns = ['code', 'name', 'active', 'actions'];
-  filter: '' | 'true' | 'false' = '';
-  query = '';
-  editing: RoleRecord | null = null;
-  model = { code: '', name: '', description: '', active: true };
 
-  constructor() {
-    void this.load();
-  }
+  readonly query = computed(() => this.params().get('q') ?? '');
 
-  async load(): Promise<void> {
-    const request = ++this.requestId;
-    this.loading.set(true);
-    this.error.set('');
-    try {
-      const roles = await this.api.listRoles(this.filter ? this.filter === 'true' : undefined);
-      if (request === this.requestId) this.roles.set(roles);
-    } catch (error) {
-      if (request === this.requestId) this.error.set(accessManagementError(error));
-    } finally {
-      if (request === this.requestId) this.loading.set(false);
-    }
-  }
+  readonly state = this.store.entityState;
+  readonly actionError = this.store.actionError;
 
-  visibleRoles(): RoleRecord[] {
-    const query = this.query.trim().toLowerCase();
+  readonly visibleRoles = computed(() => {
+    const query = this.query().trim().toLowerCase();
     if (!query) return this.roles();
 
     return this.roles().filter(role =>
       [role.code, role.name, role.description].some(value => value?.toLowerCase().includes(query)),
     );
+  });
+
+  constructor() {
+    toObservable(this.requestParams)
+      .pipe(
+        distinctUntilChanged(),
+        switchMap(params => {
+          this.store.reset();
+          return this.store.load(params);
+        }),
+        takeUntilDestroyed(),
+      )
+      .subscribe();
   }
 
-  open(role: RoleRecord | null = null): void {
-    this.error.set('');
-    this.notice.set('');
-    this.editing = role;
-    this.model = {
-      code: role?.code ?? '',
-      name: role?.name ?? '',
-      description: role?.description ?? '',
-      active: role?.active ?? true,
-    };
-    this.selected.set(null);
-    this.editor.set(true);
+  dismissActionError(): void {
+    this.store.dismissActionError();
   }
 
-  async save(): Promise<void> {
-    if (this.saving()) return;
-    this.saving.set(true);
-    this.error.set('');
-    try {
-      if (this.editing) {
-        const payload: RoleUpdate = {
-          name: this.model.name.trim(),
-          description: this.model.description.trim() || null,
-          active: this.model.active,
-        };
-        await this.api.updateRole(this.editing.id, payload);
-      } else {
-        const payload: RoleCreate = {
-          code: this.model.code.trim(),
-          name: this.model.name.trim(),
-          description: this.model.description.trim() || null,
-        };
-        await this.api.createRole(payload);
-      }
-      this.editor.set(false);
-      await this.load();
-      this.notice.set('Changes saved.');
-    } catch (error) {
-      this.error.set(accessManagementError(error));
-    } finally {
-      this.saving.set(false);
-    }
+  load(): void {
+    this.store.load(this.requestParams()).pipe(takeUntilDestroyed(this.destroyRef)).subscribe();
   }
 
-  changeFilter(): void {
-    void this.load();
+  open(record: RoleRecord | null = null): void {
+    const ref = this.dialog.open(RoleFormDialog, { data: record, width: '560px', maxWidth: '95vw' });
+    ref
+      .afterClosed()
+      .pipe(
+        filter(result => result === true),
+        tap(() => this.snackBar.open('Changes saved.', 'Dismiss', { duration: 4000 })),
+        concatMap(() => this.store.load(this.requestParams())),
+        takeUntilDestroyed(this.destroyRef),
+        finalize(() => ref.close()),
+      )
+      .subscribe();
+  }
+
+  openDetails(template: TemplateRef<unknown>, record: RoleRecord): void {
+    const ref = this.dialog.open(template, { data: record, width: '800px', maxWidth: '95vw' });
+    ref
+      .afterClosed()
+      .pipe(
+        takeUntilDestroyed(this.destroyRef),
+        finalize(() => ref.close()),
+      )
+      .subscribe();
+  }
+
+  deactivate(role: RoleRecord): void {
+    const ref = this.dialog.open(ConfirmDialog, {
+      data: {
+        title: 'Deactivate role?',
+        message: `Deactivate ${role.name}? This role will no longer grant permissions.`,
+        confirmText: 'Deactivate',
+      },
+      autoFocus: 'first-tabbable',
+    });
+    ref
+      .afterClosed()
+      .pipe(
+        filter(confirmed => confirmed === true),
+        concatMap(() =>
+          this.store.update({
+            id: role.id,
+            payload: { name: role.name, description: role.description, active: false },
+          }),
+        ),
+        concatMap(() => this.store.load(this.requestParams())),
+        takeUntilDestroyed(this.destroyRef),
+        finalize(() => ref.close()),
+      )
+      .subscribe();
   }
 }

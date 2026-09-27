@@ -1,0 +1,43 @@
+@if (actionErrorMessage(); as message) {
+  <div class="m-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800"
+       role="alert">
+    <p>{{ message }}</p>
+    <button mat-button
+            type="button"
+            (click)="actionErrorDismissed.emit()">Dismiss</button>
+  </div>
+}
+@if (showRejected()) {
+  <div class="m-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800"
+       role="alert">
+    @if (rejected(); as template) { <ng-container [ngTemplateOutlet]="template" /> }
+    @else {
+      <p>{{ errorMessage() }}</p> }
+    <button mat-stroked-button
+            type="button"
+            [disabled]="isPending()"
+            (click)="retry.emit()">Retry</button>
+  </div>
+}
+@if (showUpdating()) {
+  @if (updating(); as template) { <ng-container [ngTemplateOutlet]="template" /> }
+  @else { <mat-progress-bar mode="indeterminate"
+                      aria-label="Updating data" /> }
+}
+@if (showResolved()) { <ng-container [ngTemplateOutlet]="resolved() ?? null" /> }
+@if (showEmpty()) {
+  @if (empty(); as template) { <ng-container [ngTemplateOutlet]="template" /> }
+  @else {
+    <p class="px-6 py-14 text-center text-sm text-stone-500"
+       role="status">No data found.</p> }
+}
+@if (showPending()) {
+  @if (pending(); as template) { <ng-container [ngTemplateOutlet]="template" /> }
+  @else {
+    <div class="grid min-h-52 place-items-center"
+         role="status"
+         aria-label="Loading data">
+      <mat-spinner diameter="36" />
+    </div>
+  }
+}

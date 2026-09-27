@@ -1,105 +1,154 @@
 import type { OnChanges } from '@angular/core';
-import { Component, inject, input, output, signal } from '@angular/core';
-import { FormsModule } from '@angular/forms';
+import { Component, computed, DestroyRef, effect, inject, input, output, signal } from '@angular/core';
+import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
+import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
+import { MatDialogRef } from '@angular/material/dialog';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
-import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSelectModule } from '@angular/material/select';
-import { AccessManagementApiService, accessManagementError } from '@warehouse/access-management/data-access';
-import type { RoleAssignmentRecord, RoleRecord, ScopeType, UserRecord } from '@warehouse/access-management/util';
+import { MatSnackBar } from '@angular/material/snack-bar';
+import { AccessManagementApiService, UserAccessStore } from '@warehouse/access-management/data-access';
+import type { ScopeType, UserRecord } from '@warehouse/access-management/util';
+import { UIStateContainerComponent } from '@warehouse/shared';
+import type { Observable } from 'rxjs';
+import { concatMap, Subject, takeUntil, tap } from 'rxjs';
 
 @Component({
+  providers: [UserAccessStore],
   selector: 'am-user-access',
   imports: [
-    FormsModule,
+    ReactiveFormsModule,
+    UIStateContainerComponent,
     MatButtonModule,
     MatCardModule,
     MatFormFieldModule,
     MatInputModule,
-    MatProgressSpinnerModule,
     MatSelectModule,
   ],
   templateUrl: './user-access.html',
 })
 export class UserAccess implements OnChanges {
+  private readonly builder = inject(FormBuilder);
+  private readonly dialogRef = inject(MatDialogRef, { optional: true });
+  private readonly snackBar = inject(MatSnackBar);
   private readonly api = inject(AccessManagementApiService);
+  private readonly destroyRef = inject(DestroyRef);
+  readonly store = inject(UserAccessStore);
   readonly user = input.required<UserRecord>();
   readonly closed = output<void>();
-  readonly busy = signal(false);
-  readonly loading = signal(false);
-  readonly error = signal('');
-  readonly notice = signal('');
-  roles: RoleRecord[] = [];
-  assignments: RoleAssignmentRecord[] = [];
-  subject = '';
-  roleId = '';
-  scope: ScopeType = 'GLOBAL';
-  scopeId = '';
+  readonly updated = output<UserRecord>();
+  private readonly selectionChanged = new Subject<void>();
+  readonly busy = computed(() => this.store.loading() || this.store.saving());
+  readonly loading = this.store.loading;
+  readonly error = computed(() => this.store.actionError() ?? this.store.error() ?? '');
+  readonly roles = this.store.roles;
+  readonly assignments = this.store.assignments;
+  readonly linkedUser = signal<UserRecord | null>(null);
+  readonly auth0Subject = computed(() => this.linkedUser()?.auth0_subject ?? this.user().auth0_subject);
+  readonly linkForm = this.builder.nonNullable.group({
+    subject: ['', [Validators.required, Validators.pattern(/\S/)]],
+  });
+  readonly assignmentForm = this.builder.nonNullable.group({
+    roleId: ['', Validators.required],
+    scope: this.builder.nonNullable.control<ScopeType>('GLOBAL'),
+    scopeId: [
+      { value: '', disabled: true },
+      [
+        Validators.required,
+        Validators.pattern(/^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/),
+      ],
+    ],
+  });
+  readonly scope = toSignal(this.assignmentForm.controls.scope.valueChanges, { initialValue: 'GLOBAL' as ScopeType });
 
-  ngOnChanges(): void {
-    this.subject = '';
-    this.roleId = '';
-    this.scope = 'GLOBAL';
-    this.scopeId = '';
-    this.notice.set('');
-    void this.load();
-  }
+  readonly state = this.store.requestState;
+  readonly actionError = this.store.actionError;
 
-  async load(): Promise<void> {
-    this.loading.set(true);
-    this.error.set('');
-    try {
-      [this.roles, this.assignments] = await Promise.all([
-        this.api.listRoles(),
-        this.api.listRoleAssignments(this.user().id),
-      ]);
-    } catch (error) {
-      this.error.set(accessManagementError(error));
-    } finally {
-      this.loading.set(false);
-    }
-  }
-
-  roleName(id: string): string {
-    return this.roles.find(role => role.id === id)?.name ?? id;
-  }
-
-  link(): Promise<void> {
-    return this.mutate(async () => {
-      const updated = await this.api.linkAuth0(this.user().id, this.subject.trim());
-      this.user().auth0_subject = updated.auth0_subject;
+  constructor() {
+    effect(() => {
+      const busy = this.busy();
+      if (this.dialogRef) this.dialogRef.disableClose = this.store.saving();
+      if (busy) {
+        this.linkForm.disable({ emitEvent: false });
+        this.assignmentForm.disable({ emitEvent: false });
+      } else {
+        this.linkForm.enable({ emitEvent: false });
+        this.assignmentForm.enable({ emitEvent: false });
+        if (this.scope() === 'GLOBAL') this.assignmentForm.controls.scopeId.disable({ emitEvent: false });
+      }
     });
   }
 
-  assign(): Promise<void> {
-    return this.mutate(() =>
-      this.api.assignRole(this.user().id, {
-        role_id: this.roleId,
-        scope_type: this.scope,
-        scope_id: this.scope === 'GLOBAL' ? null : this.scopeId.trim(),
-      }),
+  ngOnChanges(): void {
+    this.selectionChanged.next();
+    this.store.reset();
+    this.store.resetMutation();
+    this.linkedUser.set(null);
+    this.linkForm.reset();
+    this.assignmentForm.reset();
+    this.load();
+  }
+
+  dismissActionError(): void {
+    this.store.dismissActionError();
+  }
+
+  load(): void {
+    this.store
+      .load(this.user().id)
+      .pipe(takeUntil(this.selectionChanged), takeUntilDestroyed(this.destroyRef))
+      .subscribe();
+  }
+
+  roleName(id: string): string {
+    return this.roles().find(role => role.id === id)?.name ?? id;
+  }
+
+  link(): void {
+    const id = this.user().id;
+    if (this.linkForm.invalid) return;
+    const subject = this.linkForm.getRawValue().subject.trim();
+    this.mutate(
+      () => this.api.linkAuth0(id, subject),
+      user => {
+        this.linkedUser.set(user);
+        this.updated.emit(user);
+      },
     );
   }
 
-  revoke(assignmentId: string): Promise<void> {
-    return this.mutate(() => this.api.revokeRoleAssignment(this.user().id, assignmentId));
+  assign(): void {
+    const id = this.user().id;
+    if (this.assignmentForm.invalid) return;
+    const value = this.assignmentForm.getRawValue();
+    const payload = {
+      role_id: value.roleId,
+      scope_type: value.scope,
+      scope_id: value.scope === 'GLOBAL' ? null : value.scopeId.trim(),
+    };
+    this.mutate(() => this.api.assignRole(id, payload));
   }
 
-  private async mutate(action: () => Promise<unknown>): Promise<void> {
-    if (this.busy()) return;
-    this.busy.set(true);
-    this.error.set('');
-    this.notice.set('');
-    try {
-      await action();
-      await this.load();
-      this.notice.set('Changes saved.');
-    } catch (error) {
-      this.error.set(accessManagementError(error));
-    } finally {
-      this.busy.set(false);
-    }
+  revoke(assignmentId: string): void {
+    const id = this.user().id;
+    this.mutate(() => this.api.revokeRoleAssignment(id, assignmentId));
+  }
+
+  private mutate<T>(action: () => Observable<T>, apply?: (data: T) => void): void {
+    const userId = this.user().id;
+    this.store
+      .mutate(action)
+      .pipe(
+        tap(result => {
+          apply?.(result.data);
+          this.snackBar.open('Changes saved.', 'Dismiss', { duration: 4000 });
+        }),
+        concatMap(() => this.store.load(userId)),
+        takeUntil(this.selectionChanged),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe();
   }
 }

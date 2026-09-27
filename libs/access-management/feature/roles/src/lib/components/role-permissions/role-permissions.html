@@ -8,32 +8,20 @@
             (click)="closed.emit()">Close</button>
   </mat-card-header>
   <mat-card-content class="pt-5!">
-    @if (error()) {
-      <p class="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800"
-         role="alert">
-        {{ error() }}
-      </p>
-    }
-    @if (notice()) {
-      <p class="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800"
-         role="status">
-        {{ notice() }}
-      </p>
-    }
-    @if (loading()) {
-      <div class="flex min-h-32 items-center justify-center gap-3 text-sm text-stone-600"
-           role="status">
-        <mat-spinner diameter="28" /> Loading permissions…
-      </div>
-    } @else if (ready()) {
-      <form (ngSubmit)="save()">
+    <app-ui-state-container [state]="state()"
+                            [resolved]="data"
+                            [actionError]="actionError()"
+                            (actionErrorDismissed)="dismissActionError()"
+                            (retry)="load()" />
+    <ng-template #data>
+      <form [formGroup]="form"
+            (ngSubmit)="save()">
         <fieldset>
           <legend class="mb-4 font-semibold text-stone-900">Role permissions</legend>
           <div class="grid gap-3 md:grid-cols-2">
-            @for (permission of permissions; track permission.code) {
+            @for (permission of permissions(); track permission.code) {
               <mat-checkbox [name]="permission.code"
-                            [disabled]="busy()"
-                            [(ngModel)]="selected[permission.code]">
+                            [formControl]="form.controls[permission.code]">
                 <span class="font-semibold">{{ permission.code }}</span>
                 <span class="block text-xs text-stone-600">{{ permission.description }}</span>
               </mat-checkbox>
@@ -41,13 +29,10 @@
           </div>
         </fieldset>
         <button mat-flat-button
+                type="submit"
                 class="mt-6"
                 [disabled]="busy()">Save permissions</button>
       </form>
-    } @else {
-      <button mat-flat-button
-              type="button"
-              (click)="load()">Retry</button>
-    }
+    </ng-template>
   </mat-card-content>
 </mat-card>

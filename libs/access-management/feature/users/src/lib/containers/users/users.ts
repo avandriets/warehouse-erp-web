@@ -1,132 +1,155 @@
-import { Component, inject, signal } from '@angular/core';
-import { FormsModule } from '@angular/forms';
+import type { TemplateRef } from '@angular/core';
+import { Component, computed, DestroyRef, inject } from '@angular/core';
+import { takeUntilDestroyed, toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
-import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatInputModule } from '@angular/material/input';
-import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
-import { MatSelectModule } from '@angular/material/select';
+import { MatDialog, MatDialogModule } from '@angular/material/dialog';
+import { MatIconModule } from '@angular/material/icon';
+import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatTableModule } from '@angular/material/table';
-import { AccessManagementApiService, accessManagementError } from '@warehouse/access-management/data-access';
+import { ActivatedRoute, Router } from '@angular/router';
+import { UsersStore } from '@warehouse/access-management/data-access';
 import { StatusBadge } from '@warehouse/access-management/ui';
-import type { UserRecord, UserStatus, UserWrite } from '@warehouse/access-management/util';
-import { Page } from '@warehouse/shared';
+import type { UserRecord } from '@warehouse/access-management/util';
+import { parseUsersQuery, USERS_PAGE_SIZE } from '@warehouse/access-management/util';
+import { ConfirmDialog, Page, UIStateContainerComponent, UrlSearch } from '@warehouse/shared';
+import { concatMap, distinctUntilChanged, filter, finalize, of, switchMap, tap } from 'rxjs';
 
-import { UserAccess } from '../../components';
+import { UserAccess, UserFormDialog, UsersFilter } from '../../components';
 
 @Component({
+  providers: [UsersStore],
   imports: [
-    FormsModule,
     MatButtonModule,
     MatCardModule,
-    MatFormFieldModule,
-    MatInputModule,
-    MatProgressSpinnerModule,
-    MatSelectModule,
     MatTableModule,
+    MatDialogModule,
+    MatIconModule,
+    UrlSearch,
+    UsersFilter,
     Page,
+    UIStateContainerComponent,
     StatusBadge,
     UserAccess,
   ],
   templateUrl: './users.html',
 })
 export class UsersPage {
-  private readonly api = inject(AccessManagementApiService);
-  private requestId = 0;
-  readonly users = signal<UserRecord[]>([]);
-  readonly loading = signal(false);
-  readonly saving = signal(false);
-  readonly error = signal('');
-  readonly notice = signal('');
-  readonly editor = signal(false);
-  readonly selected = signal<UserRecord | null>(null);
+  private readonly dialog = inject(MatDialog);
+  private readonly snackBar = inject(MatSnackBar);
+  private readonly destroyRef = inject(DestroyRef);
+  private readonly route = inject(ActivatedRoute);
+  private readonly router = inject(Router);
+  readonly store = inject(UsersStore);
+  private readonly params = toSignal(this.route.queryParamMap, { initialValue: this.route.snapshot.queryParamMap });
+  private readonly requestParams = computed(() => parseUsersQuery(this.params()));
+  readonly users = this.store.entities;
+  readonly loading = this.store.loading;
+  readonly saving = this.store.saving;
+  readonly error = computed(() => this.store.actionError() ?? this.store.error() ?? '');
   readonly displayedColumns = ['display_name', 'email', 'status', 'actions'];
-  readonly pageSize = 25;
-  offset = 0;
-  filter: UserStatus | '' = '';
-  query = '';
-  editing: UserRecord | null = null;
-  model = { email: '', display_name: '' };
+  readonly pageSize = USERS_PAGE_SIZE;
 
-  constructor() {
-    void this.load();
-  }
+  readonly query = computed(() => this.params().get('q') ?? '');
+  readonly offset = computed(() => this.requestParams().offset);
 
-  async load(): Promise<void> {
-    const request = ++this.requestId;
-    this.loading.set(true);
-    this.error.set('');
-    try {
-      const users = await this.api.listUsers(this.pageSize, this.offset, this.filter || undefined);
-      if (request === this.requestId) this.users.set(users);
-    } catch (error) {
-      if (request === this.requestId) this.error.set(accessManagementError(error));
-    } finally {
-      if (request === this.requestId) this.loading.set(false);
-    }
-  }
+  readonly state = this.store.entityState;
+  readonly actionError = this.store.actionError;
 
-  visibleUsers(): UserRecord[] {
-    const query = this.query.trim().toLowerCase();
+  readonly visibleUsers = computed(() => {
+    const query = this.query().trim().toLowerCase();
     if (!query) return this.users();
 
     return this.users().filter(user =>
       [user.display_name, user.email, user.status].some(value => value?.toLowerCase().includes(query)),
     );
+  });
+
+  constructor() {
+    toObservable(this.requestParams)
+      .pipe(
+        distinctUntilChanged(
+          (previous, current) => previous.offset === current.offset && previous.status === current.status,
+        ),
+        switchMap(params => {
+          this.store.reset();
+          return this.store.load(params);
+        }),
+        takeUntilDestroyed(),
+      )
+      .subscribe();
   }
 
-  open(user: UserRecord | null = null): void {
-    this.error.set('');
-    this.notice.set('');
-    this.editing = user;
-    this.model = { email: user?.email ?? '', display_name: user?.display_name ?? '' };
-    this.selected.set(null);
-    this.editor.set(true);
+  dismissActionError(): void {
+    this.store.dismissActionError();
   }
 
-  async save(): Promise<void> {
-    if (this.saving()) return;
-    const payload: UserWrite = {
-      email: this.model.email.trim() || null,
-      display_name: this.model.display_name.trim() || null,
-    };
-    this.saving.set(true);
-    this.error.set('');
-    try {
-      if (this.editing) await this.api.updateUser(this.editing.id, payload);
-      else await this.api.createUser(payload);
-      this.editor.set(false);
-      await this.load();
-      this.notice.set('Changes saved.');
-    } catch (error) {
-      this.error.set(accessManagementError(error));
-    } finally {
-      this.saving.set(false);
-    }
+  load(): void {
+    this.store.load(this.requestParams()).pipe(takeUntilDestroyed(this.destroyRef)).subscribe();
   }
 
-  async changeStatus(user: UserRecord): Promise<void> {
-    if (this.saving()) return;
-    this.saving.set(true);
-    this.error.set('');
-    try {
-      if (user.status === 'ACTIVE') await this.api.suspendUser(user.id);
-      else await this.api.activateUser(user.id);
-      await this.load();
-    } catch (error) {
-      this.error.set(accessManagementError(error));
-    } finally {
-      this.saving.set(false);
-    }
+  open(record: UserRecord | null = null): void {
+    const ref = this.dialog.open(UserFormDialog, { data: record, width: '560px', maxWidth: '95vw' });
+
+    ref
+      .afterClosed()
+      .pipe(
+        filter(result => result === true),
+        tap(() => this.snackBar.open('Changes saved.', 'Dismiss', { duration: 4000 })),
+        concatMap(() => this.store.load(this.requestParams())),
+        takeUntilDestroyed(this.destroyRef),
+        finalize(() => ref.close()),
+      )
+      .subscribe();
   }
 
-  changeFilter(): void {
-    this.offset = 0;
-    void this.load();
+  openDetails(template: TemplateRef<unknown>, record: UserRecord): void {
+    const ref = this.dialog.open(template, { data: record, width: '800px', maxWidth: '95vw' });
+    ref
+      .afterClosed()
+      .pipe(
+        takeUntilDestroyed(this.destroyRef),
+        finalize(() => ref.close()),
+      )
+      .subscribe();
   }
 
-  page(delta: number): void {
-    this.offset = Math.max(0, this.offset + delta * this.pageSize);
-    void this.load();
+  userUpdated(user: UserRecord): void {
+    this.store.upsert(user);
+  }
+
+  changeStatus(user: UserRecord): void {
+    const ref =
+      user.status === 'ACTIVE'
+        ? this.dialog.open(ConfirmDialog, {
+            data: {
+              title: 'Suspend user?',
+              message: `Suspend ${user.display_name || user.email || 'this user'}? ERP access will be blocked.`,
+              confirmText: 'Suspend',
+            },
+            autoFocus: 'first-tabbable',
+          })
+        : null;
+    const confirmation = ref?.afterClosed() ?? of(true);
+
+    confirmation
+      .pipe(
+        filter(confirmed => confirmed === true),
+        concatMap(() =>
+          this.store.update({ id: user.id, payload: { status: user.status === 'ACTIVE' ? 'SUSPENDED' : 'ACTIVE' } }),
+        ),
+        concatMap(() => this.store.load(this.requestParams())),
+        takeUntilDestroyed(this.destroyRef),
+        finalize(() => ref?.close()),
+      )
+      .subscribe();
+  }
+
+  page(delta: number): Promise<boolean> {
+    return this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: { offset: Math.max(0, this.offset() + delta * this.pageSize) || null },
+      queryParamsHandling: 'merge',
+    });
   }
 }

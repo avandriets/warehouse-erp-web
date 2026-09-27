@@ -12,87 +12,77 @@ import type {
   UserWrite,
 } from '@warehouse/access-management/util';
 import { ACCESS_MANAGEMENT_CONFIG } from '@warehouse/access-management/util';
-import { firstValueFrom } from 'rxjs';
+import type { Observable } from 'rxjs';
 
 @Injectable({ providedIn: 'root' })
 export class AccessManagementApiService {
   private readonly http = inject(HttpClient);
   private readonly base = inject(ACCESS_MANAGEMENT_CONFIG).apiUrl;
 
-  listUsers(limit = 25, offset = 0, status?: UserStatus): Promise<UserRecord[]> {
+  listUsers(limit = 25, offset = 0, status?: UserStatus): Observable<UserRecord[]> {
     const params: Record<string, string | number> = { limit, offset };
     if (status) params['status'] = status;
 
-    return firstValueFrom(this.http.get<UserRecord[]>(`${this.base}/identity/users`, { params }));
+    return this.http.get<UserRecord[]>(`${this.base}/identity/users`, { params });
   }
 
-  createUser(payload: UserWrite): Promise<UserRecord> {
-    return firstValueFrom(this.http.post<UserRecord>(`${this.base}/identity/users`, payload));
+  createUser(payload: UserWrite): Observable<UserRecord> {
+    return this.http.post<UserRecord>(`${this.base}/identity/users`, payload);
   }
 
-  updateUser(userId: string, payload: UserWrite): Promise<UserRecord> {
-    return firstValueFrom(this.http.patch<UserRecord>(`${this.base}/identity/users/${userId}`, payload));
+  updateUser(userId: string, payload: UserWrite): Observable<UserRecord> {
+    return this.http.patch<UserRecord>(`${this.base}/identity/users/${userId}`, payload);
   }
 
-  linkAuth0(userId: string, auth0Subject: string): Promise<UserRecord> {
-    return firstValueFrom(
-      this.http.put<UserRecord>(`${this.base}/identity/users/${userId}/auth0`, { auth0_subject: auth0Subject }),
-    );
+  linkAuth0(userId: string, auth0Subject: string): Observable<UserRecord> {
+    return this.http.put<UserRecord>(`${this.base}/identity/users/${userId}/auth0`, { auth0_subject: auth0Subject });
   }
 
-  activateUser(userId: string): Promise<UserRecord> {
-    return firstValueFrom(this.http.post<UserRecord>(`${this.base}/identity/users/${userId}/activate`, null));
+  activateUser(userId: string): Observable<UserRecord> {
+    return this.http.post<UserRecord>(`${this.base}/identity/users/${userId}/activate`, null);
   }
 
-  suspendUser(userId: string): Promise<UserRecord> {
-    return firstValueFrom(this.http.post<UserRecord>(`${this.base}/identity/users/${userId}/suspend`, null));
+  suspendUser(userId: string): Observable<UserRecord> {
+    return this.http.post<UserRecord>(`${this.base}/identity/users/${userId}/suspend`, null);
   }
 
-  listRoles(active?: boolean): Promise<RoleRecord[]> {
-    return firstValueFrom(
-      this.http.get<RoleRecord[]>(`${this.base}/identity/roles`, { params: active === undefined ? {} : { active } }),
-    );
+  listRoles(active?: boolean): Observable<RoleRecord[]> {
+    return this.http.get<RoleRecord[]>(`${this.base}/identity/roles`, {
+      params: active === undefined ? {} : { active },
+    });
   }
 
-  createRole(payload: RoleCreate): Promise<RoleRecord> {
-    return firstValueFrom(this.http.post<RoleRecord>(`${this.base}/identity/roles`, payload));
+  createRole(payload: RoleCreate): Observable<RoleRecord> {
+    return this.http.post<RoleRecord>(`${this.base}/identity/roles`, payload);
   }
 
-  updateRole(roleId: string, payload: RoleUpdate): Promise<RoleRecord> {
-    return firstValueFrom(this.http.patch<RoleRecord>(`${this.base}/identity/roles/${roleId}`, payload));
+  updateRole(roleId: string, payload: RoleUpdate): Observable<RoleRecord> {
+    return this.http.patch<RoleRecord>(`${this.base}/identity/roles/${roleId}`, payload);
   }
 
-  listPermissions(): Promise<PermissionRecord[]> {
-    return firstValueFrom(this.http.get<PermissionRecord[]>(`${this.base}/identity/permissions`));
+  listPermissions(): Observable<PermissionRecord[]> {
+    return this.http.get<PermissionRecord[]>(`${this.base}/identity/permissions`);
   }
 
-  listRolePermissions(roleId: string): Promise<PermissionRecord[]> {
-    return firstValueFrom(this.http.get<PermissionRecord[]>(`${this.base}/identity/roles/${roleId}/permissions`));
+  listRolePermissions(roleId: string): Observable<PermissionRecord[]> {
+    return this.http.get<PermissionRecord[]>(`${this.base}/identity/roles/${roleId}/permissions`);
   }
 
-  replaceRolePermissions(roleId: string, permissionCodes: string[]): Promise<PermissionRecord[]> {
-    return firstValueFrom(
-      this.http.put<PermissionRecord[]>(`${this.base}/identity/roles/${roleId}/permissions`, {
-        permission_codes: permissionCodes,
-      }),
-    );
+  replaceRolePermissions(roleId: string, permissionCodes: string[]): Observable<PermissionRecord[]> {
+    return this.http.put<PermissionRecord[]>(`${this.base}/identity/roles/${roleId}/permissions`, {
+      permission_codes: permissionCodes,
+    });
   }
 
-  listRoleAssignments(userId: string): Promise<RoleAssignmentRecord[]> {
-    return firstValueFrom(
-      this.http.get<RoleAssignmentRecord[]>(`${this.base}/identity/users/${userId}/role-assignments`),
-    );
+  listRoleAssignments(userId: string): Observable<RoleAssignmentRecord[]> {
+    return this.http.get<RoleAssignmentRecord[]>(`${this.base}/identity/users/${userId}/role-assignments`);
   }
 
-  assignRole(userId: string, payload: RoleAssignmentCreate): Promise<RoleAssignmentRecord> {
-    return firstValueFrom(
-      this.http.post<RoleAssignmentRecord>(`${this.base}/identity/users/${userId}/role-assignments`, payload),
-    );
+  assignRole(userId: string, payload: RoleAssignmentCreate): Observable<RoleAssignmentRecord> {
+    return this.http.post<RoleAssignmentRecord>(`${this.base}/identity/users/${userId}/role-assignments`, payload);
   }
 
-  revokeRoleAssignment(userId: string, assignmentId: string): Promise<void> {
-    return firstValueFrom(
-      this.http.delete<void>(`${this.base}/identity/users/${userId}/role-assignments/${assignmentId}`),
-    );
+  revokeRoleAssignment(userId: string, assignmentId: string): Observable<void> {
+    return this.http.delete<void>(`${this.base}/identity/users/${userId}/role-assignments/${assignmentId}`);
   }
 }

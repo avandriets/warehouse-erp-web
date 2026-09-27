@@ -4,105 +4,87 @@
     <h1 class="m-0 text-3xl font-bold tracking-tight text-stone-900 sm:text-4xl">Users</h1>
     <p class="mt-3 text-sm leading-6 text-stone-600">Employee accounts and ERP access.</p>
   </div>
-  <div pageActions>
+  <div pageActions
+       class="flex flex-wrap items-center gap-3">
     <button mat-flat-button
             type="button"
-            [disabled]="saving()"
-            (click)="open()">Add user</button>
+            [disabled]="saving() || loading()"
+            (click)="open()">Add user
+    </button>
+    <app-url-search class="block w-48"
+                    label="Search this page"
+                    placeholder="Enter a name or email" />
+    <am-users-filter class="block w-28" />
+    <button mat-icon-button
+            type="button"
+            aria-label="Refresh users"
+            title="Refresh"
+            [disabled]="saving() || loading()"
+            (click)="load()">
+      <mat-icon>refresh</mat-icon>
+    </button>
   </div>
   <div pageBody>
 
-    @if (error()) {
-      <div class="mt-5 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800"
-           role="alert">{{ error() }}</div>
-    }
-    @if (notice()) {
-      <div class="mt-5 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800"
-           role="status">
-        {{ notice() }}
-      </div>
-    }
-
     <mat-card appearance="outlined"
               class="mt-7 overflow-hidden">
-      <mat-card-content class="grid gap-4 p-4! md:grid-cols-[minmax(0,1fr)_14rem_auto] md:items-center md:p-6!">
-        <mat-form-field appearance="outline"
-                        subscriptSizing="dynamic"
-                        class="w-full">
-          <mat-label>Search this page</mat-label>
-          <input matInput
-                 name="query"
-                 placeholder="Enter a name or email"
-                 [(ngModel)]="query" />
-        </mat-form-field>
-        <mat-form-field appearance="outline"
-                        subscriptSizing="dynamic"
-                        class="w-full">
-          <mat-label>Status</mat-label>
-          <mat-select name="filter"
-                      [(ngModel)]="filter"
-                      (ngModelChange)="changeFilter()">
-            <mat-option value="">All users</mat-option>
-            <mat-option value="INVITED">Invited</mat-option>
-            <mat-option value="PENDING_APPROVAL">Pending approval</mat-option>
-            <mat-option value="ACTIVE">Active</mat-option>
-            <mat-option value="SUSPENDED">Suspended</mat-option>
-          </mat-select>
-        </mat-form-field>
-        <button mat-stroked-button
-                type="button"
-                [disabled]="loading()"
-                (click)="load()">Refresh</button>
-      </mat-card-content>
-
-      @if (loading()) {
-        <div class="grid min-h-52 place-items-center border-t border-stone-200"
-             role="status"
-             aria-label="Loading users">
-          <mat-spinner diameter="36" />
-        </div>
-      } @else {
+      <app-ui-state-container [state]="state()"
+                              [resolved]="data"
+                              [actionError]="actionError()"
+                              (actionErrorDismissed)="dismissActionError()"
+                              (retry)="load()" />
+      <ng-template #data>
         <div class="overflow-x-auto border-t border-stone-200">
           <table mat-table
                  class="w-full"
                  [dataSource]="visibleUsers()">
             <ng-container matColumnDef="display_name">
               <th *matHeaderCellDef
-                  mat-header-cell>Name</th>
+                  mat-header-cell>Name
+              </th>
               <td *matCellDef="let user"
-                  mat-cell>{{ user.display_name ?? '—' }}</td>
+                  mat-cell>{{ user.display_name ?? '—' }}
+              </td>
             </ng-container>
             <ng-container matColumnDef="email">
               <th *matHeaderCellDef
-                  mat-header-cell>Email</th>
+                  mat-header-cell>Email
+              </th>
               <td *matCellDef="let user"
-                  mat-cell>{{ user.email ?? '—' }}</td>
+                  mat-cell>{{ user.email ?? '—' }}
+              </td>
             </ng-container>
             <ng-container matColumnDef="status">
               <th *matHeaderCellDef
-                  mat-header-cell>Status</th>
+                  mat-header-cell>Status
+              </th>
               <td *matCellDef="let user"
-                  mat-cell><am-status-badge [value]="user.status" /></td>
+                  mat-cell>
+                <am-status-badge [value]="user.status" />
+              </td>
             </ng-container>
             <ng-container matColumnDef="actions">
               <th *matHeaderCellDef
-                  mat-header-cell>Actions</th>
+                  mat-header-cell>Actions
+              </th>
               <td *matCellDef="let user"
                   mat-cell>
                 <div class="flex flex-wrap gap-1">
                   <button mat-button
                           type="button"
-                          [disabled]="saving()"
-                          (click)="open(user)">Edit</button>
+                          [disabled]="saving() || loading()"
+                          (click)="open(user)">Edit
+                  </button>
                   <button mat-button
                           type="button"
-                          [disabled]="saving()"
+                          [disabled]="saving() || loading()"
                           (click)="changeStatus(user)">
                     {{ user.status === 'ACTIVE' ? 'Suspend' : 'Activate' }}
                   </button>
                   <button mat-button
                           type="button"
-                          (click)="selected.set(user)">Access</button>
+                          (click)="openDetails(details, user)">Access
+                  </button>
                 </div>
               </td>
             </ng-container>
@@ -113,77 +95,39 @@
             <tr *matNoDataRow
                 class="mat-row">
               <td class="mat-cell px-6 py-14 text-center text-sm text-stone-500"
-                  [attr.colspan]="displayedColumns.length">No users found</td>
+                  [attr.colspan]="displayedColumns.length">No users found
+              </td>
             </tr>
           </table>
         </div>
-      }
+      </ng-template>
 
       <mat-card-actions class="flex flex-col gap-3 border-t border-stone-200 px-4! py-3! sm:flex-row sm:justify-between sm:px-6!">
-        <span class="text-xs text-stone-600">Page {{ offset / pageSize + 1 }} · Records: {{ users().length }}</span>
+        <span class="text-xs text-stone-600">Page {{ offset() / pageSize + 1 }} · Records: {{ users().length }}</span>
         <div class="flex gap-2">
           <button mat-stroked-button
                   type="button"
-                  [disabled]="loading() || offset === 0"
-                  (click)="page(-1)">Previous</button>
+                  [disabled]="saving() || loading() || offset() === 0"
+                  (click)="page(-1)">Previous
+          </button>
           <button mat-stroked-button
                   type="button"
-                  [disabled]="loading() || users().length < pageSize"
-                  (click)="page(1)">Next</button>
+                  [disabled]="saving() || loading() || users().length < pageSize"
+                  (click)="page(1)">Next
+          </button>
         </div>
       </mat-card-actions>
     </mat-card>
 
-    @if (editor()) {
-      <mat-card appearance="outlined"
-                class="mt-6"
-                aria-labelledby="user-editor-title">
-        <mat-card-header><mat-card-title id="user-editor-title">{{ editing ? 'Edit user' : 'New user' }}</mat-card-title></mat-card-header>
-        <mat-card-content class="pt-5!">
-          <form #form="ngForm"
-                (ngSubmit)="save()">
-            <fieldset [disabled]="saving()">
-              <div class="grid gap-4 md:grid-cols-2">
-                <mat-form-field appearance="outline"
-                                subscriptSizing="dynamic"
-                                class="w-full">
-                  <mat-label>Email</mat-label>
-                  <input matInput
-                         type="email"
-                         name="email"
-                         required
-                         email
-                         maxlength="320"
-                         [(ngModel)]="model.email" />
-                </mat-form-field>
-                <mat-form-field appearance="outline"
-                                subscriptSizing="dynamic"
-                                class="w-full">
-                  <mat-label>Name</mat-label>
-                  <input matInput
-                         name="displayName"
-                         maxlength="255"
-                         [(ngModel)]="model.display_name" />
-                </mat-form-field>
-              </div>
-            </fieldset>
-            <div class="mt-6 flex flex-wrap gap-3">
-              <button mat-flat-button
-                      type="submit"
-                      [disabled]="form.invalid || saving()">{{ saving() ? 'Saving…' : 'Save' }}</button>
-              <button mat-stroked-button
-                      type="button"
-                      [disabled]="saving()"
-                      (click)="editor.set(false)">Cancel</button>
-            </div>
-          </form>
-        </mat-card-content>
-      </mat-card>
-    }
-
-    @if (selected(); as user) {
-      <am-user-access [user]="user"
-                      (closed)="selected.set(null)" />
-    }
   </div>
 </app-page>
+<ng-template #details
+             let-user
+             let-dialogRef="dialogRef">
+  <h2 mat-dialog-title>User access</h2>
+  <mat-dialog-content>
+    <am-user-access [user]="user"
+                    (closed)="dialogRef.close()"
+                    (updated)="userUpdated($event)" />
+  </mat-dialog-content>
+</ng-template>
