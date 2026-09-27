@@ -13,10 +13,10 @@ export const permissionGuard: CanActivateFn = (route, state) => {
 
   const authorize = (): Observable<boolean | UrlTree> => {
     if (!auth.authenticated()) {
-      return of(router.createUrlTree(['/'], { queryParams: { returnTo: state.url } }));
+      return of(router.createUrlTree(['/access-required'], { queryParams: { returnTo: state.url } }));
     }
 
-    return auth.loadCurrentUser().pipe(
+    return auth.ensureCurrentUser().pipe(
       map(user =>
         user.status === 'ACTIVE' && (!route.data['permission'] || auth.can(route.data['permission']))
           ? true

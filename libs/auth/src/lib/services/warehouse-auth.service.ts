@@ -2,7 +2,7 @@ import { inject, Injectable, signal } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { AuthService } from '@auth0/auth0-angular';
 import type { Observable } from 'rxjs';
-import { tap } from 'rxjs';
+import { finalize, of, shareReplay, tap } from 'rxjs';
 
 import { AUTH_CONFIG } from '../providers';
 import type { CurrentUser } from '../types';
@@ -14,6 +14,7 @@ export class WarehouseAuthService {
   private readonly auth = inject(AuthService);
   private readonly identityApi = inject(IdentityApiService);
   private readonly identity = signal<CurrentUser | null>(null);
+  private currentUserRequest$: Observable<CurrentUser> | null = null;
 
   readonly authenticated = toSignal(this.auth.isAuthenticated$, { initialValue: false });
   readonly loading = toSignal(this.auth.isLoading$, { initialValue: true });
@@ -44,10 +45,27 @@ export class WarehouseAuthService {
   loadCurrentUser(): Observable<CurrentUser> {
     this.currentUser = null;
 
-    return this.identityApi.getCurrentUser().pipe(tap(user => (this.currentUser = user)));
+    return this.ensureCurrentUser();
+  }
+
+  ensureCurrentUser(): Observable<CurrentUser> {
+    if (this.currentUser) {
+      return of(this.currentUser);
+    }
+
+    this.currentUserRequest$ ??= this.fetchCurrentUser().pipe(
+      finalize(() => (this.currentUserRequest$ = null)),
+      shareReplay({ bufferSize: 1, refCount: true }),
+    );
+
+    return this.currentUserRequest$;
   }
 
   can(permission: string): boolean {
     return this.currentUser?.status === 'ACTIVE' && this.currentUser.permissions.includes(permission);
+  }
+
+  private fetchCurrentUser(): Observable<CurrentUser> {
+    return this.identityApi.getCurrentUser().pipe(tap(user => (this.currentUser = user)));
   }
 }

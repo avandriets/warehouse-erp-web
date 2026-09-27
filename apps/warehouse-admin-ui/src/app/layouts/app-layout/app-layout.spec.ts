@@ -23,7 +23,7 @@ describe('admin app layout', () => {
     user: signal(null),
     currentUser: null,
     can: vi.fn(() => true),
-    loadCurrentUser: vi.fn(() =>
+    ensureCurrentUser: vi.fn(() =>
       of({
         user_id: 'user-1',
         subject: 'auth0|1',
@@ -40,7 +40,7 @@ describe('admin app layout', () => {
     viewport.next({ matches: false, breakpoints: {} });
     auth.authenticated.set(true);
     auth.can.mockReturnValue(true);
-    auth.loadCurrentUser.mockClear();
+    auth.ensureCurrentUser.mockClear();
     auth.login.mockClear();
     auth.logout.mockClear();
     TestBed.configureTestingModule({
@@ -89,7 +89,7 @@ describe('admin app layout', () => {
   it('loads the ERP identity for an authenticated user', async () => {
     await fixture.whenStable();
 
-    expect(auth.loadCurrentUser).toHaveBeenCalledOnce();
+    expect(auth.ensureCurrentUser).toHaveBeenCalledOnce();
   });
 
   it('uses a full overlay on mobile and keeps the desktop collapse preference', async () => {

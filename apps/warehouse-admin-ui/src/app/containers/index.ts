@@ -1,3 +1,0 @@
-export * from './app-layout/app-layout';
-export * from './forbidden/forbidden';
-export * from './welcome/welcome';

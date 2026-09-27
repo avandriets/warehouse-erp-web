@@ -58,9 +58,9 @@ describe('shared authentication and permissions', () => {
     );
   }
 
-  it('redirects unauthenticated visitors to the public welcome page without requesting ERP data', async () => {
+  it('redirects unauthenticated visitors to the access explanation without requesting ERP data', async () => {
     sdk.isAuthenticated$ = of(false);
-    expect(TestBed.inject(Router).serializeUrl((await guard()) as UrlTree)).toBe('/?returnTo=%2Fusers');
+    expect(TestBed.inject(Router).serializeUrl((await guard()) as UrlTree)).toBe('/access-required?returnTo=%2Fusers');
     http.expectNone('/api/identity/me');
   });
   it('allows an active manager based on ERP permissions', async () => {
@@ -68,6 +68,19 @@ describe('shared authentication and permissions', () => {
     http.expectOne('/api/identity/me').flush(user);
     expect(await result).toBe(true);
     expect(TestBed.inject(WarehouseAuthService).can('users.manage')).toBe(true);
+  });
+  it('reuses the current ERP identity and shares an in-flight request', async () => {
+    const auth = TestBed.inject(WarehouseAuthService);
+    const first = firstValueFrom(auth.ensureCurrentUser());
+    const second = firstValueFrom(auth.ensureCurrentUser());
+    const request = http.expectOne('/api/identity/me');
+
+    request.flush(user);
+
+    expect(await first).toEqual(user);
+    expect(await second).toEqual(user);
+    expect(await firstValueFrom(auth.ensureCurrentUser())).toEqual(user);
+    http.expectNone('/api/identity/me');
   });
   it.each([
     { ...user, status: 'SUSPENDED' },
@@ -78,9 +91,8 @@ describe('shared authentication and permissions', () => {
     http.expectOne('/api/identity/me').flush(value);
     expect(TestBed.inject(Router).serializeUrl((await result) as UrlTree)).toBe('/forbidden');
   });
-  it('fails closed and clears previously loaded permissions on API failure', async () => {
+  it('fails closed when the ERP identity request fails', async () => {
     const auth = TestBed.inject(WarehouseAuthService);
-    auth.currentUser = user;
     const result = guard();
     http.expectOne('/api/identity/me').flush({ detail: 'unavailable' }, { status: 503, statusText: 'Unavailable' });
     expect(TestBed.inject(Router).serializeUrl((await result) as UrlTree)).toBe('/forbidden');

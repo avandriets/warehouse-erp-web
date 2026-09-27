@@ -40,7 +40,7 @@ export class AppLayout {
     toObservable(this.auth.authenticated)
       .pipe(
         filter(authenticated => authenticated && !this.auth.currentUser),
-        switchMap(() => this.auth.loadCurrentUser()),
+        switchMap(() => this.auth.ensureCurrentUser()),
         takeUntilDestroyed(),
       )
       .subscribe({ error: () => undefined });
