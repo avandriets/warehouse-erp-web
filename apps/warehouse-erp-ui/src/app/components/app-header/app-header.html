@@ -1,0 +1,41 @@
+<mat-toolbar class="app-header sticky top-0 z-30 gap-2 px-3! sm:px-5!">
+  <a mat-button
+     routerLink="/"
+     aria-label="Warehouse ERP home"
+     class="h-12! px-2!">
+    <span class="flex items-center gap-3">
+      <span class="grid size-9 place-items-center rounded-lg bg-[var(--mat-sys-on-primary)] font-black text-[var(--mat-sys-primary)]"
+            aria-hidden="true">W</span>
+      <span class="hidden text-left leading-tight sm:block">
+        <strong class="block text-sm">Warehouse ERP</strong>
+        <span class="block text-[0.65rem] tracking-[0.16em] uppercase opacity-75">Warehouse management</span>
+      </span>
+    </span>
+  </a>
+
+  <span class="flex-1"></span>
+
+  @if (loading()) {
+    <span class="text-sm opacity-80"
+          role="status">Checking session…</span>
+  } @else if (authenticated()) {
+    <button mat-button
+            type="button"
+            aria-label="Open account menu"
+            [matMenuTriggerFor]="accountMenu">
+      <span class="max-w-48 truncate">{{ userName() || 'Account' }}</span>
+      <span class="ml-2 text-xs"
+            aria-hidden="true">▾</span>
+    </button>
+    <mat-menu #accountMenu="matMenu"
+              xPosition="before">
+      <button mat-menu-item
+              type="button"
+              (click)="signOut.emit()">Sign out</button>
+    </mat-menu>
+  } @else {
+    <button mat-flat-button
+            type="button"
+            (click)="signIn.emit()">Sign in</button>
+  }
+</mat-toolbar>

@@ -1,12 +1,54 @@
-html,
-body {
-  margin: 0;
+@use 'tailwindcss';
+@use '@angular/material' as mat;
+
+html {
+  @include mat.theme(
+    (
+      color: (
+        primary: mat.$spring-green-palette,
+        tertiary: mat.$cyan-palette,
+        theme-type: color-scheme,
+      ),
+      typography: (
+        system-ui,
+        sans-serif,
+      ),
+      density: 0,
+    )
+  );
+
+  color-scheme: light;
   min-height: 100%;
 }
 
-button,
-input,
-textarea,
-select {
-  font: inherit;
+body {
+  min-width: 20rem;
+  min-height: 100%;
+  margin: 0;
+  background: var(--mat-sys-surface);
+  color: var(--mat-sys-on-surface);
+  font-family: system-ui, sans-serif;
+}
+
+app-root {
+  display: block;
+  min-height: 100dvh;
+}
+
+.app-header {
+  @include mat.toolbar-overrides(
+    (
+      container-background-color: var(--mat-sys-primary),
+      container-text-color: var(--mat-sys-on-primary),
+    )
+  );
+  @include mat.button-overrides(
+    (
+      text-label-text-color: var(--mat-sys-on-primary),
+      text-state-layer-color: var(--mat-sys-on-primary),
+      filled-container-color: var(--mat-sys-on-primary),
+      filled-label-text-color: var(--mat-sys-primary),
+      filled-state-layer-color: var(--mat-sys-primary),
+    )
+  );
 }

@@ -1,10 +1,10 @@
 import { BreakpointObserver } from '@angular/cdk/layout';
 import { ChangeDetectionStrategy, Component, computed, inject, signal, viewChild } from '@angular/core';
-import { toSignal } from '@angular/core/rxjs-interop';
+import { takeUntilDestroyed, toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { MatSidenav, MatSidenavModule } from '@angular/material/sidenav';
 import { Router, RouterOutlet } from '@angular/router';
 import { WarehouseAuthService } from '@warehouse/auth';
-import { map } from 'rxjs';
+import { filter, map, switchMap } from 'rxjs';
 
 import { AppHeader, AppNavigation } from '../../components';
 import { ADMIN_NAVIGATION } from '../../config';
@@ -36,10 +36,26 @@ export class AppLayout {
     ).filter(item => ('children' in item ? item.children.length > 0 : this.auth.can(item.permission))),
   );
 
-  login(): void {
-    const returnTo = this.router.url.startsWith('/') && !this.router.url.startsWith('//') ? this.router.url : '/';
+  constructor() {
+    toObservable(this.auth.authenticated)
+      .pipe(
+        filter(authenticated => authenticated && !this.auth.currentUser),
+        switchMap(() => this.auth.loadCurrentUser()),
+        takeUntilDestroyed(),
+      )
+      .subscribe({ error: () => undefined });
+  }
 
-    this.auth.login(returnTo === '/login' ? '/' : returnTo);
+  login(): void {
+    const url = this.router.parseUrl(this.router.url);
+    const requestedRoute = url.queryParams['returnTo'];
+    const currentRoute = this.router.url.startsWith('/') && !this.router.url.startsWith('//') ? this.router.url : '/';
+    const returnTo =
+      typeof requestedRoute === 'string' && requestedRoute.startsWith('/') && !requestedRoute.startsWith('//')
+        ? requestedRoute
+        : currentRoute;
+
+    this.auth.login(returnTo);
   }
 
   toggleNavigation(): void {

@@ -58,9 +58,9 @@ describe('shared authentication and permissions', () => {
     );
   }
 
-  it('redirects unauthenticated visitors to login without requesting ERP data', async () => {
+  it('redirects unauthenticated visitors to the public welcome page without requesting ERP data', async () => {
     sdk.isAuthenticated$ = of(false);
-    expect(TestBed.inject(Router).serializeUrl((await guard()) as UrlTree)).toBe('/login?returnTo=%2Fusers');
+    expect(TestBed.inject(Router).serializeUrl((await guard()) as UrlTree)).toBe('/?returnTo=%2Fusers');
     http.expectNone('/api/identity/me');
   });
   it('allows an active manager based on ERP permissions', async () => {

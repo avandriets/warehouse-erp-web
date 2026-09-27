@@ -1,7 +1,7 @@
 @let user = auth.user();
 
 <div class="flex min-h-dvh flex-col bg-[var(--mat-sys-surface)]">
-  <app-header [compact]="compact()"
+  <app-header [compact]="auth.authenticated() && compact()"
               [loading]="auth.loading()"
               [authenticated]="auth.authenticated()"
               [userName]="user?.name ?? user?.email ?? null"
@@ -9,7 +9,9 @@
               (signIn)="login()"
               (signOut)="auth.logout()" />
 
-  <mat-sidenav-container class="min-h-0 flex-1 bg-[var(--mat-sys-surface)]" [autosize]="true">
+  @if (auth.authenticated()) {
+  <mat-sidenav-container class="min-h-0 flex-1 bg-[var(--mat-sys-surface)]"
+                         [autosize]="true">
     <mat-sidenav #sidenav
                  id="app-navigation-drawer"
                  class="app-navigation-drawer"
@@ -30,4 +32,10 @@
       </main>
     </mat-sidenav-content>
   </mat-sidenav-container>
+} @else {
+  <main id="content"
+        class="mx-auto w-full max-w-[90rem] flex-1 p-4 sm:p-6 lg:p-10">
+    <router-outlet />
+  </main>
+}
 </div>

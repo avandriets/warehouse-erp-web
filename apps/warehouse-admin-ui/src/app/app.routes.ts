@@ -5,11 +5,6 @@ import { ACCESS_MANAGEMENT_SECTION } from './config';
 
 export const routes: Routes = [
   {
-    path: 'login',
-    title: 'Sign in · Warehouse ERP',
-    loadComponent: () => import('./containers').then(module => module.LoginPage),
-  },
-  {
     path: 'forbidden',
     title: 'Access unavailable · Warehouse ERP',
     loadComponent: () => import('./containers').then(module => module.ForbiddenPage),
@@ -17,8 +12,6 @@ export const routes: Routes = [
   {
     path: '',
     loadComponent: () => import('./containers').then(module => module.AppLayout),
-    canActivate: [permissionGuard],
-    data: { permission: 'users.manage' },
     children: [
       {
         path: '',
@@ -26,7 +19,11 @@ export const routes: Routes = [
         title: 'Welcome · Warehouse ERP',
         loadComponent: () => import('./containers').then(module => module.WelcomePage),
       },
-      ACCESS_MANAGEMENT_SECTION,
+      {
+        ...ACCESS_MANAGEMENT_SECTION,
+        canActivate: [permissionGuard],
+        data: { permission: 'users.manage' },
+      },
     ],
   },
   { path: '**', redirectTo: '' },

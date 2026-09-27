@@ -10,7 +10,7 @@ libs/auth                — Auth0, configuration, HTTP interceptor, ERP profile
 libs/shared              — shared utilities, imported through @warehouse/shared
 ```
 
-The existing login, signup, and profile screen is preserved in `warehouse-erp-ui`.
+`warehouse-erp-ui` uses a route-level application layout. Unauthenticated users see the top toolbar with a sign-in action and the public welcome page without application navigation.
 The admin application layout composes `@warehouse/access-management`; its domain behavior stays in that package. The backend lives in the
 sibling `warehouse-erp` repository and requires no changes for this migration.
 

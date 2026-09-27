@@ -8,7 +8,7 @@ import { MatButtonHarness } from '@angular/material/button/testing';
 import { MatSidenavHarness } from '@angular/material/sidenav/testing';
 import { provideRouter, Router } from '@angular/router';
 import { WarehouseAuthService } from '@warehouse/auth';
-import { BehaviorSubject } from 'rxjs';
+import { BehaviorSubject, of } from 'rxjs';
 
 import { AppLayout } from './app-layout';
 
@@ -21,7 +21,16 @@ describe('admin app layout', () => {
     loading: signal(false),
     authenticated: signal(false),
     user: signal(null),
+    currentUser: null,
     can: vi.fn(() => true),
+    loadCurrentUser: vi.fn(() =>
+      of({
+        user_id: 'user-1',
+        subject: 'auth0|1',
+        status: 'ACTIVE',
+        permissions: ['users.manage'],
+      }),
+    ),
     login: vi.fn(),
     logout: vi.fn(),
   };
@@ -29,7 +38,9 @@ describe('admin app layout', () => {
   beforeEach(() => {
     localStorage.removeItem(storageKey);
     viewport.next({ matches: false, breakpoints: {} });
+    auth.authenticated.set(true);
     auth.can.mockReturnValue(true);
+    auth.loadCurrentUser.mockClear();
     auth.login.mockClear();
     auth.logout.mockClear();
     TestBed.configureTestingModule({
@@ -75,6 +86,12 @@ describe('admin app layout', () => {
     expect(localStorage.getItem(storageKey)).toBe('false');
   });
 
+  it('loads the ERP identity for an authenticated user', async () => {
+    await fixture.whenStable();
+
+    expect(auth.loadCurrentUser).toHaveBeenCalledOnce();
+  });
+
   it('uses a full overlay on mobile and keeps the desktop collapse preference', async () => {
     fixture.componentInstance.toggleNavigationCollapsed();
     viewport.next({ matches: true, breakpoints: {} });
@@ -115,11 +132,28 @@ describe('admin app layout', () => {
   });
 
   it('starts login from the application header', async () => {
-    const signIn = await loader.getHarness(MatButtonHarness.with({ text: 'Sign in' }));
+    auth.authenticated.set(false);
+    const guestFixture = TestBed.createComponent(AppLayout);
+    await guestFixture.whenStable();
+    const guestLoader = TestbedHarnessEnvironment.loader(guestFixture);
+    const signIn = await guestLoader.getHarness(MatButtonHarness.with({ text: 'Sign in' }));
 
     await signIn.click();
 
     expect(auth.login).toHaveBeenCalledWith('/');
+    guestFixture.destroy();
+  });
+
+  it('shows only the header and page content to unauthenticated visitors', async () => {
+    auth.authenticated.set(false);
+    const guestFixture = TestBed.createComponent(AppLayout);
+    await guestFixture.whenStable();
+
+    expect(guestFixture.nativeElement.querySelector('app-header')).not.toBeNull();
+    expect(guestFixture.nativeElement.querySelector('mat-sidenav-container')).toBeNull();
+    expect(guestFixture.nativeElement.querySelector('app-navigation')).toBeNull();
+    expect(guestFixture.nativeElement.querySelector('main router-outlet')).not.toBeNull();
+    guestFixture.destroy();
   });
 
   it('renders access-management links without highlighting one at the application root', async () => {
