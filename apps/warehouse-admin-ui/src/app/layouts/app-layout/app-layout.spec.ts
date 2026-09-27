@@ -70,8 +70,10 @@ describe('admin app layout', () => {
     expect(fixture.componentInstance.collapsed()).toBe(true);
     expect(localStorage.getItem(storageKey)).toBe('true');
     expect(
-      fixture.nativeElement.querySelector('#app-navigation-drawer').style.getPropertyValue('--app-navigation-width'),
-    ).toBe('4.5rem');
+      fixture.nativeElement
+        .querySelector('#app-navigation-drawer')
+        .classList.contains('app-navigation-drawer-collapsed'),
+    ).toBe(true);
     expect(fixture.nativeElement.querySelectorAll('nav a svg')).toHaveLength(2);
     expect(fixture.nativeElement.querySelector('nav a').getAttribute('aria-label')).toBe('Users');
 
@@ -84,6 +86,11 @@ describe('admin app layout', () => {
     await expand.click();
     expect(fixture.componentInstance.collapsed()).toBe(false);
     expect(localStorage.getItem(storageKey)).toBe('false');
+    expect(
+      fixture.nativeElement
+        .querySelector('#app-navigation-drawer')
+        .classList.contains('app-navigation-drawer-collapsed'),
+    ).toBe(false);
   });
 
   it('loads the ERP identity for an authenticated user', async () => {

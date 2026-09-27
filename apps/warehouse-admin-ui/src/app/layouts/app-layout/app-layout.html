@@ -15,7 +15,7 @@
     <mat-sidenav #sidenav
                  id="app-navigation-drawer"
                  class="app-navigation-drawer"
-                 [style.--app-navigation-width]="collapsed() ? '4.5rem' : '18rem'"
+                 [class.app-navigation-drawer-collapsed]="collapsed()"
                  [mode]="compact() ? 'over' : 'side'"
                  [opened]="!compact()">
       <app-navigation [navigation]="navigation()"

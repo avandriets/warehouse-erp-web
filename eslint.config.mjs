@@ -82,7 +82,7 @@ export default tseslint.config(
         'error',
         {
           template: 0,
-          styles: 1000,
+          styles: 0,
           animations: 1000,
         },
       ],
@@ -131,6 +131,7 @@ export default tseslint.config(
         },
       ],
       '@angular-eslint/template/eqeqeq': ['error', { allowNullOrUndefined: true }],
+      '@angular-eslint/template/no-inline-styles': 'error',
     },
   },
   eslintConfigPrettier,

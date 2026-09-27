@@ -14,6 +14,7 @@ import type { NavigationSection } from '../../types';
   selector: 'app-layout',
   imports: [MatSidenavModule, RouterOutlet, AppHeader, AppNavigation],
   templateUrl: './app-layout.html',
+  styleUrl: './app-layout.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class AppLayout {
