@@ -10,11 +10,11 @@ import { MatTableModule } from '@angular/material/table';
 import { AccessManagementApiService, accessManagementError } from '@warehouse/access-management/data-access';
 import { StatusBadge } from '@warehouse/access-management/ui';
 import type { UserRecord, UserStatus, UserWrite } from '@warehouse/access-management/util';
+import { Page } from '@warehouse/shared';
 
 import { UserAccess } from '../../components';
 
 @Component({
-  standalone: true,
   imports: [
     FormsModule,
     MatButtonModule,
@@ -24,6 +24,7 @@ import { UserAccess } from '../../components';
     MatProgressSpinnerModule,
     MatSelectModule,
     MatTableModule,
+    Page,
     StatusBadge,
     UserAccess,
   ],

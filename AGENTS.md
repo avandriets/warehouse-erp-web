@@ -31,7 +31,7 @@
 - `apps/warehouse-admin-ui` is the thin administration runner application (port 4301).
 - `libs/access-management` is a publishable Angular package that owns users, roles, permissions, and their navigation routes.
 - `libs/auth` owns Auth0 integration, runtime auth configuration, the ERP profile, and permission guards.
-- `libs/shared` currently contains reusable utilities independent of the applications and Auth0. As shared code grows, split shared UI, data access, and types into libraries with matching type tags instead of turning this project into a mixed-purpose dumping ground.
+- `libs/shared` owns cross-application components, types with their associated metadata, and pure utilities independent of the applications, domains, and Auth0. Keep those concerns in focused internal collection directories; do not create a separate shared Nx library solely to separate those folders unless explicitly requested.
 - The backend is in the sibling `warehouse-erp` repository. Read its API contracts before changing frontend requests.
 - Preserve existing uncommitted work. Keep UI text, code comments, and repository documentation in English.
 
@@ -185,6 +185,7 @@ When adding another publishable domain package, start with only the layers it ne
 - Order class members as follows: injected fields (`inject()`), inputs, outputs, private fields, protected fields, public fields, constructor, getters/setters, Angular lifecycle hooks, public methods, protected methods, and private methods. Keep lifecycle hooks in Angular invocation order: `ngOnChanges`, `ngOnInit`, `ngDoCheck`, `ngAfterContentInit`, `ngAfterContentChecked`, `ngAfterViewInit`, `ngAfterViewChecked`, `ngOnDestroy`. The local `warehouse/class-member-order` ESLint rule enforces this convention.
 - Order Angular template attributes by category: template references (`#ref`), structural directives, static attributes and attribute directives, property bindings (`[]`), two-way bindings (`[()]`), then event bindings (`()`). Preserve author order inside each category. Angular ESLint applies this ordering before `html-beautify` aligns wrapped attributes.
 - Always place Angular component templates in a co-located `.html` file and reference them with a relative `templateUrl`. Inline `template` declarations are forbidden even for one-line components; `@angular-eslint/component-max-inline-declarations` enforces a template limit of zero lines.
+- Angular 21 components, directives, and pipes are standalone by default. Do not write redundant `standalone: true` metadata; specify `standalone: false` only when deliberately declaring an artifact in an NgModule.
 - Prettier formats code; js-beautify formats external HTML. Use `npm run format`, not Prettier on HTML files.
 - Run `npm run check` for formatting, lint, and type checks. Run relevant Nx tests and builds for behavior changes.
 - After shared-library changes, validate affected consumers. `npm test` and `npm run build` cover both applications.
@@ -197,6 +198,7 @@ When adding another publishable domain package, start with only the layers it ne
 - Use Angular Material for interactive components and established patterns such as forms, buttons, tables, dialogs, menus, navigation, feedback, and overlays.
 - Use Tailwind CSS for layout, flexbox, grid, spacing, sizing, alignment, responsive presentation, and small visual adjustments.
 - Prefer templates built from Material components and Tailwind utilities. Do not create component `.scss` files or add `styleUrl` unless the design cannot be expressed clearly with those systems.
+- Compose route screens with `Page` from `@warehouse/shared`. Use its `pageBreadcrumb`, `pageBack`, `pageTitle`, `pageActions`, and `pageBody` projection slots instead of duplicating page-header structure. Use `ErrorState` and its `errorEyebrow`, `errorTitle`, `errorDescription`, and `errorActions` slots for application error screens.
 - Keep Material theme generation, Tailwind imports, application-layout defaults, and unavoidable global overrides in global styles. Share theme definitions between applications when their design is the same.
 - Customize Material only through public theming APIs, design tokens, component inputs, and host classes. Never depend on private implementation selectors such as `.mat-mdc-*`.
 - Use Tailwind responsive variants for visual changes. Use CDK `BreakpointObserver` only when a breakpoint changes component behavior or application logic.

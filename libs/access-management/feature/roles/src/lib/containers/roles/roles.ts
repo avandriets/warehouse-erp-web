@@ -11,11 +11,11 @@ import { MatTableModule } from '@angular/material/table';
 import { AccessManagementApiService, accessManagementError } from '@warehouse/access-management/data-access';
 import { StatusBadge } from '@warehouse/access-management/ui';
 import type { RoleCreate, RoleRecord, RoleUpdate } from '@warehouse/access-management/util';
+import { Page } from '@warehouse/shared';
 
 import { RolePermissions } from '../../components';
 
 @Component({
-  standalone: true,
   imports: [
     FormsModule,
     MatButtonModule,
@@ -26,6 +26,7 @@ import { RolePermissions } from '../../components';
     MatProgressSpinnerModule,
     MatSelectModule,
     MatTableModule,
+    Page,
     RolePermissions,
     StatusBadge,
   ],

@@ -1,53 +1,19 @@
-<section class="mx-auto flex min-h-[calc(100dvh-10rem)] max-w-3xl items-center">
-  <div>
-    <p class="mb-3 text-sm font-semibold tracking-[0.18em] text-[var(--mat-sys-primary)] uppercase">
-      Error {{ status() }}
-    </p>
+<app-error-state>
+  <span errorEyebrow>Error {{ status() }}</span>
 
-    @switch (status()) {
-      @case (401) {
-        <h1 class="m-0 text-3xl font-bold tracking-tight text-[var(--mat-sys-on-surface)] sm:text-5xl">
-          Sign in to continue
-        </h1>
-        <p class="mt-5 max-w-2xl text-base leading-7 text-[var(--mat-sys-on-surface-variant)] sm:text-lg">
-          The requested section is available only to authenticated users. Use the Sign in button in the toolbar; after
-          authentication, you will return to the requested page.
-        </p>
-      }
-      @case (403) {
-        <h1 class="m-0 text-3xl font-bold tracking-tight text-[var(--mat-sys-on-surface)] sm:text-5xl">
-          Access unavailable
-        </h1>
-        <p class="mt-5 max-w-2xl text-base leading-7 text-[var(--mat-sys-on-surface-variant)] sm:text-lg">
-          Your ERP account is inactive or does not have the required permissions for this section.
-        </p>
-      }
-      @case (404) {
-        <h1 class="m-0 text-3xl font-bold tracking-tight text-[var(--mat-sys-on-surface)] sm:text-5xl">
-          Page not found
-        </h1>
-        <p class="mt-5 max-w-2xl text-base leading-7 text-[var(--mat-sys-on-surface-variant)] sm:text-lg">
-          The requested URL does not match any page in Warehouse ERP administration.
-        </p>
-      }
-      @default {
-        <h1 class="m-0 text-3xl font-bold tracking-tight text-[var(--mat-sys-on-surface)] sm:text-5xl">
-          Something went wrong
-        </h1>
-        <p class="mt-5 max-w-2xl text-base leading-7 text-[var(--mat-sys-on-surface-variant)] sm:text-lg">
-          The ERP service is temporarily unavailable. Try again later or return to the welcome page.
-        </p>
-      }
+  <h1 errorTitle
+      class="m-0 text-3xl font-bold tracking-tight text-[var(--mat-sys-on-surface)] sm:text-5xl">
+    {{ content().title }}
+  </h1>
+  <p errorDescription>{{ content().description }}</p>
+
+  <div errorActions>
+    <a mat-flat-button
+       routerLink="/">Return to welcome</a>
+    @if (status() === 403) {
+      <button mat-stroked-button
+              type="button"
+              (click)="auth.logout()">Sign out</button>
     }
-
-    <div class="mt-4 flex flex-wrap gap-3">
-      <a mat-flat-button
-         routerLink="/">Return to welcome</a>
-      @if (status() === 403) {
-        <button mat-stroked-button
-                type="button"
-                (click)="auth.logout()">Sign out</button>
-      }
-    </div>
   </div>
-</section>
+</app-error-state>

@@ -10,7 +10,6 @@ import type { PermissionRecord, RoleRecord } from '@warehouse/access-management/
 
 @Component({
   selector: 'am-role-permissions',
-  standalone: true,
   imports: [FormsModule, MatButtonModule, MatCardModule, MatCheckboxModule, MatProgressSpinnerModule],
   templateUrl: './role-permissions.html',
 })

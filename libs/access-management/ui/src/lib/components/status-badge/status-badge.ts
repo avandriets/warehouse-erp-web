@@ -4,7 +4,6 @@ import { USER_STATUS_LABELS } from '@warehouse/shared';
 
 @Component({
   selector: 'am-status-badge',
-  standalone: true,
   templateUrl: './status-badge.html',
 })
 export class StatusBadge {

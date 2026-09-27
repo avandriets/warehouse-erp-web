@@ -12,7 +12,6 @@ import type { RoleAssignmentRecord, RoleRecord, ScopeType, UserRecord } from '@w
 
 @Component({
   selector: 'am-user-access',
-  standalone: true,
   imports: [
     FormsModule,
     MatButtonModule,
