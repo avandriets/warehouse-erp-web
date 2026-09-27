@@ -2,7 +2,7 @@ import { HttpErrorResponse, provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 import type { ActivatedRouteSnapshot, RouterStateSnapshot, UrlTree } from '@angular/router';
-import { provideRouter, Router } from '@angular/router';
+import { provideRouter, RedirectCommand, Router } from '@angular/router';
 import { AuthService } from '@auth0/auth0-angular';
 import type { CurrentUser } from '@warehouse/auth';
 import { AUTH_CONFIG, permissionGuard, WarehouseAuthService } from '@warehouse/auth';
@@ -47,20 +47,28 @@ describe('shared authentication and permissions', () => {
   });
   afterEach(() => http.verify());
 
-  function guard(): Promise<boolean | UrlTree> {
+  function guard(): Promise<boolean | UrlTree | RedirectCommand> {
     return firstValueFrom(
       TestBed.runInInjectionContext(() =>
         permissionGuard(
           { data: { permission: 'users.manage' } } as unknown as ActivatedRouteSnapshot,
           { url: '/users' } as RouterStateSnapshot,
         ),
-      ) as Observable<boolean | UrlTree>,
+      ) as Observable<boolean | UrlTree | RedirectCommand>,
     );
+  }
+
+  function expectErrorRedirect(result: boolean | UrlTree | RedirectCommand, status: 401 | 403 | 503): void {
+    expect(result).toBeInstanceOf(RedirectCommand);
+    const redirect = result as RedirectCommand;
+
+    expect(TestBed.inject(Router).serializeUrl(redirect.redirectTo)).toBe(`/error?status=${status}&returnTo=%2Fusers`);
+    expect(redirect.navigationBehaviorOptions).toEqual({ skipLocationChange: true });
   }
 
   it('redirects unauthenticated visitors to the access explanation without requesting ERP data', async () => {
     sdk.isAuthenticated$ = of(false);
-    expect(TestBed.inject(Router).serializeUrl((await guard()) as UrlTree)).toBe('/access-required?returnTo=%2Fusers');
+    expectErrorRedirect(await guard(), 401);
     http.expectNone('/api/identity/me');
   });
   it('allows an active manager based on ERP permissions', async () => {
@@ -89,13 +97,13 @@ describe('shared authentication and permissions', () => {
   ])('denies inactive or unprivileged users: %j', async value => {
     const result = guard();
     http.expectOne('/api/identity/me').flush(value);
-    expect(TestBed.inject(Router).serializeUrl((await result) as UrlTree)).toBe('/forbidden');
+    expectErrorRedirect(await result, 403);
   });
   it('fails closed when the ERP identity request fails', async () => {
     const auth = TestBed.inject(WarehouseAuthService);
     const result = guard();
     http.expectOne('/api/identity/me').flush({ detail: 'unavailable' }, { status: 503, statusText: 'Unavailable' });
-    expect(TestBed.inject(Router).serializeUrl((await result) as UrlTree)).toBe('/forbidden');
+    expectErrorRedirect(await result, 503);
     expect(auth.can('users.manage')).toBe(false);
   });
   it('preserves return route and clears identity on logout', () => {

@@ -57,6 +57,7 @@
 - Keep `ACCESS_MANAGEMENT_ROUTES` in the primary `@warehouse/access-management` entry point. It is routing configuration for the package, not a secondary library or `routes` entry point.
 - The access-management package uses secondary entry points for `feature/users`, `feature/roles`, `data-access`, `ui`, and `util`. Do not expose implementation files directly.
 - Keep shared utilities small and free of domain-specific workflows. Keep HTTP requests and state out of reusable presentation components.
+- Use one application-level `ErrorPage` for authentication-required, forbidden, not-found, and service-unavailable states. Pass the status through route data for static routes or query parameters for guard redirects. Preserve the originally requested browser URL for errors by rendering the wildcard page in place or returning a `RedirectCommand` with `skipLocationChange`; do not silently redirect unknown URLs to the welcome page.
 - Enforce dependencies with `@nx/enforce-module-boundaries`; do not add exemptions to hide architectural violations.
 
 ## Domain package blueprint

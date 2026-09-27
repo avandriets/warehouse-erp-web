@@ -1,5 +1,5 @@
 import { routes } from './app.routes';
-import { NotFoundPage } from './pages';
+import { ErrorPage } from './pages';
 
 describe('admin application routes', () => {
   it('renders the not-found page for an unknown URL inside the application layout', async () => {
@@ -7,6 +7,7 @@ describe('admin application routes', () => {
     const notFoundRoute = layoutRoute?.children?.at(-1);
 
     expect(notFoundRoute?.path).toBe('**');
-    expect(await notFoundRoute?.loadComponent?.()).toBe(NotFoundPage);
+    expect(notFoundRoute?.data?.['status']).toBe(404);
+    expect(await notFoundRoute?.loadComponent?.()).toBe(ErrorPage);
   });
 });

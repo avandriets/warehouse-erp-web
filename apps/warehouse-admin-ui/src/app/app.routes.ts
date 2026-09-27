@@ -5,11 +5,6 @@ import { ACCESS_MANAGEMENT_SECTION } from './config';
 
 export const routes: Routes = [
   {
-    path: 'forbidden',
-    title: 'Access unavailable · Warehouse ERP',
-    loadComponent: () => import('./pages').then(module => module.ForbiddenPage),
-  },
-  {
     path: '',
     loadComponent: () => import('./layouts').then(module => module.AppLayout),
     children: [
@@ -20,9 +15,10 @@ export const routes: Routes = [
         loadComponent: () => import('./pages').then(module => module.WelcomePage),
       },
       {
-        path: 'access-required',
-        title: 'Sign in required · Warehouse ERP',
-        loadComponent: () => import('./pages').then(module => module.AccessRequiredPage),
+        path: 'error',
+        title: 'Error · Warehouse ERP',
+        data: { status: 503 },
+        loadComponent: () => import('./pages').then(module => module.ErrorPage),
       },
       {
         ...ACCESS_MANAGEMENT_SECTION,
@@ -32,7 +28,8 @@ export const routes: Routes = [
       {
         path: '**',
         title: 'Page not found · Warehouse ERP',
-        loadComponent: () => import('./pages').then(module => module.NotFoundPage),
+        data: { status: 404 },
+        loadComponent: () => import('./pages').then(module => module.ErrorPage),
       },
     ],
   },
