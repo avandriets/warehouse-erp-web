@@ -1,0 +1,125 @@
+import { provideHttpClient } from '@angular/common/http';
+import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
+import { TestBed } from '@angular/core/testing';
+import { provideAccessManagement } from '@warehouse/access-management';
+import type { RoleRecord } from '@warehouse/access-management/util';
+
+import { RolePermissionsEditor } from './role-permissions-editor';
+
+const role: RoleRecord = {
+  id: 'r1',
+  code: 'MANAGER',
+  name: 'Manager',
+  description: null,
+  active: true,
+  system_role: false,
+  created_at: '',
+  updated_at: '',
+};
+
+describe('role permissions', () => {
+  let http: HttpTestingController;
+
+  beforeEach(() => {
+    TestBed.configureTestingModule({
+      imports: [RolePermissionsEditor],
+      providers: [provideHttpClient(), provideHttpClientTesting(), provideAccessManagement({ apiUrl: '/api' })],
+    });
+    http = TestBed.inject(HttpTestingController);
+  });
+
+  afterEach(() => http.verify());
+
+  it('replaces permissions using only selected codes', async () => {
+    const fixture = TestBed.createComponent(RolePermissionsEditor);
+    fixture.componentRef.setInput('role', role);
+    fixture.detectChanges();
+    http.expectOne('/api/identity/permissions').flush([
+      { id: 'p1', code: 'users.manage', description: 'Manage users' },
+      { id: 'p2', code: 'catalog.read', description: 'Read catalog' },
+    ]);
+    http.expectOne('/api/identity/roles/r1/permissions').flush([]);
+    const component = fixture.componentInstance;
+    component.form.patchValue({ 'users.manage': true, 'catalog.read': false });
+    component.form.markAsDirty();
+    component.save();
+    const request = http.expectOne('/api/identity/roles/r1/permissions');
+    expect(request.request.body).toEqual({ permission_codes: ['users.manage'] });
+    request.flush([]);
+    http.expectNone(pending => pending.method === 'GET');
+  });
+
+  it('keeps the editor disabled if assigned permissions fail to load', async () => {
+    const fixture = TestBed.createComponent(RolePermissionsEditor);
+    fixture.componentRef.setInput('role', role);
+    fixture.detectChanges();
+    http
+      .expectOne('/api/identity/permissions')
+      .flush([{ id: 'p1', code: 'users.manage', description: 'Manage users' }]);
+    http.expectOne('/api/identity/roles/r1/permissions').flush({}, { status: 403, statusText: 'Forbidden' });
+    await vi.waitFor(() => {
+      expect(fixture.componentInstance.ready()).toBe(false);
+      expect(fixture.componentInstance.error()).toContain('You do not have permission');
+    });
+  });
+  it('keeps draft selection on a failed write and prevents duplicate writes', async () => {
+    const fixture = TestBed.createComponent(RolePermissionsEditor);
+    fixture.componentRef.setInput('role', role);
+    await vi.waitFor(() => {
+      http.expectOne('/api/identity/permissions').flush([{ id: 'p1', code: 'users.manage' }]);
+      http.expectOne('/api/identity/roles/r1/permissions').flush([]);
+    });
+    await fixture.whenStable();
+    const component = fixture.componentInstance;
+    component.form.patchValue({ 'users.manage': true });
+    component.form.markAsDirty();
+    component.save();
+    component.save();
+    http
+      .expectOne('/api/identity/roles/r1/permissions')
+      .flush({ detail: 'Write denied' }, { status: 409, statusText: 'Conflict' });
+    expect(component.form.getRawValue()).toEqual({ 'users.manage': true });
+    expect(component.error()).toBe('Write denied');
+    expect(component.busy()).toBe(false);
+    http.expectNone(pending => pending.method === 'GET');
+  });
+
+  it('ignores completion of an old write after switching roles', async () => {
+    const fixture = TestBed.createComponent(RolePermissionsEditor);
+    fixture.componentRef.setInput('role', role);
+    await vi.waitFor(() => {
+      http.expectOne('/api/identity/permissions').flush([]);
+      http.expectOne('/api/identity/roles/r1/permissions').flush([]);
+    });
+    await fixture.whenStable();
+    const component = fixture.componentInstance;
+    component.form.markAsDirty();
+    component.save();
+    const old = http.expectOne('/api/identity/roles/r1/permissions');
+    fixture.componentRef.setInput('role', { ...role, id: 'r2' });
+    await vi.waitFor(() => {
+      http.expectOne('/api/identity/permissions').flush([{ id: 'p2', code: 'catalog.read' }]);
+      http.expectOne('/api/identity/roles/r2/permissions').flush([{ id: 'p2', code: 'catalog.read' }]);
+    });
+    await fixture.whenStable();
+    expect(old.cancelled).toBe(true);
+    expect(component.form.getRawValue()).toEqual({ 'catalog.read': true });
+    expect(component.busy()).toBe(false);
+    http.expectNone(pending => pending.method === 'GET');
+  });
+  it('updates selection from the save response without reloading the catalog', () => {
+    const fixture = TestBed.createComponent(RolePermissionsEditor);
+    fixture.componentRef.setInput('role', role);
+    fixture.detectChanges();
+    http.expectOne('/api/identity/permissions').flush([{ id: 'p1', code: 'users.manage' }]);
+    http.expectOne('/api/identity/roles/r1/permissions').flush([]);
+    const component = fixture.componentInstance;
+    component.form.patchValue({ 'users.manage': true });
+    component.form.markAsDirty();
+    component.save();
+    http.expectOne('/api/identity/roles/r1/permissions').flush([{ id: 'p1', code: 'users.manage' }]);
+    expect(component.form.getRawValue()).toEqual({ 'users.manage': true });
+    expect(component.busy()).toBe(false);
+    http.expectNone(pending => pending.method === 'GET');
+  });
+});
