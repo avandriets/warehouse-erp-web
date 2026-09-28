@@ -1,4 +1,3 @@
-import type { TemplateRef } from '@angular/core';
 import { Component, computed, DestroyRef, inject } from '@angular/core';
 import { takeUntilDestroyed, toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { MatButtonModule } from '@angular/material/button';
@@ -7,7 +6,7 @@ import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { MatIconModule } from '@angular/material/icon';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatTableModule } from '@angular/material/table';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { UsersStore } from '@warehouse/access-management/data-access';
 import { StatusBadge } from '@warehouse/access-management/ui';
 import type { UserRecord } from '@warehouse/access-management/util';
@@ -15,7 +14,7 @@ import { parseUsersQuery, USERS_PAGE_SIZE } from '@warehouse/access-management/u
 import { ConfirmDialog, Page, UIStateContainerComponent, UrlSearch } from '@warehouse/shared';
 import { concatMap, distinctUntilChanged, filter, finalize, of, switchMap, tap } from 'rxjs';
 
-import { UserAccess, UserFormDialog, UsersFilter } from '../../components';
+import { UserFormDialog, UsersFilter } from '../../components';
 
 @Component({
   providers: [UsersStore],
@@ -30,7 +29,7 @@ import { UserAccess, UserFormDialog, UsersFilter } from '../../components';
     Page,
     UIStateContainerComponent,
     StatusBadge,
-    UserAccess,
+    RouterLink,
   ],
   templateUrl: './users.html',
 })
@@ -81,33 +80,22 @@ export class UsersPage {
   }
 
   open(record: UserRecord | null = null): void {
-    const ref = this.dialog.open(UserFormDialog, { data: record, width: '560px', maxWidth: '95vw' });
+    const ref = this.dialog.open<UserFormDialog, UserRecord | null, UserRecord>(UserFormDialog, {
+      data: record,
+      width: '560px',
+      maxWidth: '95vw',
+    });
 
     ref
       .afterClosed()
       .pipe(
-        filter(result => result === true),
+        filter((result): result is UserRecord => result !== undefined),
         tap(() => this.snackBar.open('Changes saved.', 'Dismiss', { duration: 4000 })),
         concatMap(() => this.store.load(this.requestParams())),
         takeUntilDestroyed(this.destroyRef),
         finalize(() => ref.close()),
       )
       .subscribe();
-  }
-
-  openDetails(template: TemplateRef<unknown>, record: UserRecord): void {
-    const ref = this.dialog.open(template, { data: record, width: '800px', maxWidth: '95vw' });
-    ref
-      .afterClosed()
-      .pipe(
-        takeUntilDestroyed(this.destroyRef),
-        finalize(() => ref.close()),
-      )
-      .subscribe();
-  }
-
-  userUpdated(user: UserRecord): void {
-    this.store.upsert(user);
   }
 
   changeStatus(user: UserRecord): void {

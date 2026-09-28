@@ -18,7 +18,7 @@ import { finalize, tap } from 'rxjs';
 export class UserFormDialog {
   private readonly builder = inject(FormBuilder);
   private readonly destroyRef = inject(DestroyRef);
-  private readonly dialogRef = inject(MatDialogRef<UserFormDialog, boolean>);
+  private readonly dialogRef = inject(MatDialogRef<UserFormDialog, UserRecord>);
   readonly record = inject<UserRecord | null>(MAT_DIALOG_DATA);
   readonly store = inject(UsersStore);
   readonly form = this.builder.nonNullable.group({
@@ -44,7 +44,7 @@ export class UserFormDialog {
     this.dialogRef.disableClose = true;
     request
       .pipe(
-        tap(() => this.dialogRef.close(true)),
+        tap(user => this.dialogRef.close(user)),
         finalize(() => {
           this.dialogRef.disableClose = false;
         }),

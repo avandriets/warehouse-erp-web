@@ -28,6 +28,10 @@ export class AccessManagementApiService {
     return this.http.get<UserRecord[]>(`${this.base}/identity/users`, { params });
   }
 
+  getUser(userId: string): Observable<UserRecord> {
+    return this.http.get<UserRecord>(`${this.base}/identity/users/${userId}`);
+  }
+
   createUser(payload: UserWrite): Observable<UserRecord> {
     return this.http.post<UserRecord>(`${this.base}/identity/users`, payload);
   }
@@ -58,6 +62,10 @@ export class AccessManagementApiService {
     }
 
     return this.http.get<RoleRecord[]>(`${this.base}/identity/roles`, { params });
+  }
+
+  getRole(roleId: string): Observable<RoleRecord> {
+    return this.http.get<RoleRecord>(`${this.base}/identity/roles/${roleId}`);
   }
 
   createRole(payload: RoleCreate): Observable<RoleRecord> {

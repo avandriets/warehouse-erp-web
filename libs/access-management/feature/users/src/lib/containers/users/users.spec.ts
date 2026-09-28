@@ -6,7 +6,6 @@ import { provideLocationMocks } from '@angular/common/testing';
 import { TestBed } from '@angular/core/testing';
 import { MatButtonHarness } from '@angular/material/button/testing';
 import { MatDialog } from '@angular/material/dialog';
-import { MatDialogHarness } from '@angular/material/dialog/testing';
 import { MatInputHarness } from '@angular/material/input/testing';
 import { By } from '@angular/platform-browser';
 import { provideRouter, Router } from '@angular/router';
@@ -53,7 +52,10 @@ describe('users page', () => {
         provideHttpClient(),
         provideHttpClientTesting(),
         provideAccessManagement({ apiUrl: '/api' }),
-        provideRouter([{ path: 'users', component: UsersPage }]),
+        provideRouter([
+          { path: 'users', component: UsersPage },
+          { path: 'users/:userId/access', children: [] },
+        ]),
         provideLocationMocks(),
       ],
     });
@@ -284,7 +286,7 @@ describe('users page', () => {
     http.expectNone(pending => pending.method === 'GET');
   });
 
-  it('opens user access in a dialog', async () => {
+  it('navigates to the user access page', async () => {
     const component = await create();
     component.store.replaceAll([
       {
@@ -299,9 +301,9 @@ describe('users page', () => {
     ]);
     const loader = TestbedHarnessEnvironment.loader(harness.fixture);
     await (await loader.getHarness(MatButtonHarness.with({ text: 'Access' }))).click();
-    http.expectOne('/api/identity/roles').flush([]);
-    http.expectOne('/api/identity/users/u1/role-assignments').flush([]);
-    expect(TestBed.inject(MatDialog).openDialogs).toHaveLength(1);
+    await harness.fixture.whenStable();
+    expect(TestBed.inject(Router).url).toBe('/users/u1/access');
+    expect(TestBed.inject(MatDialog).openDialogs).toHaveLength(0);
   });
   it('closes an open editor when the page is destroyed without submitting it', async () => {
     const component = await create();
@@ -321,38 +323,6 @@ describe('users page', () => {
     await vi.waitFor(() => expect(dialogs.openDialogs).toHaveLength(0));
     http.expectNone(request => request.method === 'POST');
   });
-  it('blocks Escape while access is saving and restores it after an error', async () => {
-    const component = await create();
-    component.store.replaceAll([
-      {
-        id: 'u1',
-        email: 'alex@example.com',
-        display_name: 'Alex',
-        status: 'ACTIVE',
-        auth0_subject: null,
-        created_at: '',
-        updated_at: '',
-      },
-    ]);
-    const loader = TestbedHarnessEnvironment.documentRootLoader(harness.fixture);
-    await (await loader.getHarness(MatButtonHarness.with({ text: 'Access' }))).click();
-    http.expectOne('/api/identity/roles').flush([]);
-    http.expectOne('/api/identity/users/u1/role-assignments').flush([]);
-    const dialog = await loader.getHarness(MatDialogHarness);
-    await (
-      await loader.getHarness(MatInputHarness.with({ selector: '[formControlName="subject"]' }))
-    ).setValue('auth0|alex');
-    await (await loader.getHarness(MatButtonHarness.with({ text: 'Link account' }))).click();
-    const request = http.expectOne('/api/identity/users/u1/auth0');
-    await dialog.close();
-    expect(TestBed.inject(MatDialog).openDialogs).toHaveLength(1);
-    expect(request.cancelled).toBe(false);
-    request.flush({ detail: 'Cannot link account' }, { status: 409, statusText: 'Conflict' });
-    await harness.fixture.whenStable();
-    await dialog.close();
-    await vi.waitFor(() => expect(TestBed.inject(MatDialog).openDialogs).toHaveLength(0));
-  });
-
   it('cancels stale searches, displays server results, and clears search', async () => {
     const component = await create();
     await changeQuery('first');

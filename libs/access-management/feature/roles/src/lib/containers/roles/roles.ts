@@ -1,4 +1,3 @@
-import type { TemplateRef } from '@angular/core';
 import { Component, computed, DestroyRef, inject } from '@angular/core';
 import { takeUntilDestroyed, toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { MatButtonModule } from '@angular/material/button';
@@ -7,7 +6,7 @@ import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { MatIconModule } from '@angular/material/icon';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatTableModule } from '@angular/material/table';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, RouterLink } from '@angular/router';
 import { RolesStore } from '@warehouse/access-management/data-access';
 import { StatusBadge } from '@warehouse/access-management/ui';
 import type { RoleRecord } from '@warehouse/access-management/util';
@@ -15,7 +14,7 @@ import { parseRolesQuery } from '@warehouse/access-management/util';
 import { ConfirmDialog, Page, UIStateContainerComponent, UrlSearch } from '@warehouse/shared';
 import { concatMap, distinctUntilChanged, filter, finalize, switchMap, tap } from 'rxjs';
 
-import { RoleFormDialog, RolePermissions, RolesFilter } from '../../components';
+import { RoleFormDialog, RolesFilter } from '../../components';
 
 @Component({
   providers: [RolesStore],
@@ -29,7 +28,7 @@ import { RoleFormDialog, RolePermissions, RolesFilter } from '../../components';
     RolesFilter,
     Page,
     UIStateContainerComponent,
-    RolePermissions,
+    RouterLink,
     StatusBadge,
   ],
   templateUrl: './roles.html',
@@ -74,24 +73,17 @@ export class RolesPage {
   }
 
   open(record: RoleRecord | null = null): void {
-    const ref = this.dialog.open(RoleFormDialog, { data: record, width: '560px', maxWidth: '95vw' });
+    const ref = this.dialog.open<RoleFormDialog, RoleRecord | null, RoleRecord>(RoleFormDialog, {
+      data: record,
+      width: '560px',
+      maxWidth: '95vw',
+    });
     ref
       .afterClosed()
       .pipe(
-        filter(result => result === true),
+        filter((result): result is RoleRecord => result !== undefined),
         tap(() => this.snackBar.open('Changes saved.', 'Dismiss', { duration: 4000 })),
         concatMap(() => this.store.load(this.requestParams())),
-        takeUntilDestroyed(this.destroyRef),
-        finalize(() => ref.close()),
-      )
-      .subscribe();
-  }
-
-  openDetails(template: TemplateRef<unknown>, record: RoleRecord): void {
-    const ref = this.dialog.open(template, { data: record, width: '800px', maxWidth: '95vw' });
-    ref
-      .afterClosed()
-      .pipe(
         takeUntilDestroyed(this.destroyRef),
         finalize(() => ref.close()),
       )

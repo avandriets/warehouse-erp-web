@@ -1,4 +1,5 @@
 <h2 mat-dialog-title>{{ record ? 'Edit role' : 'New role' }}</h2>
+
 <form [formGroup]="form"
       (ngSubmit)="save()">
   <mat-dialog-content>
@@ -7,7 +8,7 @@
          class="mb-4 rounded-lg bg-red-50 p-3 text-red-800">{{ actionError() }}</p>
     }
     <fieldset [disabled]="saving()">
-      <div class="grid gap-4 md:grid-cols-2">
+      <div class="grid gap-4">
         @if (!record) {
           <mat-form-field appearance="outline"
                           subscriptSizing="dynamic"
@@ -35,7 +36,7 @@
         </mat-form-field>
         <mat-form-field appearance="outline"
                         subscriptSizing="dynamic"
-                        class="w-full md:col-span-2">
+                        class="w-full">
           <mat-label>Description</mat-label>
           <input matInput
                  name="description"
@@ -43,7 +44,8 @@
         </mat-form-field>
         @if (record) {
           <mat-checkbox name="active"
-                        formControlName="active">Active</mat-checkbox>
+                        formControlName="active">Active
+          </mat-checkbox>
         }
       </div>
     </fieldset>
@@ -53,9 +55,11 @@
     <button mat-button
             type="button"
             mat-dialog-close
-            [disabled]="saving()">Cancel</button>
+            [disabled]="saving()">Cancel
+    </button>
     <button mat-flat-button
             type="submit"
-            [disabled]="!canSave">{{ saving() ? 'Saving…' : 'Save' }}</button>
+            [disabled]="!canSave">{{ saving() ? 'Saving…' : 'Save' }}
+    </button>
   </mat-dialog-actions>
 </form>

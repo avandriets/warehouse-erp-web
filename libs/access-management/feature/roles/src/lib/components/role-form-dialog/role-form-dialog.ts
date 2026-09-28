@@ -26,7 +26,7 @@ import { finalize, tap } from 'rxjs';
 export class RoleFormDialog {
   private readonly builder = inject(FormBuilder);
   private readonly destroyRef = inject(DestroyRef);
-  private readonly dialogRef = inject(MatDialogRef<RoleFormDialog, boolean>);
+  private readonly dialogRef = inject(MatDialogRef<RoleFormDialog, RoleRecord>);
   readonly record = inject<RoleRecord | null>(MAT_DIALOG_DATA);
   readonly store = inject(RolesStore);
   readonly form = this.builder.nonNullable.group({
@@ -56,10 +56,12 @@ export class RoleFormDialog {
     const request = this.record
       ? this.store.update({ id: this.record.id, payload: { ...payload, active: model.active } })
       : this.store.create({ ...payload, code: model.code.trim() });
+
     this.dialogRef.disableClose = true;
+
     request
       .pipe(
-        tap(() => this.dialogRef.close(true)),
+        tap(role => this.dialogRef.close(role)),
         finalize(() => {
           this.dialogRef.disableClose = false;
         }),

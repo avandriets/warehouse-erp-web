@@ -23,4 +23,13 @@ describe('AccessManagementApiService', () => {
     subscription.unsubscribe();
     expect(pending.cancelled).toBe(true);
   });
+
+  it('loads individual users and roles for direct editor routes', () => {
+    const api = TestBed.inject(AccessManagementApiService);
+    const http = TestBed.inject(HttpTestingController);
+    api.getUser('u1').subscribe();
+    api.getRole('r1').subscribe();
+    expect(http.expectOne('/api/identity/users/u1').request.method).toBe('GET');
+    expect(http.expectOne('/api/identity/roles/r1').request.method).toBe('GET');
+  });
 });
