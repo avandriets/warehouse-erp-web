@@ -11,7 +11,7 @@ import { ActivatedRoute } from '@angular/router';
 import { RolesStore } from '@warehouse/access-management/data-access';
 import { StatusBadge } from '@warehouse/access-management/ui';
 import type { RoleRecord } from '@warehouse/access-management/util';
-import { parseActive } from '@warehouse/access-management/util';
+import { parseRolesQuery } from '@warehouse/access-management/util';
 import { ConfirmDialog, Page, UIStateContainerComponent, UrlSearch } from '@warehouse/shared';
 import { concatMap, distinctUntilChanged, filter, finalize, switchMap, tap } from 'rxjs';
 
@@ -41,33 +41,23 @@ export class RolesPage {
   private readonly route = inject(ActivatedRoute);
   readonly store = inject(RolesStore);
   private readonly params = toSignal(this.route.queryParamMap, { initialValue: this.route.snapshot.queryParamMap });
-  private readonly requestParams = computed(() => parseActive(this.params().get('active')));
+  private readonly requestParams = computed(() => parseRolesQuery(this.params()));
   readonly roles = this.store.entities;
   readonly loading = this.store.loading;
   readonly saving = this.store.saving;
   readonly error = computed(() => this.store.actionError() ?? this.store.error() ?? '');
   readonly displayedColumns = ['code', 'name', 'active', 'actions'];
 
-  readonly query = computed(() => this.params().get('q') ?? '');
-
   readonly state = this.store.entityState;
   readonly actionError = this.store.actionError;
-
-  readonly visibleRoles = computed(() => {
-    const query = this.query().trim().toLowerCase();
-    if (!query) return this.roles();
-
-    return this.roles().filter(role =>
-      [role.code, role.name, role.description].some(value => value?.toLowerCase().includes(query)),
-    );
-  });
 
   constructor() {
     toObservable(this.requestParams)
       .pipe(
-        distinctUntilChanged(),
+        distinctUntilChanged((previous, current) => previous.active === current.active && previous.q === current.q),
         switchMap(params => {
           this.store.reset();
+
           return this.store.load(params);
         }),
         takeUntilDestroyed(),

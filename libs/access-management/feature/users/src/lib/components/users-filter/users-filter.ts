@@ -25,6 +25,7 @@ export class UsersFilter {
         takeUntilDestroyed(),
       )
       .subscribe(value => this.control.setValue(value, { emitEvent: false }));
+
     this.control.valueChanges.pipe(takeUntilDestroyed()).subscribe(value => {
       void this.router.navigate([], {
         relativeTo: this.route,

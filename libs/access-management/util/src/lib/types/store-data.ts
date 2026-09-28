@@ -1,22 +1,15 @@
-import type { PermissionRecord } from './permission';
-import type { RoleRecord } from './role';
-import type { RoleAssignmentRecord } from './role-assignment';
 import type { UserStatus, UserWrite } from './user';
 
 export interface UsersQuery {
   limit: number;
   offset: number;
   status?: UserStatus;
+  q?: string;
 }
 
-export type UserUpdateCommand = UserWrite | { status: 'ACTIVE' | 'SUSPENDED' };
-
-export interface UserAccessData {
-  roles: RoleRecord[];
-  assignments: RoleAssignmentRecord[];
+export interface RolesQuery {
+  active?: boolean;
+  q?: string;
 }
 
-export interface RolePermissionsData {
-  permissions: PermissionRecord[];
-  assigned: PermissionRecord[];
-}
+export type UserUpdateCommand = UserWrite | { status: 'ACTIVE' | 'SUSPENDED' } | { auth0_subject: string };

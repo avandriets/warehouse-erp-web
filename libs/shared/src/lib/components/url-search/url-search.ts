@@ -16,6 +16,8 @@ export class UrlSearch {
   private readonly router = inject(Router);
   readonly label = input('Search');
   readonly placeholder = input('');
+  readonly maxLength = input<number | null>(null);
+  readonly resetParams = input<Record<string, null>>({});
   readonly control = new FormControl('', { nonNullable: true });
 
   constructor() {
@@ -24,15 +26,19 @@ export class UrlSearch {
       .pipe(
         switchMap(params => {
           this.control.setValue(params.get('q') ?? '', { emitEvent: false });
+
           return this.control.valueChanges.pipe(switchMap(value => timer(300).pipe(map(() => value.trim()))));
         }),
         takeUntilDestroyed(),
       )
       .subscribe(query => {
-        if (query === (this.route.snapshot.queryParamMap.get('q') ?? '')) return;
+        if (query === (this.route.snapshot.queryParamMap.get('q') ?? '')) {
+          return;
+        }
+
         void this.router.navigate([], {
           relativeTo: this.route,
-          queryParams: { q: query || null },
+          queryParams: { ...this.resetParams(), q: query || null },
           queryParamsHandling: 'merge',
           replaceUrl: true,
         });

@@ -11,8 +11,9 @@
             [disabled]="saving() || loading()"
             (click)="open()">Add role</button>
     <app-url-search class="block w-48"
-                    label="Search this page"
-                    placeholder="Enter a name or code" />
+                    label="Search roles"
+                    placeholder="Enter a name or code"
+                    [maxLength]="255" />
     <am-roles-filter class="block w-28" />
     <button mat-icon-button
             type="button"
@@ -36,7 +37,7 @@
         <div class="overflow-x-auto border-t border-stone-200">
           <table mat-table
                  class="w-full"
-                 [dataSource]="visibleRoles()">
+                 [dataSource]="roles()">
             <ng-container matColumnDef="code">
               <th *matHeaderCellDef
                   mat-header-cell>Code</th>

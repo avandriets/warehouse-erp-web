@@ -27,7 +27,10 @@ export class UIStateContainerComponent {
 
   private readonly statuses = computed<readonly UIStateStatus[]>(() => {
     const state = this.state();
-    if (!state) return [{ resolved: false, rejected: false, pending: true, err: null }];
+    if (!state) {
+      return [{ resolved: false, rejected: false, pending: true, err: null }];
+    }
+
     return Array.isArray(state) ? state : 'resolved' in state ? [state as UIStateStatus] : Object.values(state);
   });
   private readonly allResolved = computed(() => this.statuses().every(status => status.resolved));
@@ -40,10 +43,12 @@ export class UIStateContainerComponent {
   readonly showPending = computed(() => !this.allResolved() && this.isPending());
   readonly errorMessage = computed(() => {
     const error = this.statuses().find(status => status.rejected)?.err;
+
     return error instanceof Error ? error.message : typeof error === 'string' ? error : 'Could not load data.';
   });
   readonly actionErrorMessage = computed(() => {
     const error = this.actionError();
+
     return error instanceof Error ? error.message : error;
   });
 }

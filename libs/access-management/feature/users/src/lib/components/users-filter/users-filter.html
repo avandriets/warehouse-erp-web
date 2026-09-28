@@ -1,5 +1,14 @@
 <mat-form-field appearance="outline"
                 subscriptSizing="dynamic"
-                class="w-full"><mat-label>Status</mat-label><mat-select [formControl]="control"><mat-option value="">All users</mat-option><mat-option
-                value="INVITED">Invited</mat-option><mat-option value="PENDING_APPROVAL">Pending approval</mat-option><mat-option value="ACTIVE">Active</mat-option><mat-option
-                value="SUSPENDED">Suspended</mat-option></mat-select></mat-form-field>
+                class="w-full">
+  <mat-label>Status</mat-label>
+  <mat-select [formControl]="control">
+    <mat-option value="">All users</mat-option>
+    <mat-option value="INVITED">Invited
+    </mat-option>
+    <mat-option value="PENDING_APPROVAL">Pending approval</mat-option>
+    <mat-option value="ACTIVE">Active</mat-option>
+    <mat-option value="SUSPENDED">Suspended
+    </mat-option>
+  </mat-select>
+</mat-form-field>

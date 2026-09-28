@@ -7,13 +7,13 @@ import { MatCardModule } from '@angular/material/card';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatDialogRef } from '@angular/material/dialog';
 import { MatSnackBar } from '@angular/material/snack-bar';
-import { AccessManagementApiService, RolePermissionsStore } from '@warehouse/access-management/data-access';
+import { AccessApiService, AccessStore } from '@warehouse/access-management/data-access';
 import type { RoleRecord } from '@warehouse/access-management/util';
 import { UIStateContainerComponent } from '@warehouse/shared';
-import { concatMap, Subject, takeUntil, tap } from 'rxjs';
+import { forkJoin, Subject, takeUntil, tap } from 'rxjs';
 
 @Component({
-  providers: [RolePermissionsStore],
+  providers: [AccessApiService, AccessStore],
   selector: 'am-role-permissions',
   imports: [ReactiveFormsModule, MatButtonModule, MatCardModule, MatCheckboxModule, UIStateContainerComponent],
   templateUrl: './role-permissions.html',
@@ -21,35 +21,53 @@ import { concatMap, Subject, takeUntil, tap } from 'rxjs';
 export class RolePermissions implements OnChanges {
   private readonly dialogRef = inject(MatDialogRef, { optional: true });
   private readonly snackBar = inject(MatSnackBar);
-  private readonly api = inject(AccessManagementApiService);
   private readonly destroyRef = inject(DestroyRef);
-  readonly store = inject(RolePermissionsStore);
+  private readonly store = inject(AccessStore);
   readonly role = input.required<RoleRecord>();
   readonly closed = output<void>();
   private readonly selectionChanged = new Subject<void>();
-  readonly busy = computed(() => this.store.loading() || this.store.saving());
-  readonly loading = this.store.loading;
-  readonly ready = this.store.loaded;
-  readonly error = computed(() => this.store.actionError() ?? this.store.error() ?? '');
-  readonly permissions = this.store.permissions;
+  readonly busy = computed(() => this.loading() || this.store.rolePermissionsSaving());
+  readonly loading = computed(() => this.store.rolePermissionsLoading() || this.store.permissionsLoading());
+  readonly ready = computed(() => this.store.rolePermissionsLoaded() && this.store.permissionsLoaded());
+  readonly error = computed(
+    () =>
+      this.store.rolePermissionsActionError() ??
+      this.store.rolePermissionsError() ??
+      this.store.permissionsError() ??
+      '',
+  );
+  readonly permissions = this.store.permissions.data;
   readonly form = new FormRecord<FormControl<boolean>>({});
 
-  readonly state = this.store.requestState;
-  readonly actionError = this.store.actionError;
+  readonly state = computed(() => ({
+    catalog: this.store.permissionsState(),
+    assigned: this.store.rolePermissionsState(),
+  }));
+  readonly actionError = this.store.rolePermissionsActionError;
 
   constructor() {
     effect(() => {
-      if (this.dialogRef) this.dialogRef.disableClose = this.store.saving();
-      if (this.busy()) this.form.disable({ emitEvent: false });
-      else this.form.enable({ emitEvent: false });
+      if (this.dialogRef) {
+        this.dialogRef.disableClose = this.store.rolePermissionsSaving();
+      }
+      if (this.busy()) {
+        this.form.disable({ emitEvent: false });
+      } else {
+        this.form.enable({ emitEvent: false });
+      }
     });
+  }
+
+  get canSave(): boolean {
+    return this.form.valid && this.form.dirty && !this.busy();
   }
 
   ngOnChanges(): void {
     this.selectionChanged.next();
     this.store.reset();
-    this.store.resetMutation();
-    for (const code of Object.keys(this.form.controls)) this.form.removeControl(code);
+    for (const code of Object.keys(this.form.controls)) {
+      this.form.removeControl(code);
+    }
     this.load();
   }
 
@@ -58,8 +76,7 @@ export class RolePermissions implements OnChanges {
   }
 
   load(): void {
-    this.store
-      .load(this.role().id)
+    forkJoin([this.store.listPermissions(), this.store.listRolePermissions(this.role().id)])
       .pipe(
         tap(() => this.updateSelection()),
         takeUntil(this.selectionChanged),
@@ -69,15 +86,18 @@ export class RolePermissions implements OnChanges {
   }
 
   save(): void {
+    if (!this.canSave) {
+      return;
+    }
+
     const roleId = this.role().id;
     const codes = Object.entries(this.form.getRawValue())
       .filter(([, selected]) => selected)
       .map(([code]) => code);
     this.store
-      .mutate(() => this.api.replaceRolePermissions(roleId, codes))
+      .replaceRolePermissions(roleId, codes)
       .pipe(
         tap(() => this.snackBar.open('Changes saved.', 'Dismiss', { duration: 4000 })),
-        concatMap(() => this.store.load(roleId)),
         tap(() => this.updateSelection()),
         takeUntil(this.selectionChanged),
         takeUntilDestroyed(this.destroyRef),
@@ -86,14 +106,15 @@ export class RolePermissions implements OnChanges {
   }
 
   private updateSelection(): void {
-    const data = this.store.data();
-    if (!data) return;
-    for (const code of Object.keys(this.form.controls)) this.form.removeControl(code);
-    for (const permission of data.permissions) {
+    const assigned = this.store.rolePermissions.data();
+    for (const code of Object.keys(this.form.controls)) {
+      this.form.removeControl(code);
+    }
+    for (const permission of this.permissions()) {
       this.form.addControl(
         permission.code,
         new FormControl(
-          { value: data.assigned.some(item => item.code === permission.code), disabled: this.busy() },
+          { value: assigned.some(item => item.code === permission.code), disabled: this.busy() },
           { nonNullable: true },
         ),
       );

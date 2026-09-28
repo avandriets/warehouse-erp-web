@@ -11,7 +11,9 @@ export class StatusBadge {
   readonly positive = computed(() => this.value() === true || this.value() === 'ACTIVE');
   readonly label = computed(() => {
     const value = this.value();
-    if (typeof value === 'boolean') return value ? 'Yes' : 'No';
+    if (typeof value === 'boolean') {
+      return value ? 'Yes' : 'No';
+    }
 
     return USER_STATUS_LABELS[value];
   });

@@ -50,29 +50,21 @@ export class UsersPage {
   readonly displayedColumns = ['display_name', 'email', 'status', 'actions'];
   readonly pageSize = USERS_PAGE_SIZE;
 
-  readonly query = computed(() => this.params().get('q') ?? '');
   readonly offset = computed(() => this.requestParams().offset);
 
   readonly state = this.store.entityState;
   readonly actionError = this.store.actionError;
 
-  readonly visibleUsers = computed(() => {
-    const query = this.query().trim().toLowerCase();
-    if (!query) return this.users();
-
-    return this.users().filter(user =>
-      [user.display_name, user.email, user.status].some(value => value?.toLowerCase().includes(query)),
-    );
-  });
-
   constructor() {
     toObservable(this.requestParams)
       .pipe(
         distinctUntilChanged(
-          (previous, current) => previous.offset === current.offset && previous.status === current.status,
+          (previous, current) =>
+            previous.offset === current.offset && previous.status === current.status && previous.q === current.q,
         ),
         switchMap(params => {
           this.store.reset();
+
           return this.store.load(params);
         }),
         takeUntilDestroyed(),

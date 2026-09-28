@@ -53,6 +53,7 @@ let correlationSequence = 0;
 
 function createCorrelationId(type: EntityDataOperationType): string {
   correlationSequence += 1;
+
   return `${type}-${Date.now()}-${correlationSequence}`;
 }
 
@@ -77,7 +78,9 @@ function dispatchEntityEvent<TPayload>(
   eventCreator: EventCreator<string, TPayload> | undefined,
   payload: TPayload,
 ): void {
-  if (eventCreator) dispatcher.dispatch(eventCreator(payload));
+  if (eventCreator) {
+    dispatcher.dispatch(eventCreator(payload));
+  }
 }
 
 function processValue<TValue>(processor: ((value: TValue) => TValue) | undefined, value: TValue): TValue {
@@ -128,7 +131,10 @@ export const withEntityData = <TEntity extends { id: EntityId }, TCreate, TLoadP
         store.entityOperations()[id]?.status === 'pending';
 
       const finishLoad = (correlationId: string, error: string | null): void => {
-        if (!isActiveLoad(correlationId)) return;
+        if (!isActiveLoad(correlationId)) {
+          return;
+        }
+
         patchState(store, state => ({
           loadOperations: {
             ...state.loadOperations,
@@ -138,7 +144,10 @@ export const withEntityData = <TEntity extends { id: EntityId }, TCreate, TLoadP
       };
 
       const finishCreate = (correlationId: string, error: string | null): void => {
-        if (store.createOperations()[correlationId]?.status !== 'pending') return;
+        if (store.createOperations()[correlationId]?.status !== 'pending') {
+          return;
+        }
+
         patchState(store, state => ({
           createOperations: {
             ...state.createOperations,
@@ -148,7 +157,10 @@ export const withEntityData = <TEntity extends { id: EntityId }, TCreate, TLoadP
       };
 
       const finishEntityOperation = (id: EntityId, correlationId: string, error: string | null): void => {
-        if (!isActiveEntityOperation(id, correlationId)) return;
+        if (!isActiveEntityOperation(id, correlationId)) {
+          return;
+        }
+
         patchState(store, state => ({
           entityOperations: {
             ...state.entityOperations,
@@ -158,19 +170,27 @@ export const withEntityData = <TEntity extends { id: EntityId }, TCreate, TLoadP
       };
 
       const cancelCreate = (correlationId: string): void => {
-        if (store.createOperations()[correlationId]?.status !== 'pending') return;
+        if (store.createOperations()[correlationId]?.status !== 'pending') {
+          return;
+        }
+
         patchState(store, state => {
           const createOperations = { ...state.createOperations };
           delete createOperations[correlationId];
+
           return { createOperations };
         });
       };
 
       const cancelEntityOperation = (id: EntityId, correlationId: string): void => {
-        if (!isActiveEntityOperation(id, correlationId)) return;
+        if (!isActiveEntityOperation(id, correlationId)) {
+          return;
+        }
+
         patchState(store, state => {
           const entityOperations = { ...state.entityOperations };
           delete entityOperations[id];
+
           return { entityOperations };
         });
       };
@@ -202,7 +222,10 @@ export const withEntityData = <TEntity extends { id: EntityId }, TCreate, TLoadP
             const merge = options.merge ?? config.load?.merge ?? 'replace';
 
             return defer(() => {
-              if (concurrency === 'exhaust' && pendingOperations(store.loadOperations()).length) return EMPTY;
+              if (concurrency === 'exhaust' && pendingOperations(store.loadOperations()).length) {
+                return EMPTY;
+              }
+
               const processedParams = processValue(config.processors?.beforeLoad, params);
               patchState(store, state => ({
                 error: null,
@@ -218,19 +241,26 @@ export const withEntityData = <TEntity extends { id: EntityId }, TCreate, TLoadP
                         [correlationId]: createOperation('load', correlationId),
                       },
               }));
+
               return adapter.load(processedParams);
             }).pipe(
               filter(() => isActiveLoad(correlationId)),
               map(page => ({ ...page, entities: processValue(config.processors?.afterLoad, page.entities) })),
               tapResponse({
                 next: page => {
-                  if (!isActiveLoad(correlationId)) return;
+                  if (!isActiveLoad(correlationId)) {
+                    return;
+                  }
+
                   mergePage(page, merge);
                   finishLoad(correlationId, null);
                   dispatchEntityEvent(dispatcher, config.events?.loaded, createSuccess(page, correlationId));
                 },
                 error: error => {
-                  if (!isActiveLoad(correlationId)) return;
+                  if (!isActiveLoad(correlationId)) {
+                    return;
+                  }
+
                   patchState(store, { error: messageFor(error, config.errors.load) });
                   finishLoad(correlationId, messageFor(error, config.errors.load));
                   dispatchEntityEvent(
@@ -240,10 +270,14 @@ export const withEntityData = <TEntity extends { id: EntityId }, TCreate, TLoadP
                   );
                 },
                 finalize: () => {
-                  if (!isActiveLoad(correlationId)) return;
+                  if (!isActiveLoad(correlationId)) {
+                    return;
+                  }
+
                   patchState(store, state => {
                     const loadOperations = { ...state.loadOperations };
                     delete loadOperations[correlationId];
+
                     return { loadOperations };
                   });
                 },
@@ -257,6 +291,7 @@ export const withEntityData = <TEntity extends { id: EntityId }, TCreate, TLoadP
             const correlationId = options.correlationId ?? createCorrelationId('getById');
             const processedId = processValue(config.processors?.beforeGetById, id);
             const message = config.errors.getById ?? config.errors.load;
+
             return defer(() => {
               patchState(store, state => ({
                 entityOperations: {
@@ -264,6 +299,7 @@ export const withEntityData = <TEntity extends { id: EntityId }, TCreate, TLoadP
                   [processedId]: createOperation('getById', correlationId),
                 },
               }));
+
               return adapter.getById
                 ? adapter.getById(processedId)
                 : throwError(() => new Error('getById adapter is not configured'));
@@ -272,13 +308,19 @@ export const withEntityData = <TEntity extends { id: EntityId }, TCreate, TLoadP
               processResponse(config.processors?.afterGetById),
               tapResponse({
                 next: entity => {
-                  if (!isActiveEntityOperation(processedId, correlationId)) return;
+                  if (!isActiveEntityOperation(processedId, correlationId)) {
+                    return;
+                  }
+
                   patchState(store, setEntity(entity));
                   finishEntityOperation(processedId, correlationId, null);
                   dispatchEntityEvent(dispatcher, config.events?.retrieved, createSuccess(entity, correlationId));
                 },
                 error: error => {
-                  if (!isActiveEntityOperation(processedId, correlationId)) return;
+                  if (!isActiveEntityOperation(processedId, correlationId)) {
+                    return;
+                  }
+
                   patchState(store, { actionError: messageFor(error, message) });
                   finishEntityOperation(processedId, correlationId, messageFor(error, message));
                   dispatchEntityEvent(
@@ -296,6 +338,7 @@ export const withEntityData = <TEntity extends { id: EntityId }, TCreate, TLoadP
         create(payload: TCreate, options: EntityDataRequestOptions = {}): Observable<TEntity> {
           return defer(() => {
             const correlationId = options.correlationId ?? createCorrelationId('create');
+
             return defer(() => {
               const processedPayload = processValue(config.processors?.beforeCreate, payload);
               patchState(store, state => ({
@@ -307,6 +350,7 @@ export const withEntityData = <TEntity extends { id: EntityId }, TCreate, TLoadP
                   [correlationId]: createOperation('create', correlationId),
                 },
               }));
+
               return adapter.create
                 ? adapter.create(processedPayload)
                 : throwError(() => new Error('create adapter is not configured'));
@@ -315,13 +359,19 @@ export const withEntityData = <TEntity extends { id: EntityId }, TCreate, TLoadP
               processResponse(config.processors?.afterCreate),
               tapResponse({
                 next: entity => {
-                  if (store.createOperations()[correlationId]?.status !== 'pending') return;
+                  if (store.createOperations()[correlationId]?.status !== 'pending') {
+                    return;
+                  }
+
                   patchState(store, prependEntity(entity));
                   finishCreate(correlationId, null);
                   dispatchEntityEvent(dispatcher, config.events?.created, createSuccess(entity, correlationId));
                 },
                 error: error => {
-                  if (store.createOperations()[correlationId]?.status !== 'pending') return;
+                  if (store.createOperations()[correlationId]?.status !== 'pending') {
+                    return;
+                  }
+
                   patchState(store, { actionError: messageFor(error, config.errors.create) });
                   finishCreate(correlationId, messageFor(error, config.errors.create));
                   dispatchEntityEvent(
@@ -340,11 +390,13 @@ export const withEntityData = <TEntity extends { id: EntityId }, TCreate, TLoadP
           return defer(() => {
             const correlationId = options.correlationId ?? createCorrelationId('update');
             const { id, payload } = processValue(config.processors?.beforeUpdate, update);
+
             return defer(() => {
               patchState(store, state => ({
                 actionError: null,
                 entityOperations: { ...state.entityOperations, [id]: createOperation('update', correlationId) },
               }));
+
               return adapter.update
                 ? adapter.update(id, payload)
                 : throwError(() => new Error('update adapter is not configured'));
@@ -353,13 +405,19 @@ export const withEntityData = <TEntity extends { id: EntityId }, TCreate, TLoadP
               processResponse(config.processors?.afterUpdate),
               tapResponse({
                 next: entity => {
-                  if (!isActiveEntityOperation(id, correlationId)) return;
+                  if (!isActiveEntityOperation(id, correlationId)) {
+                    return;
+                  }
+
                   patchState(store, setEntity(entity));
                   finishEntityOperation(id, correlationId, null);
                   dispatchEntityEvent(dispatcher, config.events?.updated, createSuccess(entity, correlationId));
                 },
                 error: error => {
-                  if (!isActiveEntityOperation(id, correlationId)) return;
+                  if (!isActiveEntityOperation(id, correlationId)) {
+                    return;
+                  }
+
                   patchState(store, { actionError: messageFor(error, config.errors.update) });
                   finishEntityOperation(id, correlationId, messageFor(error, config.errors.update));
                   dispatchEntityEvent(
@@ -378,6 +436,7 @@ export const withEntityData = <TEntity extends { id: EntityId }, TCreate, TLoadP
           return defer(() => {
             const correlationId = options.correlationId ?? createCorrelationId('remove');
             const processedId = processValue(config.processors?.beforeRemove, id);
+
             return defer(() => {
               patchState(store, state => ({
                 actionError: null,
@@ -386,6 +445,7 @@ export const withEntityData = <TEntity extends { id: EntityId }, TCreate, TLoadP
                   [processedId]: createOperation('remove', correlationId),
                 },
               }));
+
               return adapter.remove
                 ? adapter.remove(processedId).pipe(map(() => processedId))
                 : throwError(() => new Error('remove adapter is not configured'));
@@ -393,13 +453,19 @@ export const withEntityData = <TEntity extends { id: EntityId }, TCreate, TLoadP
               filter(() => isActiveEntityOperation(processedId, correlationId)),
               tapResponse({
                 next: removedId => {
-                  if (!isActiveEntityOperation(removedId, correlationId)) return;
+                  if (!isActiveEntityOperation(removedId, correlationId)) {
+                    return;
+                  }
+
                   patchState(store, removeEntity(removedId));
                   finishEntityOperation(removedId, correlationId, null);
                   dispatchEntityEvent(dispatcher, config.events?.removed, createSuccess(removedId, correlationId));
                 },
                 error: error => {
-                  if (!isActiveEntityOperation(processedId, correlationId)) return;
+                  if (!isActiveEntityOperation(processedId, correlationId)) {
+                    return;
+                  }
+
                   patchState(store, { actionError: messageFor(error, config.errors.remove) });
                   finishEntityOperation(processedId, correlationId, messageFor(error, config.errors.remove));
                   dispatchEntityEvent(

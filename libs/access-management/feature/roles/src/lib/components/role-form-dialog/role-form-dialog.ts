@@ -42,8 +42,15 @@ export class RoleFormDialog {
   readonly actionError = this.store.actionError;
   readonly saving = this.store.saving;
 
+  get canSave(): boolean {
+    return this.form.valid && this.form.dirty && !this.saving();
+  }
+
   save(): void {
-    if (this.form.invalid) return;
+    if (!this.canSave) {
+      return;
+    }
+
     const model = this.form.getRawValue();
     const payload = { name: model.name.trim(), description: model.description.trim() || null };
     const request = this.record

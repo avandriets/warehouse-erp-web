@@ -5,7 +5,8 @@
     <button mat-stroked-button
             type="button"
             [disabled]="busy()"
-            (click)="closed.emit()">Close</button>
+            (click)="closed.emit()">Close
+    </button>
   </mat-card-header>
   <mat-card-content class="pt-5!">
     <app-ui-state-container [state]="state()"
@@ -38,7 +39,8 @@
             </mat-form-field>
             <button mat-flat-button
                     type="submit"
-                    [disabled]="linkForm.invalid || busy()">Link account</button>
+                    [disabled]="!canLink">Link account
+            </button>
           </form>
         }
       </section>
@@ -54,7 +56,8 @@
               <button mat-button
                       type="button"
                       [disabled]="busy()"
-                      (click)="revoke(assignment.id)">Revoke</button>
+                      (click)="revoke(assignment.id)">Revoke
+              </button>
             </li>
           } @empty {
             <li class="py-4 text-sm text-stone-600">No roles assigned yet.</li>
@@ -108,7 +111,8 @@
         </div>
         <button mat-flat-button
                 type="submit"
-                [disabled]="assignmentForm.invalid || busy()">Assign role</button>
+                [disabled]="!canAssign">Assign role
+        </button>
       </form>
     </ng-template>
   </mat-card-content>

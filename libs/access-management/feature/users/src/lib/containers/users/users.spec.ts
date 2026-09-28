@@ -43,6 +43,7 @@ describe('users page', () => {
   async function changeQuery(value: string): Promise<void> {
     search().control.setValue(value);
     await vi.waitFor(() => expect(TestBed.inject(Router).url).toContain(`q=${value}`));
+    await harness.fixture.whenStable();
   }
 
   beforeEach(() => {
@@ -67,6 +68,7 @@ describe('users page', () => {
     const component = await harness.navigateByUrl(url, UsersPage);
     http.expectOne(request).flush([]);
     await harness.fixture.whenStable();
+
     return component;
   }
 
@@ -74,6 +76,7 @@ describe('users page', () => {
     const component = await create();
     component.open();
     editor().form.setValue({ email: 'new@example.com', display_name: ' New User ' });
+    editor().form.markAsDirty();
     editor().save();
     const loader = TestbedHarnessEnvironment.documentRootLoader(harness.fixture);
     const save = await loader.getHarness(MatButtonHarness.with({ text: 'Saving…' }));
@@ -95,6 +98,7 @@ describe('users page', () => {
     const component = await create();
     component.open();
     editor().form.setValue({ email: 'duplicate@example.com', display_name: '' });
+    editor().form.markAsDirty();
     editor().save();
     http
       .expectOne('/api/identity/users')
@@ -110,24 +114,24 @@ describe('users page', () => {
     http.expectOne('/api/identity/users?limit=25&offset=0&status=SUSPENDED').flush([]);
     expect(component.offset()).toBe(0);
   });
-  it('restores URL filters, pagination and local search without storing them in the store', async () => {
+  it('restores server search from the URL and resets pagination on a new search', async () => {
     const component = await create(
       '/users?status=ACTIVE&offset=25&q=alex',
-      '/api/identity/users?limit=25&offset=25&status=ACTIVE',
+      '/api/identity/users?limit=25&offset=25&status=ACTIVE&q=alex',
     );
     expect(filterControl().control.value).toBe('ACTIVE');
     expect(component.offset()).toBe(25);
-    expect(component.query()).toBe('alex');
+    expect(search().control.value).toBe('alex');
     await changeQuery('sam');
-    expect(TestBed.inject(Router).url).toContain('q=sam');
-    http.expectNone(request => request.url === '/api/identity/users');
+    http.expectOne('/api/identity/users?limit=25&offset=0&status=ACTIVE&q=sam').flush([]);
+    expect(component.offset()).toBe(0);
     await component.page(1);
     await harness.fixture.whenStable();
-    http.expectOne('/api/identity/users?limit=25&offset=50&status=ACTIVE').flush([]);
+    http.expectOne('/api/identity/users?limit=25&offset=25&status=ACTIVE&q=sam').flush([]);
     TestBed.inject(Location).back();
-    await vi.waitFor(() => http.expectOne('/api/identity/users?limit=25&offset=25&status=ACTIVE').flush([]));
-    expect(component.offset()).toBe(25);
-    expect(component.query()).toBe('sam');
+    await vi.waitFor(() => http.expectOne('/api/identity/users?limit=25&offset=0&status=ACTIVE&q=sam').flush([]));
+    expect(component.offset()).toBe(0);
+    expect(search().control.value).toBe('sam');
   });
 
   it('ignores invalid URL values and reloads the current URL after saving', async () => {
@@ -139,6 +143,7 @@ describe('users page', () => {
     http.expectOne('/api/identity/users?limit=25&offset=25&status=ACTIVE').flush([]);
     component.open();
     editor().form.setValue({ email: 'new@example.com', display_name: 'New' });
+    editor().form.markAsDirty();
     editor().save();
     http.expectOne('/api/identity/users').flush({ id: 'new-user' });
     await vi.waitFor(() => http.expectOne('/api/identity/users?limit=25&offset=25&status=ACTIVE').flush([]));
@@ -209,7 +214,7 @@ describe('users page', () => {
     expect(component.users()[0].status).toBe('ACTIVE');
     expect(component.error()).toBe('Cannot suspend this user');
     expect(component.saving()).toBe(false);
-    http.expectNone(request => request.method === 'GET');
+    http.expectNone(pending => pending.method === 'GET');
   });
   it('does not suspend a user when confirmation is cancelled', async () => {
     const component = await create();
@@ -258,24 +263,25 @@ describe('users page', () => {
   });
 
   it('reapplies a filter after external URL navigation and cancels stale search drafts', async () => {
-    const component = await create();
+    await create();
     await changeFilter('ACTIVE');
     http.expectOne('/api/identity/users?limit=25&offset=0&status=ACTIVE').flush([]);
     await TestBed.inject(Router).navigateByUrl('/users?status=SUSPENDED&q=restored');
     await harness.fixture.whenStable();
-    http.expectOne('/api/identity/users?limit=25&offset=0&status=SUSPENDED').flush([]);
+    http.expectOne('/api/identity/users?limit=25&offset=0&status=SUSPENDED&q=restored').flush([]);
     expect(filterControl().control.value).toBe('SUSPENDED');
     expect(search().control.value).toBe('restored');
     await changeFilter('ACTIVE');
-    http.expectOne('/api/identity/users?limit=25&offset=0&status=ACTIVE').flush([]);
+    http.expectOne('/api/identity/users?limit=25&offset=0&status=ACTIVE&q=restored').flush([]);
     search().control.setValue('stale draft');
     await TestBed.inject(Router).navigateByUrl('/users?status=ACTIVE&q=from-url');
     await harness.fixture.whenStable();
+    http.expectOne('/api/identity/users?limit=25&offset=0&status=ACTIVE&q=from-url').flush([]);
     await new Promise(resolve => setTimeout(resolve, 350));
     expect(search().control.value).toBe('from-url');
-    expect(component.query()).toBe('from-url');
+    expect(search().control.value).toBe('from-url');
     expect(TestBed.inject(Router).url).toContain('q=from-url');
-    http.expectNone(request => request.method === 'GET');
+    http.expectNone(pending => pending.method === 'GET');
   });
 
   it('opens user access in a dialog', async () => {
@@ -347,24 +353,20 @@ describe('users page', () => {
     await vi.waitFor(() => expect(TestBed.inject(MatDialog).openDialogs).toHaveLength(0));
   });
 
-  it('memoizes the visible list until data or search changes', async () => {
+  it('cancels stale searches, displays server results, and clears search', async () => {
     const component = await create();
-    const rows = [
-      {
-        id: 'u1',
-        email: 'alex@example.com',
-        display_name: 'Alex',
-        status: 'ACTIVE',
-        auth0_subject: null,
-        created_at: '',
-        updated_at: '',
-      },
-    ] satisfies UserRecord[];
-    component.store.replaceAll(rows);
-    await changeQuery('alex');
-    const first = component.visibleUsers();
-    expect(component.visibleUsers()).toBe(first);
-    await changeQuery('missing');
-    expect(component.visibleUsers()).toEqual([]);
+    await changeQuery('first');
+    const previous = http.expectOne('/api/identity/users?limit=25&offset=0&q=first');
+    await changeQuery('second');
+    expect(previous.cancelled).toBe(true);
+    http
+      .expectOne('/api/identity/users?limit=25&offset=0&q=second')
+      .flush([{ id: 'server-match', display_name: 'Server result', email: null, status: 'ACTIVE' }]);
+    await harness.fixture.whenStable();
+    expect(component.users().map(user => user.id)).toEqual(['server-match']);
+    expect(harness.routeNativeElement!.textContent).toContain('Server result');
+    search().control.setValue('   ');
+    await vi.waitFor(() => http.expectOne('/api/identity/users?limit=25&offset=0').flush([]));
+    expect(TestBed.inject(Router).url).toBe('/users');
   });
 });

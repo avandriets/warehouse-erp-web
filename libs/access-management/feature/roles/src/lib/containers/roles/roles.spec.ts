@@ -50,6 +50,7 @@ describe('roles page', () => {
   async function changeQuery(value: string): Promise<void> {
     search().control.setValue(value);
     await vi.waitFor(() => expect(TestBed.inject(Router).url).toContain(`q=${value}`));
+    await harness.fixture.whenStable();
   }
 
   beforeEach(() => {
@@ -75,6 +76,7 @@ describe('roles page', () => {
     editor().form.controls.code.setValue('CHANGED');
     editor().form.controls.description.setValue('');
     editor().form.controls.active.setValue(false);
+    editor().form.markAsDirty();
     editor().save();
     const request = http.expectOne('/api/identity/roles/r1');
     expect(request.request.method).toBe('PATCH');
@@ -84,26 +86,27 @@ describe('roles page', () => {
   });
   it('restores boolean filters from the URL and removes them for all roles', async () => {
     harness = await RouterTestingHarness.create();
-    const component = await harness.navigateByUrl('/roles?active=false&q=manager', RolesPage);
-    http.expectOne('/api/identity/roles?active=false').flush([role]);
+    await harness.navigateByUrl('/roles?active=false&q=manager', RolesPage);
+    http.expectOne('/api/identity/roles?active=false&q=manager').flush([role]);
     expect(filterControl().control.value).toBe('false');
-    expect(component.query()).toBe('manager');
+    expect(search().control.value).toBe('manager');
     await changeFilter('true');
-    http.expectOne('/api/identity/roles?active=true').flush([]);
+    http.expectOne('/api/identity/roles?active=true&q=manager').flush([]);
     expect(TestBed.inject(Router).url).toContain('active=true');
     await changeFilter('');
-    http.expectOne('/api/identity/roles').flush([]);
+    http.expectOne('/api/identity/roles?q=manager').flush([]);
     expect(TestBed.inject(Router).url).toBe('/roles?q=manager');
     await changeQuery('admin');
-    http.expectNone(request => request.url === '/api/identity/roles');
+    http.expectOne('/api/identity/roles?q=admin').flush([]);
     expect(TestBed.inject(Router).url).toBe('/roles?q=admin');
   });
   it('creates a role once and refreshes the filtered list after saving', async () => {
     harness = await RouterTestingHarness.create();
-    const component = await harness.navigateByUrl('/roles?active=true', RolesPage);
-    http.expectOne('/api/identity/roles?active=true').flush([]);
+    const component = await harness.navigateByUrl('/roles?active=true&q=manager', RolesPage);
+    http.expectOne('/api/identity/roles?active=true&q=manager').flush([]);
     component.open();
     editor().form.setValue({ code: 'MANAGER', name: ' Manager ', description: ' ', active: true });
+    editor().form.markAsDirty();
     editor().save();
     const loader = TestbedHarnessEnvironment.documentRootLoader(harness.fixture);
     const save = await loader.getHarness(MatButtonHarness.with({ text: 'Saving…' }));
@@ -114,7 +117,7 @@ describe('roles page', () => {
     expect(request.request.body).toEqual({ code: 'MANAGER', name: 'Manager', description: null });
     request.flush(role);
     await vi.waitFor(() => {
-      const refresh = http.expectOne('/api/identity/roles?active=true');
+      const refresh = http.expectOne('/api/identity/roles?active=true&q=manager');
       expect(component.loading()).toBe(true);
       refresh.flush([role]);
     });
@@ -128,6 +131,7 @@ describe('roles page', () => {
     http.expectOne('/api/identity/roles').flush([]);
     component.open();
     editor().form.setValue({ code: 'MANAGER', name: 'Manager', description: 'Draft', active: true });
+    editor().form.markAsDirty();
     editor().save();
     http
       .expectOne('/api/identity/roles')
@@ -146,8 +150,8 @@ describe('roles page', () => {
   });
   it('deactivates a role only after confirmation and refreshes the URL selection', async () => {
     harness = await RouterTestingHarness.create();
-    const component = await harness.navigateByUrl('/roles?active=true', RolesPage);
-    http.expectOne('/api/identity/roles?active=true').flush([role]);
+    const component = await harness.navigateByUrl('/roles?active=true&q=manager', RolesPage);
+    http.expectOne('/api/identity/roles?active=true&q=manager').flush([role]);
     component.deactivate(role);
     http.expectNone('/api/identity/roles/r1');
     TestBed.inject(MatDialog).openDialogs[0].close(false);
@@ -159,7 +163,23 @@ describe('roles page', () => {
     const request = http.expectOne('/api/identity/roles/r1');
     expect(request.request.body).toEqual({ name: role.name, description: role.description, active: false });
     request.flush({ ...role, active: false });
-    http.expectOne('/api/identity/roles?active=true').flush([]);
+    http.expectOne('/api/identity/roles?active=true&q=manager').flush([]);
     expect(component.saving()).toBe(false);
+  });
+  it('cancels old searches and reloads the current query after an error', async () => {
+    harness = await RouterTestingHarness.create();
+    const component = await harness.navigateByUrl('/roles', RolesPage);
+    http.expectOne('/api/identity/roles').flush([]);
+    await changeQuery('old');
+    const old = http.expectOne('/api/identity/roles?q=old');
+    await changeQuery('manager');
+    expect(old.cancelled).toBe(true);
+    http.expectOne('/api/identity/roles?q=manager').flush({}, { status: 500, statusText: 'Error' });
+    component.load();
+    http.expectOne('/api/identity/roles?q=manager').flush([role]);
+    expect(component.roles()).toEqual([role]);
+    search().control.setValue('');
+    await vi.waitFor(() => http.expectOne('/api/identity/roles').flush([]));
+    expect(TestBed.inject(Router).url).toBe('/roles');
   });
 });

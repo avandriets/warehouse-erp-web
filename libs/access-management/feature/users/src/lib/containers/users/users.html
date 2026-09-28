@@ -12,8 +12,10 @@
             (click)="open()">Add user
     </button>
     <app-url-search class="block w-48"
-                    label="Search this page"
-                    placeholder="Enter a name or email" />
+                    label="Search users"
+                    placeholder="Enter a name or email"
+                    [maxLength]="255"
+                    [resetParams]="{ offset: null }" />
     <am-users-filter class="block w-28" />
     <button mat-icon-button
             type="button"
@@ -37,7 +39,7 @@
         <div class="overflow-x-auto border-t border-stone-200">
           <table mat-table
                  class="w-full"
-                 [dataSource]="visibleUsers()">
+                 [dataSource]="users()">
             <ng-container matColumnDef="display_name">
               <th *matHeaderCellDef
                   mat-header-cell>Name

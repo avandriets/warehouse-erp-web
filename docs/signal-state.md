@@ -23,13 +23,18 @@ Sources:
 
 ## Public APIs and integration
 
-`@warehouse/shared` exports `withRequestData`, `withEntityData`, `UIStateContainerComponent`, their configuration/state types, and the small `withMutation` companion for writes on composite request stores. Implementations live in focused `state`, `types`, and `components` collections inside the existing buildable library.
+`@warehouse/shared` exports `withCallState`, `withRequestData`, `withEntityData`, `UIStateContainerComponent`, and their configuration/state types. `withRequestData` supports an optional typed save adapter for replacing a resource. Implementations live in focused `state`, `types`, and `components` collections inside the existing buildable library.
 
-`@warehouse/access-management/data-access` exports component-scoped `UsersStore`, `RolesStore`, `UserAccessStore`, and `RolePermissionsStore`. Components own draft form fields and presentation state. Stores own remote data, request status and writes; the stateless API service owns transport and preserves backend endpoints and payloads.
+`@warehouse/access-management/data-access` exports component-scoped `UsersStore`, `RolesStore`, and `AccessStore`, plus the local `AccessApiService`. Components own draft form fields and presentation state. Stores own remote data, request status and writes; the stateless API service handles users/roles transport, while `AccessApiService` owns permission and assignment HTTP operations. Both preserve backend endpoints and payloads.
 
-Users and roles use `withEntityData`. The user-access panel and permission editor use `withRequestData` with a combined response. A failed prerequisite does not render a partially initialized editor. Permission selections remain editable drafts and survive failed writes.
+Users and roles use `withEntityData`. Access management uses one domain-specific `AccessStore`
+in the package's local data-access entry point. It owns three resource slices: the permission
+catalog, assigned role permissions, and user role assignments. Each slice keeps its data and context ID; three named `withCallState` features own independent
+read/write status and errors. Status flags are not duplicated in the resource data. Panels compose these statuses through the existing container
+status-map input. Empty collections remain valid editor data, and permission drafts survive
+failed writes. Each dialog provides its own store and API service; no global access cache is used.
 
-The API service returns the original cold Observables from HttpClient. Store adapters pass them through directly, with no Promise conversion or transport `defer` wrappers. Components observe signals. Command handlers return void and subscribe to Observable workflows: writes chain into reloads with concatMap. UI busy state is derived from store loading/saving signals rather than a separately maintained flag. Subscriptions end on component destruction; detail panels also cancel ongoing workflows when the selected entity changes. Routed loading uses switchMap.
+The API service returns the original cold Observables from HttpClient. Store adapters pass them through directly, with no Promise conversion or transport `defer` wrappers. Components observe signals. Command handlers return void and subscribe to Observable workflows: resource writes update state from API responses; routed list screens reload their current query when needed. UI busy state is derived from store loading/saving signals rather than a separately maintained flag. Subscriptions end on component destruction; the role permission panel also cancels ongoing workflows when its role changes. User access is scoped to one user for the dialog lifetime. Store operations receive explicit user/role IDs; changing a resource context cancels its old operations and clears its data. Routed loading uses switchMap.
 
 ```ts
 const CatalogStore = signalStore(
@@ -56,10 +61,10 @@ The ERP API follows this Observable-based pattern. Declare the store in the cons
 
 ```html
 <app-ui-state-container
-  [state]="store.entityState()"
+  [state]="state()"
   [resolved]="content"
-  [actionError]="store.actionError()"
-  (actionErrorDismissed)="store.dismissActionError()"
+  [actionError]="actionError()"
+  (actionErrorDismissed)="dismissActionError()"
   (retry)="load()"
 />
 <ng-template #content>
@@ -69,24 +74,61 @@ The ERP API follows this Observable-based pattern. Declare the store in the cons
 
 Use `requestState()` for request stores. Pass an array or named map to aggregate prerequisites. All statuses must resolve before content appears. Use one container per independent region when partial rendering is desired.
 
+## Reusable call state
+
+`withCallState({ collection: 'permissions' })` is a named SignalStore feature exported by
+`@warehouse/shared`. Multiple collections can be composed in one store:
+
+```ts
+signalStore(
+  withState(initialState),
+  withCallState({ collection: 'permissions' }),
+  withCallState({ collection: 'rolePermissions' }),
+  withCallState({ collection: 'roleAssignments' }),
+);
+```
+
+Each instance exposes `<collection>Loading`, `Loaded`, `Saving`, `Error`, `ActionError`, and
+`State` signals. The `State` signal matches the existing `UIStateContainer` contract; it does
+not infer empty state because this feature does not own data. All values derive from one named
+`<collection>CallState` state slice.
+
+The lifecycle methods are `<collection>StartCall(operation)`, `CallSucceeded(operation)`,
+`CallFailed(operation, message)`, and `FinishCall(operation)`, where operation is `load` or `save`.
+Call `FinishCall` in finalization, including cancellation: success/error records the outcome,
+while finalization clears the busy flag. A successful load marks data as loaded. A successful
+incremental write does not claim that the entire collection was loaded; `SetLoaded()` is available
+when a complete resource is accepted, such as the replacement of assigned permissions.
+
+`DismissActionError()` clears only the write error. `ResetCallState()` restores all statuses for
+that collection without touching domain data or other collections. Refresh failures preserve
+loaded status, and starting a retry clears only the matching error.
+
+The feature owns no HTTP calls, subscriptions, data, or concurrency policy. `AccessStore` retains
+request cancellation, context changes, write concurrency, and updates from server responses.
+It cancels operations before resetting their call state. `UsersStore`, `RolesStore`, and the
+existing generic data features retain their current implementations.
+
 ## Adaptation details and boundaries
 
 - `resolved` means data is available, even if a refresh fails. The container retains that content and displays the refresh error with Retry. Writes use `actionError`, so rejected writes do not replace the editor.
 - Initial loading uses a spinner; refresh uses a progress bar. Empty results have their own view. Optional templates keep feature-specific presentation out of the shared component.
 - `latest` accepts only the active result. Stale results no longer reach command subscribers. `exhaust` skips a load while another is pending; `parallel` tracks separate operations. Explicit correlation IDs must uniquely identify operations.
 - Correlation IDs are allocated per subscription. Unsubscription and injector destruction clear pending operations. Unsubscribing now cancels the underlying HTTP request. Routed query changes cancel the previous read through switchMap; mutation reset and injector destruction unsubscribe pending mutations. Read features still use logical latest-result protection when consumers start independent subscriptions. Cancelling a write request does not guarantee a server-side rollback.
-- Switching a filter/page resets the previous collection. Refreshing the same query retains its data. Selection changes invalidate composite reads and writes, preventing an old response or completion callback from changing the new panel.
+- Switching a filter/page resets the previous collection. Refreshing the same query retains its data. Role selection changes reset assigned permissions and cancel pending workflows, preventing old responses from changing the new panel.
 - API error details are mapped with `errorMessage`, while the reference fallback messages remain available.
 - Auth0 linking emits the updated user and updates the parent collection immutably; it no longer mutates the input object.
 - Entity writes are pessimistic: the server response updates the collection. The routed screens then reload using the current URL parameters to honor pagination and filters. ERP deletion/get-by-id adapters are not enabled unless that screen needs them.
-- `withMutation` exposes one generic `mutate(action)` method for composite panels. It accepts an Observable factory and returns a cold Observable. It tracks write status/errors, rejects duplicate subscriptions, and unsubscribes on reset/destruction. It emits `{ data }` on success (including void responses) and completes without a value on failure, cancellation or a skipped duplicate. `defer` inside generic features allocates operation state per subscription; it is not an API transport wrapper. It neither stores the selected ID nor reloads data. Containers supply explicit API actions, reload via `load(id)`, and guard form updates against selection changes. There are no domain `loadPermissions`, `savePermissions`, `loadAccess`, `link`, `assign`, or `revoke` store wrappers.
+- `withRequestData.save(payload)` calls the configured adapter and replaces data with the server response. It tracks saving and action errors, skips concurrent writes, and cancels pending reads before saving and when accepting the saved response. Reset, unsubscription, and destruction cancel pending saves. Failed saves preserve existing data and form drafts. Internal `defer` allocates operation state per subscription.
+- `AccessStore` exposes the domain operations `listPermissions`, `listRolePermissions`, `replaceRolePermissions`, `listRoleAssignments`, `assignRole`, and `revokeRoleAssignment`. The API service owns HTTP calls; the store accepts server responses and updates the affected collection without reloading catalogs. Its internal request lifecycle cancels stale reads, serializes writes per resource, and skips reads while that resource is saving. Reset, unsubscription, context changes, and destruction cancel pending operations. Failed writes preserve data. No generic public mutation callback or CRUD wrappers are used for access operations.
+- `UsersStore.update` continues to handle profile, status, and Auth0 payloads through its existing adapter. Components never call transport directly. Backend HTTP methods and payloads remain unchanged.
 - Auth/session orchestration remains in `@warehouse/auth`; feature stores are not root singletons and are destroyed with their screens.
 
 Validation covers the transferred feature behavior, UI state aggregation and retry, failed writes, late responses, selection changes, unsubscribe/destruction, and existing backend payload contracts using mocked HTTP.
 
 ## List filters and URLs
 
-User and role filters live in separate `UsersFilter` and `RolesFilter` form components and URL query parameters, never in store state. Users support `status`, `offset`, and `q`; roles support `active=true|false` and `q`. Search (`q`) still filters only the loaded page locally. Updating search replaces the current history entry and does not send another HTTP request. Filter and page changes create history entries so browser Back/Forward restores them. Invalid filter and offset values fall back to an unfiltered first page.
+User and role filters live in separate `UsersFilter` and `RolesFilter` form components and URL query parameters, never in store state. Users support `status`, `offset`, and `q`; roles support `active=true|false` and `q`. Search (`q`) is sent to the backend: users match name/email before pagination; roles match name/code. Updating search replaces the current history entry and resets user pagination. The input is limited to the backend maximum of 255 characters. Filter and page changes create history entries so browser Back/Forward restores them. Invalid filter and offset values fall back to an unfiltered first page.
 
 Filter components restore their own controls on navigation. The shared `UrlSearch` writes `q` after a 300 ms debounce; navigation cancels pending drafts. The routed screen normalizes query parameters and calls the original `store.load(params)`. A changed server query resets old collection data and switches the request subscription; Refresh/Retry retains existing data. After a successful write the screen reloads from the current URL, not from stored filters or draft inputs. `loadUsers`, `loadRoles`, `query`, and `activeFilter` are not part of the stores. Forms call the original `create` or `update` method directly; no `saveRole` or `saveUser` wrapper is needed. Forms use their validation state and the store write status; screens use the store loading status during reload. There are no separate writing flags in the screens or detail panels. Successful saves use a snackbar rather than a notification signal on the page.
 
@@ -98,4 +140,4 @@ Access and permission panels open in dialogs as well. `ConfirmDialog` is a reusa
 
 All data-entry controls use Reactive Forms. User access uses separate typed form groups for account linking and role assignment; the scope UUID control is disabled for GLOBAL scope and required otherwise. Role permissions use a FormRecord of boolean controls keyed by permission code, preserving drafts on rejected writes. Request status drives form availability without separate busy flags. Detail dialogs set Material Dialog's disableClose while saving, blocking Escape and backdrop closure, then restore normal closing when the request finishes.
 
-List filtering is computed from the loaded entities and the URL search signal. Shared pure query parsers in the access-management util entry point normalize status, active and pagination consistently for filters and pages. A computed request query drives routed loading; changes to local search alone do not reload the list.
+Tables render server results directly; no additional local text filter is applied. Shared pure query parsers in the access-management util entry point normalize search, status, active and pagination consistently for filters and pages. A computed request query drives routed loading; changes to search reload the list and cancel the previous request through switchMap.

@@ -96,7 +96,6 @@ export default tseslint.config(
       '@typescript-eslint/explicit-function-return-type': ['error', { allowExpressions: true }],
       '@typescript-eslint/no-shadow': 'error',
       camelcase: ['error', { ignoreImports: true, properties: 'never' }],
-      curly: ['error', 'all'],
       'default-case': 'error',
       eqeqeq: ['error', 'smart'],
       'no-console': ['error', { allow: ['warn', 'error'] }],
@@ -138,6 +137,7 @@ export default tseslint.config(
   {
     files: ['**/*.ts'],
     rules: {
+      curly: ['error', 'all'],
       'no-redeclare': 'off',
       '@typescript-eslint/no-redeclare': 'error',
       '@stylistic/lines-between-class-members': [
@@ -162,6 +162,12 @@ export default tseslint.config(
           blankLine: 'always',
           prev: '*',
           next: { selector: 'ExportNamedDeclaration[declaration], ExportDefaultDeclaration[declaration]' },
+        },
+        { blankLine: 'always', prev: '*', next: 'return' },
+        {
+          blankLine: 'always',
+          prev: { selector: 'IfStatement[consequent.type="BlockStatement"]:has(ReturnStatement)' },
+          next: '*',
         },
       ],
       '@stylistic/no-multiple-empty-lines': ['error', { max: 1, maxEOF: 0 }],

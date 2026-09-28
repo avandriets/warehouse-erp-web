@@ -6,7 +6,7 @@ import { patchState, signalStoreFeature, withComputed, withMethods, withState } 
 import type { EventCreator } from '@ngrx/signals/events';
 import { Dispatcher } from '@ngrx/signals/events';
 import type { Observable } from 'rxjs';
-import { defer, EMPTY, filter, map } from 'rxjs';
+import { defer, EMPTY, filter, map, Subject, take, takeUntil, throwError } from 'rxjs';
 
 import type { EntityDataOperationState } from '../types';
 import type { RequestDataConfig, RequestDataOptions, RequestDataState } from '../types';
@@ -16,6 +16,7 @@ let correlationSequence = 0;
 
 function createCorrelationId(): string {
   correlationSequence += 1;
+
   return `request-${Date.now()}-${correlationSequence}`;
 }
 
@@ -36,15 +37,19 @@ function dispatchEvent<TPayload>(
   event: EventCreator<string, TPayload> | undefined,
   payload: TPayload,
 ): void {
-  if (event) dispatcher.dispatch(event(payload));
+  if (event) {
+    dispatcher.dispatch(event(payload));
+  }
 }
 
-export const withRequestData = <TData, TParams = void>(
-  config: RequestDataConfig<TData, TParams>,
-): SignalStoreFeature<EmptyFeatureResult, RequestDataFeatureResult<TData, TParams>> => {
+export const withRequestData = <TData, TParams = void, TSave = never>(
+  config: RequestDataConfig<TData, TParams, TSave>,
+): SignalStoreFeature<EmptyFeatureResult, RequestDataFeatureResult<TData, TParams, TSave>> => {
   const initialState: RequestDataState<TData> = {
     data: null,
     loaded: false,
+    saving: false,
+    actionError: null,
     error: null,
     operations: {},
   };
@@ -71,6 +76,8 @@ export const withRequestData = <TData, TParams = void>(
       const adapter = config.adapter();
       const destroyRef = inject(DestroyRef);
       const dispatcher = inject(Dispatcher);
+      const reset = new Subject<void>();
+      const cancelLoads = new Subject<void>();
       const isActive = (correlationId: string): boolean => store.operations()[correlationId]?.status === 'pending';
 
       return {
@@ -79,29 +86,34 @@ export const withRequestData = <TData, TParams = void>(
 
           return defer(() => {
             const correlationId = options.correlationId ?? createCorrelationId();
-            return defer(() => {
-              if (concurrency === 'exhaust' && pendingOperations(store.operations()).length) return EMPTY;
 
-              const processedParams = config.processors?.beforeLoad?.(params) ?? params;
-              patchState(store, state => ({
-                error: null,
-                operations:
-                  concurrency === 'latest'
-                    ? { [correlationId]: pendingOperation(correlationId) }
-                    : {
-                        ...Object.fromEntries(
-                          Object.entries(state.operations).filter(([, operation]) => operation.status === 'pending'),
-                        ),
-                        [correlationId]: pendingOperation(correlationId),
-                      },
-              }));
-              return adapter.load(processedParams);
-            }).pipe(
+            if (concurrency === 'exhaust' && pendingOperations(store.operations()).length) {
+              return EMPTY;
+            }
+
+            const processedParams = config.processors?.beforeLoad?.(params) ?? params;
+            patchState(store, state => ({
+              error: null,
+              operations:
+                concurrency === 'latest'
+                  ? { [correlationId]: pendingOperation(correlationId) }
+                  : {
+                      ...Object.fromEntries(
+                        Object.entries(state.operations).filter(([, operation]) => operation.status === 'pending'),
+                      ),
+                      [correlationId]: pendingOperation(correlationId),
+                    },
+            }));
+
+            return adapter.load(processedParams).pipe(
               filter(() => isActive(correlationId)),
               map(data => config.processors?.afterLoad?.(data) ?? data),
               tapResponse({
                 next: data => {
-                  if (!isActive(correlationId)) return;
+                  if (!isActive(correlationId)) {
+                    return;
+                  }
+
                   patchState(store, state => ({
                     data,
                     loaded: true,
@@ -114,7 +126,10 @@ export const withRequestData = <TData, TParams = void>(
                   dispatchEvent(dispatcher, config.events?.loaded, { data, correlationId });
                 },
                 error: error => {
-                  if (!isActive(correlationId)) return;
+                  if (!isActive(correlationId)) {
+                    return;
+                  }
+
                   patchState(store, state => ({
                     error: config.errorMessage?.(error) ?? config.error,
                     operations: {
@@ -132,16 +147,58 @@ export const withRequestData = <TData, TParams = void>(
                   });
                 },
                 finalize: () => {
-                  if (!isActive(correlationId)) return;
+                  if (!isActive(correlationId)) {
+                    return;
+                  }
+
                   patchState(store, state => {
                     const operations = { ...state.operations };
                     delete operations[correlationId];
+
                     return { operations };
                   });
                 },
               }),
             );
-          }).pipe(takeUntilDestroyed(destroyRef));
+          }).pipe(takeUntil(reset), takeUntil(cancelLoads), takeUntilDestroyed(destroyRef));
+        },
+
+        save(payload: TSave): Observable<TData> {
+          return defer(() => {
+            if (store.saving() || destroyRef.destroyed) {
+              return EMPTY;
+            }
+
+            const save = adapter.save;
+            if (!save) {
+              return throwError(() => new Error('save adapter is not configured'));
+            }
+
+            const correlationId = createCorrelationId();
+            cancelLoads.next();
+            patchState(store, { saving: true, actionError: null });
+
+            return defer(() => save(payload)).pipe(
+              take(1),
+              tapResponse({
+                next: data => {
+                  cancelLoads.next();
+                  patchState(store, { data, loaded: true, error: null });
+                  dispatchEvent(dispatcher, config.events?.saved, { data, correlationId });
+                },
+                error: error => {
+                  const message = config.errorMessage?.(error) ?? config.saveError ?? 'Could not save data.';
+                  patchState(store, { actionError: message });
+                  dispatchEvent(dispatcher, config.events?.saveFailed, { error, message, correlationId });
+                },
+                finalize: () => patchState(store, { saving: false }),
+              }),
+            );
+          }).pipe(takeUntil(reset), takeUntilDestroyed(destroyRef));
+        },
+
+        dismissActionError(): void {
+          patchState(store, { actionError: null });
         },
 
         setData(data: TData): void {
@@ -157,6 +214,7 @@ export const withRequestData = <TData, TParams = void>(
         },
 
         reset(): void {
+          reset.next();
           patchState(store, initialState);
         },
       };

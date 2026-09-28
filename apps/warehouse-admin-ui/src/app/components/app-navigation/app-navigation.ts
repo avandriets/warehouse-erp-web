@@ -29,6 +29,7 @@ export class AppNavigation {
       } else {
         next.add(id);
       }
+
       return next;
     });
   }

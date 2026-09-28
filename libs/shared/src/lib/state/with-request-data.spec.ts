@@ -130,3 +130,91 @@ describe('withRequestData', () => {
     expect(next).not.toHaveBeenCalled();
   });
 });
+
+describe('withRequestData save adapter', () => {
+  const save = vi.fn<(payload: number[]) => Observable<TestData>>();
+  const read = vi.fn<() => Observable<TestData>>();
+  const WritableStore = signalStore(
+    withRequestData<TestData, void, number[]>({
+      adapter: () => ({ load: read, save }),
+      error: 'Load failed',
+      saveError: 'Save failed',
+    }),
+  );
+  beforeEach(() => {
+    save.mockReset();
+    read.mockReset();
+    TestBed.configureTestingModule({ providers: [WritableStore] });
+  });
+
+  it('is cold, ignores concurrent writes, and replaces data with the server response', () => {
+    const store = TestBed.inject(WritableStore);
+    const response = new Subject<TestData>();
+    save.mockReturnValue(response);
+    const request = store.save([1]);
+    expect(save).not.toHaveBeenCalled();
+    request.subscribe();
+    store.save([2]).subscribe();
+    expect(save).toHaveBeenCalledTimes(1);
+    expect(store.saving()).toBe(true);
+    response.next({ values: [1, 3] });
+    expect(store.data()).toEqual({ values: [1, 3] });
+    expect(store.loaded()).toBe(true);
+    expect(store.saving()).toBe(false);
+    expect(read).not.toHaveBeenCalled();
+  });
+
+  it('preserves data on failure and supports another save', () => {
+    const store = TestBed.inject(WritableStore);
+    store.setData({ values: [0] });
+    const response = new Subject<TestData>();
+    save.mockReturnValueOnce(response).mockReturnValueOnce(of({ values: [2] }));
+    store.save([1]).subscribe();
+    response.error(new Error('Rejected'));
+    expect(store.data()).toEqual({ values: [0] });
+    expect(store.error()).toBeNull();
+    expect(store.actionError()).toBe('Save failed');
+    expect(store.saving()).toBe(false);
+    store.save([2]).subscribe();
+    expect(store.data()).toEqual({ values: [2] });
+    expect(store.actionError()).toBeNull();
+  });
+
+  it('cancels stale reads so they cannot overwrite saved data', () => {
+    const store = TestBed.inject(WritableStore);
+    const old = new Subject<TestData>();
+    const duringSave = new Subject<TestData>();
+    const response = new Subject<TestData>();
+    read.mockReturnValueOnce(old).mockReturnValueOnce(duringSave);
+    save.mockReturnValue(response);
+    const first = store.load().subscribe();
+    store.save([3]).subscribe();
+    expect(first.closed).toBe(true);
+    const second = store.load().subscribe();
+    response.next({ values: [3] });
+    expect(second.closed).toBe(true);
+    old.next({ values: [1] });
+    duringSave.next({ values: [2] });
+    expect(store.data()).toEqual({ values: [3] });
+  });
+
+  it.each(['reset', 'unsubscribe', 'destroy'] as const)('cleans up a pending save on %s', action => {
+    const store = TestBed.inject(WritableStore);
+    const response = new Subject<TestData>();
+    save.mockReturnValue(response);
+    const next = vi.fn();
+    const subscription = store.save([1]).subscribe(next);
+    if (action === 'reset') {
+      store.reset();
+    } else if (action === 'destroy') {
+      TestBed.resetTestingModule();
+    } else {
+      subscription.unsubscribe();
+    }
+    expect(subscription.closed).toBe(true);
+    expect(store.saving()).toBe(false);
+    response.next({ values: [1] });
+    expect(next).not.toHaveBeenCalled();
+    expect(store.data()).toBeNull();
+  });
+});

@@ -29,8 +29,15 @@ export class UserFormDialog {
   readonly actionError = this.store.actionError;
   readonly saving = this.store.saving;
 
+  get canSave(): boolean {
+    return this.form.valid && this.form.dirty && !this.saving();
+  }
+
   save(): void {
-    if (this.form.invalid) return;
+    if (!this.canSave) {
+      return;
+    }
+
     const model = this.form.getRawValue();
     const payload = { email: model.email.trim() || null, display_name: model.display_name.trim() || null };
     const request = this.record ? this.store.update({ id: this.record.id, payload }) : this.store.create(payload);
