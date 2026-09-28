@@ -23,7 +23,7 @@
                 [formGroup]="linkForm"
                 (ngSubmit)="link()">
             <mat-form-field appearance="outline"
-                            subscriptSizing="dynamic"
+                            subscriptSizing="fixed"
                             class="w-full flex-1">
               <mat-label>Auth0 subject</mat-label>
               <input matInput
@@ -63,7 +63,7 @@
             (ngSubmit)="assign()">
         <div class="grid gap-4 md:grid-cols-2">
           <mat-form-field appearance="outline"
-                          subscriptSizing="dynamic"
+                          subscriptSizing="fixed"
                           class="w-full">
             <mat-label>Role</mat-label>
             <mat-select name="role"
@@ -78,7 +78,7 @@
             <mat-error>Select a role.</mat-error>
           </mat-form-field>
           <mat-form-field appearance="outline"
-                          subscriptSizing="dynamic"
+                          subscriptSizing="fixed"
                           class="w-full">
             <mat-label>Scope</mat-label>
             <mat-select name="scope"
@@ -90,7 +90,7 @@
           </mat-form-field>
           @if (scope() !== 'GLOBAL') {
             <mat-form-field appearance="outline"
-                            subscriptSizing="dynamic"
+                            subscriptSizing="fixed"
                             class="w-full md:col-span-2">
               <mat-label>Scope UUID</mat-label>
               <input matInput

@@ -4,6 +4,7 @@ import { HttpTestingController, provideHttpClientTesting } from '@angular/common
 import { TestBed } from '@angular/core/testing';
 import { MatButtonHarness } from '@angular/material/button/testing';
 import { MatDialog } from '@angular/material/dialog';
+import { MatSnackBar } from '@angular/material/snack-bar';
 import { By } from '@angular/platform-browser';
 import { provideRouter, Router } from '@angular/router';
 import { RouterTestingHarness } from '@angular/router/testing';
@@ -147,6 +148,17 @@ describe('roles page', () => {
     await vi.waitFor(() => http.expectOne('/api/identity/roles').flush([]));
     expect(TestBed.inject(MatDialog).openDialogs).toHaveLength(0);
     expect(component.error()).toBe('');
+  });
+  it('closes the role dialog without reporting a save when cancelled', async () => {
+    harness = await RouterTestingHarness.create();
+    const component = await harness.navigateByUrl('/roles', RolesPage);
+    http.expectOne('/api/identity/roles').flush([]);
+    const snackBar = vi.spyOn(TestBed.inject(MatSnackBar), 'open');
+    component.open();
+    TestBed.inject(MatDialog).openDialogs[0].close(false);
+    await vi.waitFor(() => expect(TestBed.inject(MatDialog).openDialogs).toHaveLength(0));
+    http.expectNone(request => request.method === 'GET');
+    expect(snackBar).not.toHaveBeenCalled();
   });
   it('deactivates a role only after confirmation and refreshes the URL selection', async () => {
     harness = await RouterTestingHarness.create();

@@ -1,6 +1,14 @@
 @use 'tailwindcss';
 @use '@angular/material' as mat;
 
+$compact-form-field-theme: mat.define-theme(
+  (
+    density: (
+      scale: -3,
+    ),
+  )
+);
+
 html {
   @include mat.theme(
     (
@@ -16,6 +24,7 @@ html {
       density: 0,
     )
   );
+  @include mat.form-field-density($compact-form-field-theme);
 
   color-scheme: light;
   min-height: 100%;

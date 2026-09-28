@@ -81,7 +81,7 @@ export class RolesPage {
     ref
       .afterClosed()
       .pipe(
-        filter((result): result is RoleRecord => result !== undefined),
+        filter((result): result is RoleRecord => Boolean(result)),
         tap(() => this.snackBar.open('Changes saved.', 'Dismiss', { duration: 4000 })),
         concatMap(() => this.store.load(this.requestParams())),
         takeUntilDestroyed(this.destroyRef),

@@ -7,6 +7,7 @@ import { TestBed } from '@angular/core/testing';
 import { MatButtonHarness } from '@angular/material/button/testing';
 import { MatDialog } from '@angular/material/dialog';
 import { MatInputHarness } from '@angular/material/input/testing';
+import { MatSnackBar } from '@angular/material/snack-bar';
 import { By } from '@angular/platform-browser';
 import { provideRouter, Router } from '@angular/router';
 import { RouterTestingHarness } from '@angular/router/testing';
@@ -255,13 +256,16 @@ describe('users page', () => {
 
   it('validates new users and cancels the dialog without writing', async () => {
     const component = await create();
+    const snackBar = vi.spyOn(TestBed.inject(MatSnackBar), 'open');
     component.open();
     editor().save();
     http.expectNone(request => request.method === 'POST');
-    const loader = TestbedHarnessEnvironment.documentRootLoader(harness.fixture);
-    await (await loader.getHarness(MatButtonHarness.with({ text: 'Cancel' }))).click();
-    await vi.waitFor(() => expect(component.saving()).toBe(false));
+    TestBed.inject(MatDialog).openDialogs[0].close(false);
+    await vi.waitFor(() => expect(TestBed.inject(MatDialog).openDialogs).toHaveLength(0));
     http.expectNone(request => request.method === 'POST');
+    http.expectNone(request => request.method === 'GET');
+    expect(snackBar).not.toHaveBeenCalled();
+    expect(component.saving()).toBe(false);
   });
 
   it('reapplies a filter after external URL navigation and cancels stale search drafts', async () => {

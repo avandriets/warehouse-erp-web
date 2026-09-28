@@ -89,7 +89,7 @@ export class UsersPage {
     ref
       .afterClosed()
       .pipe(
-        filter((result): result is UserRecord => result !== undefined),
+        filter((result): result is UserRecord => Boolean(result)),
         tap(() => this.snackBar.open('Changes saved.', 'Dismiss', { duration: 4000 })),
         concatMap(() => this.store.load(this.requestParams())),
         takeUntilDestroyed(this.destroyRef),

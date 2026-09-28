@@ -11,7 +11,7 @@
       <div class="grid gap-4">
         @if (!record) {
           <mat-form-field appearance="outline"
-                          subscriptSizing="dynamic"
+                          subscriptSizing="fixed"
                           class="w-full">
             <mat-label>Code</mat-label>
             <input matInput
@@ -24,7 +24,7 @@
           </mat-form-field>
         }
         <mat-form-field appearance="outline"
-                        subscriptSizing="dynamic"
+                        subscriptSizing="fixed"
                         class="w-full">
           <mat-label>Name</mat-label>
           <input matInput
@@ -35,7 +35,7 @@
           <mat-error>Enter a name using up to 255 characters.</mat-error>
         </mat-form-field>
         <mat-form-field appearance="outline"
-                        subscriptSizing="dynamic"
+                        subscriptSizing="fixed"
                         class="w-full">
           <mat-label>Description</mat-label>
           <input matInput
