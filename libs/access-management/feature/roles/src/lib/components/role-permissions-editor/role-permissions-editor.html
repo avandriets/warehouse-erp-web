@@ -4,11 +4,11 @@
     <mat-card-title>{{ role().name }}</mat-card-title>
   </mat-card-header>
   <mat-card-content class="pt-5!">
-    <app-ui-state-container [state]="state()"
-                            [resolved]="data"
-                            [actionError]="actionError()"
-                            (actionErrorDismissed)="dismissActionError()"
-                            (retry)="load()" />
+    <ui-state-container [state]="state()"
+                        [resolved]="data"
+                        [actionError]="actionError()"
+                        (actionErrorDismissed)="dismissActionError()"
+                        (retry)="load()" />
     <ng-template #data>
       <form id="role-permissions-form"
             [formGroup]="form"

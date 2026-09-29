@@ -1,4 +1,4 @@
-<app-page-layout>
+<ui-page-layout>
   <nav pageBreadcrumb
        class="flex items-center gap-2"
        aria-label="Breadcrumb">
@@ -21,13 +21,13 @@
     </div>
   }
   <div pageBody>
-    <app-ui-state-container [state]="state()"
-                            [resolved]="content"
-                            (retry)="load()" />
+    <ui-state-container [state]="state()"
+                        [resolved]="content"
+                        (retry)="load()" />
     <ng-template #content>
       @if (role(); as currentRole) {
         <am-role-permissions-editor [role]="currentRole" />
       }
     </ng-template>
   </div>
-</app-page-layout>
+</ui-page-layout>

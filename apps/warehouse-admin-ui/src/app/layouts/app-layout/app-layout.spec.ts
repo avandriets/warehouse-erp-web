@@ -156,9 +156,9 @@ describe('admin app layout', () => {
     const guestFixture = TestBed.createComponent(AppLayout);
     await guestFixture.whenStable();
 
-    expect(guestFixture.nativeElement.querySelector('app-header')).not.toBeNull();
+    expect(guestFixture.nativeElement.querySelector('admin-header')).not.toBeNull();
     expect(guestFixture.nativeElement.querySelector('mat-sidenav-container')).toBeNull();
-    expect(guestFixture.nativeElement.querySelector('app-navigation')).toBeNull();
+    expect(guestFixture.nativeElement.querySelector('admin-navigation')).toBeNull();
     expect(guestFixture.nativeElement.querySelector('main router-outlet')).not.toBeNull();
     guestFixture.destroy();
   });

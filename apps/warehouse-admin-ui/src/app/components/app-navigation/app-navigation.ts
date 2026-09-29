@@ -9,7 +9,7 @@ import { RouterLink, RouterLinkActive } from '@angular/router';
 import type { NavigationSection } from '../../types';
 
 @Component({
-  selector: 'app-navigation',
+  selector: 'admin-navigation',
   imports: [
     NgTemplateOutlet,
     MatButtonModule,

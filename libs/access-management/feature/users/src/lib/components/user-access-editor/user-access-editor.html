@@ -4,11 +4,11 @@
     <mat-card-title>{{ user().display_name ?? user().email }}</mat-card-title>
   </mat-card-header>
   <mat-card-content class="pt-5!">
-    <app-ui-state-container [state]="state()"
-                            [resolved]="data"
-                            [actionError]="actionError()"
-                            (actionErrorDismissed)="dismissActionError()"
-                            (retry)="load()" />
+    <ui-state-container [state]="state()"
+                        [resolved]="data"
+                        [actionError]="actionError()"
+                        (actionErrorDismissed)="dismissActionError()"
+                        (retry)="load()" />
     <ng-template #data>
       <section aria-labelledby="auth0-link-title">
         <h3 id="auth0-link-title"

@@ -39,7 +39,7 @@
                  [matTooltipDisabled]="!collapsed()"
                  (click)="sectionSelected.emit()">
                 <ng-container [ngTemplateOutlet]="linkContent"
-                              [ngTemplateOutletContext]="{ item: child, nested: true }"/>
+                              [ngTemplateOutletContext]="{ item: child, nested: true }" />
               </a>
             }
           </mat-nav-list>
@@ -58,7 +58,7 @@
              [matTooltipDisabled]="!collapsed()"
              (click)="sectionSelected.emit()">
             <ng-container [ngTemplateOutlet]="linkContent"
-                          [ngTemplateOutletContext]="{ item, nested: false }"/>
+                          [ngTemplateOutletContext]="{ item, nested: false }" />
           </a>
         </mat-nav-list>
       }

@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component } from '@angular/core';
 
 @Component({
-  selector: 'app-error-state',
+  selector: 'ui-error-state',
   templateUrl: './error-state.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: {

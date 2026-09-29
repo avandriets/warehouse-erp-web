@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, input } from '@angular/core';
 
 @Component({
-  selector: 'app-page-layout',
+  selector: 'ui-page-layout',
   templateUrl: './page-layout.html',
   styleUrl: './page-layout.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,

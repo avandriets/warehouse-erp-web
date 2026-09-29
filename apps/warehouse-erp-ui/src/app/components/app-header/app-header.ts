@@ -5,7 +5,7 @@ import { MatToolbarModule } from '@angular/material/toolbar';
 import { RouterLink } from '@angular/router';
 
 @Component({
-  selector: 'app-header',
+  selector: 'erp-header',
   imports: [MatButtonModule, MatMenuModule, MatToolbarModule, RouterLink],
   templateUrl: './app-header.html',
   changeDetection: ChangeDetectionStrategy.OnPush,

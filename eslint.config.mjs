@@ -66,7 +66,7 @@ export default tseslint.config(
         'error',
         {
           type: 'element',
-          prefix: 'app',
+          prefix: ['ui', 'admin', 'erp', 'am'],
           style: 'kebab-case',
         },
       ],
@@ -74,7 +74,7 @@ export default tseslint.config(
         'error',
         {
           type: 'attribute',
-          prefix: 'app',
+          prefix: ['ui', 'admin', 'erp', 'am'],
           style: 'camelCase',
         },
       ],
@@ -109,6 +109,12 @@ export default tseslint.config(
       'simple-import-sort/exports': 'error',
       'simple-import-sort/imports': 'error',
       'warehouse/class-member-order': 'error',
+    },
+  },
+  {
+    files: ['**/*.spec.ts'],
+    rules: {
+      '@angular-eslint/component-max-inline-declarations': 'off',
     },
   },
   {

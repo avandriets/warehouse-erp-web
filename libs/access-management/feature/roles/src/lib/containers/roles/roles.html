@@ -1,4 +1,4 @@
-<app-page-layout>
+<ui-page-layout>
   <p pageBreadcrumb>Access management</p>
   <div pageTitle>
     <h1 class="m-0 text-3xl font-bold tracking-tight text-stone-900">Roles and permissions</h1>
@@ -19,10 +19,10 @@
       <h2 class="m-0 text-sm font-semibold text-[var(--mat-sys-on-surface)]">Find roles</h2>
       <p class="mt-1 text-xs text-[var(--mat-sys-on-surface-variant)]">Search and filter permission sets.</p>
     </div>
-    <app-query-param-search class="block w-full sm:w-64 sm:shrink-0"
-                            label="Search roles"
-                            placeholder="Name or code"
-                            [maxLength]="255" />
+    <ui-query-param-search class="block w-full sm:w-64 sm:shrink-0"
+                           label="Search roles"
+                           placeholder="Name or code"
+                           [maxLength]="255" />
     <am-roles-filter class="block w-full sm:w-44 sm:shrink-0" />
     <button mat-icon-button
             type="button"
@@ -38,11 +38,11 @@
 
     <mat-card appearance="outlined"
               class="mt-4 overflow-hidden">
-      <app-ui-state-container [state]="state()"
-                              [resolved]="data"
-                              [actionError]="actionError()"
-                              (actionErrorDismissed)="dismissActionError()"
-                              (retry)="load()" />
+      <ui-state-container [state]="state()"
+                          [resolved]="data"
+                          [actionError]="actionError()"
+                          (actionErrorDismissed)="dismissActionError()"
+                          (retry)="load()" />
       <ng-template #data>
         <div class="overflow-x-auto">
           <table mat-table
@@ -117,4 +117,4 @@
     </mat-card>
 
   </div>
-</app-page-layout>
+</ui-page-layout>

@@ -5,7 +5,7 @@ import { WarehouseAuthService } from '@warehouse/auth';
 import { AppHeader } from '../../components';
 
 @Component({
-  selector: 'app-layout',
+  selector: 'erp-layout',
   imports: [RouterOutlet, AppHeader],
   templateUrl: './app-layout.html',
   changeDetection: ChangeDetectionStrategy.OnPush,

@@ -1,13 +1,13 @@
 @let user = auth.user();
 
 <div class="flex min-h-dvh flex-col bg-[var(--mat-sys-surface-container-low)]">
-  <app-header [compact]="auth.authenticated() && compact()"
+  <admin-header [compact]="auth.authenticated() && compact()"
               [loading]="auth.loading()"
               [authenticated]="auth.authenticated()"
               [userName]="user?.name ?? user?.email ?? null"
               (navigationToggle)="toggleNavigation()"
               (signIn)="login()"
-              (signOut)="auth.logout()" />
+                (signOut)="auth.logout()" />
 
   @if (auth.authenticated()) {
   <mat-sidenav-container class="min-h-0 flex-1 bg-[var(--mat-sys-surface-container-low)]"
@@ -18,11 +18,11 @@
                  [class.app-navigation-drawer-collapsed]="collapsed()"
                  [mode]="compact() ? 'over' : 'side'"
                  [opened]="!compact()">
-      <app-navigation [navigation]="navigation()"
-                      [collapsed]="collapsed()"
-                      [collapsible]="!compact()"
-                      (collapseToggle)="toggleNavigationCollapsed()"
-                      (sectionSelected)="selectSection()" />
+      <admin-navigation [navigation]="navigation()"
+                        [collapsed]="collapsed()"
+                        [collapsible]="!compact()"
+                        (collapseToggle)="toggleNavigationCollapsed()"
+                        (sectionSelected)="selectSection()" />
     </mat-sidenav>
 
     <mat-sidenav-content>

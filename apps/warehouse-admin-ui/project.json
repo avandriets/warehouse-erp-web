@@ -2,6 +2,7 @@
   "name": "warehouse-admin-ui",
   "$schema": "../../node_modules/nx/schemas/project-schema.json",
   "projectType": "application",
+  "prefix": "admin",
   "sourceRoot": "apps/warehouse-admin-ui/src",
   "tags": ["type:app", "scope:admin"],
   "targets": {

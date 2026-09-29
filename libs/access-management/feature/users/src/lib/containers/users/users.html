@@ -1,4 +1,4 @@
-<app-page-layout>
+<ui-page-layout>
   <p pageBreadcrumb>Access management</p>
   <div pageTitle>
     <h1 class="m-0 text-3xl font-bold tracking-tight text-stone-900">Users</h1>
@@ -19,12 +19,12 @@
       <h2 class="m-0 text-sm font-semibold text-[var(--mat-sys-on-surface)]">Find users</h2>
       <p class="mt-1 text-xs text-[var(--mat-sys-on-surface-variant)]">Search and filter the directory.</p>
     </div>
-    <app-query-param-search class="block w-full sm:w-64 sm:shrink-0"
-                            label="Search users"
-                            placeholder="Name or email"
-                            [maxLength]="255"
-                            [resetParams]="{ offset: null }"/>
-    <am-users-filter class="block w-full sm:w-44 sm:shrink-0"/>
+    <ui-query-param-search class="block w-full sm:w-64 sm:shrink-0"
+                           label="Search users"
+                           placeholder="Name or email"
+                           [maxLength]="255"
+                           [resetParams]="{ offset: null }" />
+    <am-users-filter class="block w-full sm:w-44 sm:shrink-0" />
     <button mat-icon-button
             type="button"
             class="size-10! sm:ml-auto"
@@ -39,11 +39,11 @@
 
     <mat-card appearance="outlined"
               class="mt-4 overflow-hidden">
-      <app-ui-state-container [state]="state()"
-                              [resolved]="data"
-                              [actionError]="actionError()"
-                              (actionErrorDismissed)="dismissActionError()"
-                              (retry)="load()"/>
+      <ui-state-container [state]="state()"
+                          [resolved]="data"
+                          [actionError]="actionError()"
+                          (actionErrorDismissed)="dismissActionError()"
+                          (retry)="load()" />
       <ng-template #data>
         <div class="overflow-x-auto">
           <table mat-table
@@ -83,7 +83,7 @@
               </th>
               <td *matCellDef="let user"
                   mat-cell>
-                <am-status-badge [value]="user.status"/>
+                <am-status-badge [value]="user.status" />
               </td>
             </ng-container>
             <ng-container matColumnDef="actions">
@@ -133,8 +133,8 @@
                      [pageSize]="pageSize()"
                      [pageSizeOptions]="pageSizeOptions"
                      [disabled]="saving() || loading()"
-                     (page)="page($event)"/>
+                     (page)="page($event)" />
     </mat-card>
 
   </div>
-</app-page-layout>
+</ui-page-layout>

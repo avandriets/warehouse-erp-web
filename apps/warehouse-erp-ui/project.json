@@ -2,6 +2,7 @@
   "name": "warehouse-erp-ui",
   "$schema": "../../node_modules/nx/schemas/project-schema.json",
   "projectType": "application",
+  "prefix": "erp",
   "sourceRoot": "apps/warehouse-erp-ui/src",
   "tags": ["type:app", "scope:warehouse"],
   "targets": {

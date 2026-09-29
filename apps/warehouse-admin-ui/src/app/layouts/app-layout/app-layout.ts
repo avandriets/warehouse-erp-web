@@ -11,7 +11,7 @@ import { ADMIN_NAVIGATION } from '../../config';
 import type { NavigationSection } from '../../types';
 
 @Component({
-  selector: 'app-layout',
+  selector: 'admin-layout',
   imports: [MatSidenavModule, RouterOutlet, AppHeader, AppNavigation],
   templateUrl: './app-layout.html',
   styleUrl: './app-layout.scss',

@@ -8,7 +8,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { map, switchMap, timer } from 'rxjs';
 
 @Component({
-  selector: 'app-query-param-search',
+  selector: 'ui-query-param-search',
   imports: [ReactiveFormsModule, MatFormFieldModule, MatIconModule, MatInputModule],
   templateUrl: './query-param-search.html',
 })

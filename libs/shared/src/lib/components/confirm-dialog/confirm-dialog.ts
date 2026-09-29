@@ -5,7 +5,7 @@ import { MAT_DIALOG_DATA, MatDialogModule } from '@angular/material/dialog';
 import type { ConfirmDialogData } from '../../types';
 
 @Component({
-  selector: 'app-confirm-dialog',
+  selector: 'ui-confirm-dialog',
   imports: [MatButtonModule, MatDialogModule],
   templateUrl: './confirm-dialog.html',
 })

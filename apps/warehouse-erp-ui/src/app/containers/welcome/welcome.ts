@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component } from '@angular/core';
 
 @Component({
-  selector: 'app-welcome',
+  selector: 'erp-welcome',
   templateUrl: './welcome.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

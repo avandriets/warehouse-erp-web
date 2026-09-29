@@ -6,10 +6,10 @@ import { PageLayout } from './page-layout';
 @Component({
   imports: [PageLayout],
   template: `
-    <app-page-layout>
+    <ui-page-layout>
       <div pageFilters>Filters</div>
       <div pageBody>Body</div>
-    </app-page-layout>
+    </ui-page-layout>
   `,
 })
 class PageLayoutHost {}

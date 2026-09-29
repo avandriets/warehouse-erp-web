@@ -1,7 +1,7 @@
 @let user = auth.user();
 
 <div class="flex min-h-dvh flex-col bg-[var(--mat-sys-surface)] text-[var(--mat-sys-on-surface)]">
-  <app-header [loading]="auth.loading()"
+  <erp-header [loading]="auth.loading()"
               [authenticated]="auth.authenticated()"
               [userName]="user?.name ?? user?.email ?? null"
               (signIn)="login()"

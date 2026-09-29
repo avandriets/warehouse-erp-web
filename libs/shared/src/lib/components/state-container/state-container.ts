@@ -8,7 +8,7 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import type { UIState, UIStateStatus } from '../../types';
 
 @Component({
-  selector: 'app-ui-state-container',
+  selector: 'ui-state-container',
   imports: [NgTemplateOutlet, MatButtonModule, MatProgressBarModule, MatProgressSpinnerModule],
   templateUrl: './state-container.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
