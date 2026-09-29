@@ -1,5 +1,5 @@
 export interface NavigationLink {
-  readonly iconPath: string;
+  readonly icon: string;
   readonly exact: boolean;
   readonly path: string;
   readonly title: string;
@@ -10,7 +10,7 @@ export interface NavigationLink {
 export interface NavigationGroup {
   readonly id: string;
   readonly title: string;
-  readonly iconPath: string;
+  readonly icon: string;
   readonly children: readonly NavigationLink[];
 }
 

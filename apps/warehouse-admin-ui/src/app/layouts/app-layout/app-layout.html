@@ -1,6 +1,6 @@
 @let user = auth.user();
 
-<div class="flex min-h-dvh flex-col bg-[var(--mat-sys-surface)]">
+<div class="flex min-h-dvh flex-col bg-[var(--mat-sys-surface-container-low)]">
   <app-header [compact]="auth.authenticated() && compact()"
               [loading]="auth.loading()"
               [authenticated]="auth.authenticated()"
@@ -10,7 +10,7 @@
               (signOut)="auth.logout()" />
 
   @if (auth.authenticated()) {
-  <mat-sidenav-container class="min-h-0 flex-1 bg-[var(--mat-sys-surface)]"
+  <mat-sidenav-container class="min-h-0 flex-1 bg-[var(--mat-sys-surface-container-low)]"
                          [autosize]="true">
     <mat-sidenav #sidenav
                  id="app-navigation-drawer"

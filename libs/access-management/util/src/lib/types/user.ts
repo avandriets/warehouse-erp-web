@@ -6,6 +6,8 @@ export interface UserRecord {
   id: string;
   auth0_subject: string | null;
   email: string | null;
+  first_name: string | null;
+  last_name: string | null;
   display_name: string | null;
   status: UserStatus;
   created_at: string;
@@ -14,5 +16,11 @@ export interface UserRecord {
 
 export interface UserWrite {
   email: string | null;
-  display_name: string | null;
+  first_name: string | null;
+  last_name: string | null;
+}
+
+export interface UserPage {
+  items: UserRecord[];
+  total: number;
 }

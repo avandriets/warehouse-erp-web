@@ -23,7 +23,8 @@ export class UserFormDialog {
   readonly store = inject(UsersStore);
   readonly form = this.builder.nonNullable.group({
     email: [this.record?.email ?? '', [Validators.required, Validators.email, Validators.maxLength(320)]],
-    display_name: [this.record?.display_name ?? '', Validators.maxLength(255)],
+    first_name: [this.record?.first_name ?? '', Validators.maxLength(100)],
+    last_name: [this.record?.last_name ?? '', Validators.maxLength(100)],
   });
 
   readonly actionError = this.store.actionError;
@@ -39,7 +40,11 @@ export class UserFormDialog {
     }
 
     const model = this.form.getRawValue();
-    const payload = { email: model.email.trim() || null, display_name: model.display_name.trim() || null };
+    const payload = {
+      email: model.email.trim() || null,
+      first_name: model.first_name.trim() || null,
+      last_name: model.last_name.trim() || null,
+    };
     const request = this.record ? this.store.update({ id: this.record.id, payload }) : this.store.create(payload);
     this.dialogRef.disableClose = true;
     request

@@ -5,7 +5,7 @@ import { ActivatedRoute, RouterLink } from '@angular/router';
 import { signalStore } from '@ngrx/signals';
 import { AccessManagementApiService } from '@warehouse/access-management/data-access';
 import type { RoleRecord } from '@warehouse/access-management/util';
-import { apiError, Page, UIStateContainerComponent, withRequestData } from '@warehouse/shared';
+import { apiError, PageLayout, UIStateContainerComponent, withRequestData } from '@warehouse/shared';
 import { distinctUntilChanged, filter, map, switchMap, tap } from 'rxjs';
 
 import { RolePermissionsEditor } from '../../components';
@@ -24,7 +24,7 @@ const RoleDetailsStore = signalStore(
 
 @Component({
   providers: [RoleDetailsStore],
-  imports: [MatButtonModule, RouterLink, Page, UIStateContainerComponent, RolePermissionsEditor],
+  imports: [MatButtonModule, RouterLink, PageLayout, UIStateContainerComponent, RolePermissionsEditor],
   templateUrl: './role-permissions.html',
 })
 export class RolePermissionsPage {

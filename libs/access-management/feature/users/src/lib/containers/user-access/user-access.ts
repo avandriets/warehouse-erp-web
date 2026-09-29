@@ -5,7 +5,7 @@ import { ActivatedRoute, RouterLink } from '@angular/router';
 import { signalStore } from '@ngrx/signals';
 import { AccessManagementApiService } from '@warehouse/access-management/data-access';
 import type { UserRecord } from '@warehouse/access-management/util';
-import { apiError, Page, UIStateContainerComponent, withRequestData } from '@warehouse/shared';
+import { apiError, PageLayout, UIStateContainerComponent, withRequestData } from '@warehouse/shared';
 import { distinctUntilChanged, filter, map, switchMap, tap } from 'rxjs';
 
 import { UserAccessEditor } from '../../components';
@@ -24,7 +24,7 @@ const UserDetailsStore = signalStore(
 
 @Component({
   providers: [UserDetailsStore],
-  imports: [MatButtonModule, RouterLink, Page, UIStateContainerComponent, UserAccessEditor],
+  imports: [MatButtonModule, RouterLink, PageLayout, UIStateContainerComponent, UserAccessEditor],
   templateUrl: './user-access.html',
 })
 export class UserAccessPage {

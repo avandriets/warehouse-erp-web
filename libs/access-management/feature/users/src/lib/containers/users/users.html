@@ -1,73 +1,95 @@
-<app-page>
+<app-page-layout>
   <p pageBreadcrumb>Access management</p>
   <div pageTitle>
-    <h1 class="m-0 text-3xl font-bold tracking-tight text-stone-900 sm:text-4xl">Users</h1>
-    <p class="mt-3 text-sm leading-6 text-stone-600">Employee accounts and ERP access.</p>
+    <h1 class="m-0 text-3xl font-bold tracking-tight text-stone-900">Users</h1>
+    <p class="mt-1 text-sm leading-5 text-stone-600">Employee accounts and ERP access.</p>
   </div>
   <div pageActions
-       class="flex flex-wrap items-center gap-3">
+       class="flex flex-wrap items-center gap-2">
     <button mat-flat-button
             type="button"
             [disabled]="saving() || loading()"
             (click)="open()">Add user
     </button>
-    <app-url-search class="block w-48"
-                    label="Search users"
-                    placeholder="Enter a name or email"
-                    [maxLength]="255"
-                    [resetParams]="{ offset: null }" />
-    <am-users-filter class="block w-28" />
+  </div>
+  <section pageFilters
+           class="flex flex-col gap-3 sm:flex-row sm:items-center"
+           aria-label="User filters">
+    <div class="min-w-40">
+      <h2 class="m-0 text-sm font-semibold text-[var(--mat-sys-on-surface)]">Find users</h2>
+      <p class="mt-1 text-xs text-[var(--mat-sys-on-surface-variant)]">Search and filter the directory.</p>
+    </div>
+    <app-query-param-search class="block w-full sm:w-64 sm:shrink-0"
+                            label="Search users"
+                            placeholder="Name or email"
+                            [maxLength]="255"
+                            [resetParams]="{ offset: null }"/>
+    <am-users-filter class="block w-full sm:w-44 sm:shrink-0"/>
     <button mat-icon-button
             type="button"
+            class="size-10! sm:ml-auto"
             aria-label="Refresh users"
             title="Refresh"
             [disabled]="saving() || loading()"
             (click)="load()">
       <mat-icon>refresh</mat-icon>
     </button>
-  </div>
+  </section>
   <div pageBody>
 
     <mat-card appearance="outlined"
-              class="mt-7 overflow-hidden">
+              class="mt-4 overflow-hidden">
       <app-ui-state-container [state]="state()"
                               [resolved]="data"
                               [actionError]="actionError()"
                               (actionErrorDismissed)="dismissActionError()"
-                              (retry)="load()" />
+                              (retry)="load()"/>
       <ng-template #data>
-        <div class="overflow-x-auto border-t border-stone-200">
+        <div class="overflow-x-auto">
           <table mat-table
                  class="w-full"
                  [dataSource]="users()">
-            <ng-container matColumnDef="display_name">
+            <ng-container matColumnDef="user">
               <th *matHeaderCellDef
-                  mat-header-cell>Name
+                  mat-header-cell
+                  class="text-xs! tracking-wide! text-[var(--mat-sys-on-surface-variant)]! uppercase">User
               </th>
               <td *matCellDef="let user"
-                  mat-cell>{{ user.display_name ?? '—' }}
+                  mat-cell>
+                <a class="font-medium text-emerald-700 no-underline hover:underline"
+                   [routerLink]="[user.id, 'access']">{{ user.display_name ?? user.email ?? 'Unnamed user' }}</a>
+                @if (user.display_name && user.email) {
+                  <span class="mt-1 block text-xs text-stone-500">{{ user.email }}</span>
+                }
               </td>
             </ng-container>
-            <ng-container matColumnDef="email">
+            <ng-container matColumnDef="authentication">
               <th *matHeaderCellDef
-                  mat-header-cell>Email
+                  mat-header-cell
+                  class="text-xs! tracking-wide! text-[var(--mat-sys-on-surface-variant)]! uppercase">Authentication
               </th>
               <td *matCellDef="let user"
-                  mat-cell>{{ user.email ?? '—' }}
+                  mat-cell>
+                <span [class.text-emerald-700]="user.auth0_subject"
+                      [class.text-stone-500]="!user.auth0_subject">
+                  {{ user.auth0_subject ? 'Auth0 linked' : 'Not linked' }}
+                </span>
               </td>
             </ng-container>
             <ng-container matColumnDef="status">
               <th *matHeaderCellDef
-                  mat-header-cell>Status
+                  mat-header-cell
+                  class="text-xs! tracking-wide! text-[var(--mat-sys-on-surface-variant)]! uppercase">Status
               </th>
               <td *matCellDef="let user"
                   mat-cell>
-                <am-status-badge [value]="user.status" />
+                <am-status-badge [value]="user.status"/>
               </td>
             </ng-container>
             <ng-container matColumnDef="actions">
               <th *matHeaderCellDef
-                  mat-header-cell>Actions
+                  mat-header-cell
+                  class="text-xs! tracking-wide! text-[var(--mat-sys-on-surface-variant)]! uppercase">Actions
               </th>
               <td *matCellDef="let user"
                   mat-cell>
@@ -84,13 +106,15 @@
                     {{ user.status === 'ACTIVE' ? 'Suspend' : 'Activate' }}
                   </button>
                   <a mat-button
-                     [routerLink]="[user.id, 'access']">Access</a>
+                     [routerLink]="[user.id, 'access']">Open details</a>
                 </div>
               </td>
             </ng-container>
             <tr *matHeaderRowDef="displayedColumns"
+                class="bg-[var(--mat-sys-surface-container)]"
                 mat-header-row></tr>
             <tr *matRowDef="let row; columns: displayedColumns"
+                class="hover:bg-[var(--mat-sys-primary-container)]"
                 mat-row></tr>
             <tr *matNoDataRow
                 class="mat-row">
@@ -102,22 +126,15 @@
         </div>
       </ng-template>
 
-      <mat-card-actions class="flex flex-col gap-3 border-t border-stone-200 px-4! py-3! sm:flex-row sm:justify-between sm:px-6!">
-        <span class="text-xs text-stone-600">Page {{ offset() / pageSize + 1 }} · Records: {{ users().length }}</span>
-        <div class="flex gap-2">
-          <button mat-stroked-button
-                  type="button"
-                  [disabled]="saving() || loading() || offset() === 0"
-                  (click)="page(-1)">Previous
-          </button>
-          <button mat-stroked-button
-                  type="button"
-                  [disabled]="saving() || loading() || users().length < pageSize"
-                  (click)="page(1)">Next
-          </button>
-        </div>
-      </mat-card-actions>
+      <mat-paginator showFirstLastButtons
+                     aria-label="Users pagination"
+                     [length]="total()"
+                     [pageIndex]="pageIndex()"
+                     [pageSize]="pageSize()"
+                     [pageSizeOptions]="pageSizeOptions"
+                     [disabled]="saving() || loading()"
+                     (page)="page($event)"/>
     </mat-card>
 
   </div>
-</app-page>
+</app-page-layout>

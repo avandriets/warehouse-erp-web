@@ -1,4 +1,4 @@
-<app-page>
+<app-page-layout>
   <nav pageBreadcrumb
        class="flex items-center gap-2"
        aria-label="Breadcrumb">
@@ -8,8 +8,8 @@
     <span aria-current="page">Role permissions</span>
   </nav>
   <div pageTitle>
-    <h1 class="m-0 text-3xl font-bold tracking-tight text-stone-900 sm:text-4xl">Role permissions</h1>
-    <p class="mt-3 text-sm leading-6 text-stone-600">Permissions granted by this role.</p>
+    <h1 class="m-0 text-3xl font-bold tracking-tight text-stone-900">Role permissions</h1>
+    <p class="mt-1 text-sm leading-5 text-stone-600">Permissions granted by this role.</p>
   </div>
   @if (editor(); as permissionsEditor) {
     <div pageActions>
@@ -30,4 +30,4 @@
       }
     </ng-template>
   </div>
-</app-page>
+</app-page-layout>

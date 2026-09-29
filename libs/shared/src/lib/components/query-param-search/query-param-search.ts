@@ -2,16 +2,17 @@ import { Component, inject, input } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { ActivatedRoute, Router } from '@angular/router';
 import { map, switchMap, timer } from 'rxjs';
 
 @Component({
-  selector: 'app-url-search',
-  imports: [ReactiveFormsModule, MatFormFieldModule, MatInputModule],
-  templateUrl: './url-search.html',
+  selector: 'app-query-param-search',
+  imports: [ReactiveFormsModule, MatFormFieldModule, MatIconModule, MatInputModule],
+  templateUrl: './query-param-search.html',
 })
-export class UrlSearch {
+export class QueryParamSearch {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   readonly label = input('Search');

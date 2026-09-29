@@ -10,7 +10,7 @@ import { provideRouter, Router } from '@angular/router';
 import { RouterTestingHarness } from '@angular/router/testing';
 import { provideAccessManagement } from '@warehouse/access-management';
 import type { RoleRecord } from '@warehouse/access-management/util';
-import { UrlSearch } from '@warehouse/shared';
+import { QueryParamSearch } from '@warehouse/shared';
 
 import type { RoleFormDialog } from '../../components';
 import { RolesFilter } from '../../components';
@@ -39,8 +39,8 @@ describe('roles page', () => {
     return harness.routeDebugElement!.query(By.directive(RolesFilter)).componentInstance;
   }
 
-  function search(): UrlSearch {
-    return harness.routeDebugElement!.query(By.directive(UrlSearch)).componentInstance;
+  function search(): QueryParamSearch {
+    return harness.routeDebugElement!.query(By.directive(QueryParamSearch)).componentInstance;
   }
 
   async function changeFilter(value: string): Promise<void> {

@@ -1,47 +1,57 @@
-<app-page>
+<app-page-layout>
   <p pageBreadcrumb>Access management</p>
   <div pageTitle>
-    <h1 class="m-0 text-3xl font-bold tracking-tight text-stone-900 sm:text-4xl">Roles and permissions</h1>
-    <p class="mt-3 text-sm leading-6 text-stone-600">Permission sets for working in the ERP system.</p>
+    <h1 class="m-0 text-3xl font-bold tracking-tight text-stone-900">Roles and permissions</h1>
+    <p class="mt-1 text-sm leading-5 text-stone-600">Permission sets for working in the ERP system.</p>
   </div>
   <div pageActions
-       class="flex flex-wrap items-center gap-3">
+       class="flex flex-wrap items-center gap-2">
     <button mat-flat-button
             type="button"
             [disabled]="saving() || loading()"
             (click)="open()">Add role
     </button>
-    <app-url-search class="block w-48"
-                    label="Search roles"
-                    placeholder="Enter a name or code"
-                    [maxLength]="255" />
-    <am-roles-filter class="block w-28" />
+  </div>
+  <section pageFilters
+           class="flex flex-col gap-3 sm:flex-row sm:items-center"
+           aria-label="Role filters">
+    <div class="min-w-40">
+      <h2 class="m-0 text-sm font-semibold text-[var(--mat-sys-on-surface)]">Find roles</h2>
+      <p class="mt-1 text-xs text-[var(--mat-sys-on-surface-variant)]">Search and filter permission sets.</p>
+    </div>
+    <app-query-param-search class="block w-full sm:w-64 sm:shrink-0"
+                            label="Search roles"
+                            placeholder="Name or code"
+                            [maxLength]="255" />
+    <am-roles-filter class="block w-full sm:w-44 sm:shrink-0" />
     <button mat-icon-button
             type="button"
+            class="size-10! sm:ml-auto"
             aria-label="Refresh roles"
             title="Refresh"
             [disabled]="saving() || loading()"
             (click)="load()">
       <mat-icon>refresh</mat-icon>
     </button>
-  </div>
+  </section>
   <div pageBody>
 
     <mat-card appearance="outlined"
-              class="mt-7 overflow-hidden">
+              class="mt-4 overflow-hidden">
       <app-ui-state-container [state]="state()"
                               [resolved]="data"
                               [actionError]="actionError()"
                               (actionErrorDismissed)="dismissActionError()"
                               (retry)="load()" />
       <ng-template #data>
-        <div class="overflow-x-auto border-t border-stone-200">
+        <div class="overflow-x-auto">
           <table mat-table
                  class="w-full"
                  [dataSource]="roles()">
             <ng-container matColumnDef="code">
               <th *matHeaderCellDef
-                  mat-header-cell>Code
+                  mat-header-cell
+                  class="text-xs! tracking-wide! text-[var(--mat-sys-on-surface-variant)]! uppercase">Code
               </th>
               <td *matCellDef="let role"
                   mat-cell>{{ role.code }}
@@ -49,7 +59,8 @@
             </ng-container>
             <ng-container matColumnDef="name">
               <th *matHeaderCellDef
-                  mat-header-cell>Name
+                  mat-header-cell
+                  class="text-xs! tracking-wide! text-[var(--mat-sys-on-surface-variant)]! uppercase">Name
               </th>
               <td *matCellDef="let role"
                   mat-cell>{{ role.name }}
@@ -57,7 +68,8 @@
             </ng-container>
             <ng-container matColumnDef="active">
               <th *matHeaderCellDef
-                  mat-header-cell>Active
+                  mat-header-cell
+                  class="text-xs! tracking-wide! text-[var(--mat-sys-on-surface-variant)]! uppercase">Active
               </th>
               <td *matCellDef="let role"
                   mat-cell>
@@ -66,7 +78,8 @@
             </ng-container>
             <ng-container matColumnDef="actions">
               <th *matHeaderCellDef
-                  mat-header-cell>Actions
+                  mat-header-cell
+                  class="text-xs! tracking-wide! text-[var(--mat-sys-on-surface-variant)]! uppercase">Actions
               </th>
               <td *matCellDef="let role"
                   mat-cell>
@@ -87,8 +100,10 @@
               </td>
             </ng-container>
             <tr *matHeaderRowDef="displayedColumns"
+                class="bg-[var(--mat-sys-surface-container)]"
                 mat-header-row></tr>
             <tr *matRowDef="let row; columns: displayedColumns"
+                class="hover:bg-[var(--mat-sys-primary-container)]"
                 mat-row></tr>
             <tr *matNoDataRow
                 class="mat-row">
@@ -102,4 +117,4 @@
     </mat-card>
 
   </div>
-</app-page>
+</app-page-layout>

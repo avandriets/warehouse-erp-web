@@ -74,7 +74,7 @@ describe('admin app layout', () => {
         .querySelector('#app-navigation-drawer')
         .classList.contains('app-navigation-drawer-collapsed'),
     ).toBe(true);
-    expect(fixture.nativeElement.querySelectorAll('nav a svg')).toHaveLength(2);
+    expect(fixture.nativeElement.querySelectorAll('nav a mat-icon')).toHaveLength(2);
     expect(fixture.nativeElement.querySelector('nav a').getAttribute('aria-label')).toBe('Users');
 
     const restored = TestBed.createComponent(AppLayout);

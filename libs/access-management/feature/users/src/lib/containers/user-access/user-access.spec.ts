@@ -14,6 +14,8 @@ const user: UserRecord = {
   id: 'u1',
   auth0_subject: null,
   email: 'alex@example.com',
+  first_name: 'Alex',
+  last_name: null,
   display_name: 'Alex',
   status: 'ACTIVE',
   created_at: '',

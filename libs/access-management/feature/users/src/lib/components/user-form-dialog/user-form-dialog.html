@@ -24,12 +24,22 @@
         <mat-form-field appearance="outline"
                         subscriptSizing="fixed"
                         class="w-full">
-          <mat-label>Name</mat-label>
+          <mat-label>First name</mat-label>
           <input matInput
-                 name="displayName"
-                 maxlength="255"
-                 formControlName="display_name" />
-          <mat-error>Use up to 255 characters.</mat-error>
+                 name="firstName"
+                 maxlength="100"
+                 formControlName="first_name" />
+          <mat-error>Use up to 100 characters.</mat-error>
+        </mat-form-field>
+        <mat-form-field appearance="outline"
+                        subscriptSizing="fixed"
+                        class="w-full">
+          <mat-label>Last name</mat-label>
+          <input matInput
+                 name="lastName"
+                 maxlength="100"
+                 formControlName="last_name" />
+          <mat-error>Use up to 100 characters.</mat-error>
         </mat-form-field>
       </div>
     </fieldset>

@@ -13,7 +13,9 @@ export const UsersStore = signalStore(
 
       return {
         load: params =>
-          api.listUsers(params.limit, params.offset, params.status, params.q).pipe(map(entities => ({ entities }))),
+          api
+            .listUsers(params.limit, params.offset, params.status, params.q)
+            .pipe(map(page => ({ entities: page.items, pagination: { total: page.total } }))),
         create: payload => api.createUser(payload),
         update: (id, payload) =>
           'status' in payload

@@ -1,13 +1,14 @@
 import { ChangeDetectionStrategy, Component, input } from '@angular/core';
 
 @Component({
-  selector: 'app-page',
-  templateUrl: './page.html',
+  selector: 'app-page-layout',
+  templateUrl: './page-layout.html',
+  styleUrl: './page-layout.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
     class: 'block min-w-0',
   },
 })
-export class Page {
+export class PageLayout {
   readonly header = input(true);
 }

@@ -4,6 +4,7 @@ import type {
   RoleCreate,
   RoleRecord,
   RoleUpdate,
+  UserPage,
   UserRecord,
   UserStatus,
   UserWrite,
@@ -16,7 +17,7 @@ export class AccessManagementApiService {
   private readonly http = inject(HttpClient);
   private readonly base = inject(ACCESS_MANAGEMENT_CONFIG).apiUrl;
 
-  listUsers(limit = 25, offset = 0, status?: UserStatus, q?: string): Observable<UserRecord[]> {
+  listUsers(limit = 25, offset = 0, status?: UserStatus, q?: string): Observable<UserPage> {
     const params: Record<string, string | number> = { limit, offset };
     if (status) {
       params['status'] = status;
@@ -25,7 +26,7 @@ export class AccessManagementApiService {
       params['q'] = q;
     }
 
-    return this.http.get<UserRecord[]>(`${this.base}/identity/users`, { params });
+    return this.http.get<UserPage>(`${this.base}/identity/users`, { params });
   }
 
   getUser(userId: string): Observable<UserRecord> {

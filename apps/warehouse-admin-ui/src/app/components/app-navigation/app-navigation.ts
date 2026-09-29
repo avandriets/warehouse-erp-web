@@ -1,6 +1,7 @@
 import { NgTemplateOutlet } from '@angular/common';
 import { ChangeDetectionStrategy, Component, input, output, signal } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
+import { MatIconModule } from '@angular/material/icon';
 import { MatListModule } from '@angular/material/list';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { RouterLink, RouterLinkActive } from '@angular/router';
@@ -9,8 +10,17 @@ import type { NavigationSection } from '../../types';
 
 @Component({
   selector: 'app-navigation',
-  imports: [NgTemplateOutlet, MatButtonModule, MatTooltipModule, MatListModule, RouterLink, RouterLinkActive],
+  imports: [
+    NgTemplateOutlet,
+    MatButtonModule,
+    MatIconModule,
+    MatTooltipModule,
+    MatListModule,
+    RouterLink,
+    RouterLinkActive,
+  ],
   templateUrl: './app-navigation.html',
+  styleUrl: './app-navigation.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class AppNavigation {

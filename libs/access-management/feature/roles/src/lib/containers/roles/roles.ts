@@ -11,7 +11,7 @@ import { RolesStore } from '@warehouse/access-management/data-access';
 import { StatusBadge } from '@warehouse/access-management/ui';
 import type { RoleRecord } from '@warehouse/access-management/util';
 import { parseRolesQuery } from '@warehouse/access-management/util';
-import { ConfirmDialog, Page, UIStateContainerComponent, UrlSearch } from '@warehouse/shared';
+import { ConfirmDialog, PageLayout, QueryParamSearch, UIStateContainerComponent } from '@warehouse/shared';
 import { concatMap, distinctUntilChanged, filter, finalize, switchMap, tap } from 'rxjs';
 
 import { RoleFormDialog, RolesFilter } from '../../components';
@@ -24,9 +24,9 @@ import { RoleFormDialog, RolesFilter } from '../../components';
     MatTableModule,
     MatDialogModule,
     MatIconModule,
-    UrlSearch,
+    QueryParamSearch,
     RolesFilter,
-    Page,
+    PageLayout,
     UIStateContainerComponent,
     RouterLink,
     StatusBadge,

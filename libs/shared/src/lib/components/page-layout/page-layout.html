@@ -1,8 +1,8 @@
 <section class="flex min-w-0 flex-col">
   @if (header()) {
-    <header class="flex flex-col gap-5 border-b border-[var(--mat-sys-outline-variant)] pb-6 sm:flex-row sm:items-start sm:justify-between">
+    <header class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
       <div class="min-w-0 flex-1">
-        <div class="mb-3 text-sm text-[var(--mat-sys-on-surface-variant)] empty:hidden">
+        <div class="mb-1 text-xs text-[var(--mat-sys-on-surface-variant)] empty:hidden">
           <ng-content select="[pageBreadcrumb]"></ng-content>
         </div>
         <div class="flex min-w-0 items-start gap-3">
@@ -12,13 +12,18 @@
           </div>
         </div>
       </div>
-      <div class="flex shrink-0 flex-wrap items-center gap-3">
+      <div class="flex shrink-0 flex-wrap items-center gap-2">
         <ng-content select="[pageActions]"></ng-content>
       </div>
     </header>
   }
 
-  <div class="min-w-0">
+  <div
+       class="page-filters mt-7 min-h-18 min-w-0 rounded-[10px] border border-[var(--mat-sys-outline-variant)] bg-[var(--mat-sys-surface-container-lowest)] px-4 py-3.5 empty:hidden">
+    <ng-content select="[pageFilters]"></ng-content>
+  </div>
+
+  <div class="page-body min-w-0">
     <ng-content select="[pageBody]"></ng-content>
   </div>
 </section>

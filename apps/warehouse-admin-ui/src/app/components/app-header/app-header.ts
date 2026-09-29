@@ -8,6 +8,7 @@ import { RouterLink } from '@angular/router';
   selector: 'app-header',
   imports: [MatButtonModule, MatMenuModule, MatToolbarModule, RouterLink],
   templateUrl: './app-header.html',
+  styleUrl: './app-header.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class AppHeader {

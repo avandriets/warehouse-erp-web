@@ -34,7 +34,7 @@ describe('user resource store', () => {
   it('preserves users on refresh failure', () => {
     const store = TestBed.inject(UsersStore);
     store.load({ limit: 25, offset: 0 }).subscribe();
-    http.expectOne('/api/identity/users?limit=25&offset=0').flush([{ id: 'u1' }]);
+    http.expectOne('/api/identity/users?limit=25&offset=0').flush({ items: [{ id: 'u1' }], total: 1 });
     store.load({ limit: 25, offset: 0 }).subscribe();
     http.expectOne('/api/identity/users?limit=25&offset=0').flush({}, { status: 503, statusText: 'Unavailable' });
     expect(store.entities().map(item => item.id)).toEqual(['u1']);

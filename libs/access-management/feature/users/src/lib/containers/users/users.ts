@@ -4,14 +4,16 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { MatIconModule } from '@angular/material/icon';
+import type { PageEvent } from '@angular/material/paginator';
+import { MatPaginatorModule } from '@angular/material/paginator';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatTableModule } from '@angular/material/table';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { UsersStore } from '@warehouse/access-management/data-access';
 import { StatusBadge } from '@warehouse/access-management/ui';
 import type { UserRecord } from '@warehouse/access-management/util';
-import { parseUsersQuery, USERS_PAGE_SIZE } from '@warehouse/access-management/util';
-import { ConfirmDialog, Page, UIStateContainerComponent, UrlSearch } from '@warehouse/shared';
+import { parseUsersQuery, USERS_PAGE_SIZE, USERS_PAGE_SIZES } from '@warehouse/access-management/util';
+import { ConfirmDialog, PageLayout, QueryParamSearch, UIStateContainerComponent } from '@warehouse/shared';
 import { concatMap, distinctUntilChanged, filter, finalize, of, switchMap, tap } from 'rxjs';
 
 import { UserFormDialog, UsersFilter } from '../../components';
@@ -24,9 +26,10 @@ import { UserFormDialog, UsersFilter } from '../../components';
     MatTableModule,
     MatDialogModule,
     MatIconModule,
-    UrlSearch,
+    MatPaginatorModule,
+    QueryParamSearch,
     UsersFilter,
-    Page,
+    PageLayout,
     UIStateContainerComponent,
     StatusBadge,
     RouterLink,
@@ -46,10 +49,13 @@ export class UsersPage {
   readonly loading = this.store.loading;
   readonly saving = this.store.saving;
   readonly error = computed(() => this.store.actionError() ?? this.store.error() ?? '');
-  readonly displayedColumns = ['display_name', 'email', 'status', 'actions'];
-  readonly pageSize = USERS_PAGE_SIZE;
+  readonly displayedColumns = ['user', 'authentication', 'status', 'actions'];
+  readonly pageSizeOptions = USERS_PAGE_SIZES;
 
   readonly offset = computed(() => this.requestParams().offset);
+  readonly pageSize = computed(() => this.requestParams().limit);
+  readonly pageIndex = computed(() => Math.floor(this.offset() / this.pageSize()));
+  readonly total = computed(() => this.store.pagination().total ?? 0);
 
   readonly state = this.store.entityState;
   readonly actionError = this.store.actionError;
@@ -59,7 +65,10 @@ export class UsersPage {
       .pipe(
         distinctUntilChanged(
           (previous, current) =>
-            previous.offset === current.offset && previous.status === current.status && previous.q === current.q,
+            previous.limit === current.limit &&
+            previous.offset === current.offset &&
+            previous.status === current.status &&
+            previous.q === current.q,
         ),
         switchMap(params => {
           this.store.reset();
@@ -125,10 +134,13 @@ export class UsersPage {
       .subscribe();
   }
 
-  page(delta: number): Promise<boolean> {
+  page(event: PageEvent): Promise<boolean> {
     return this.router.navigate([], {
       relativeTo: this.route,
-      queryParams: { offset: Math.max(0, this.offset() + delta * this.pageSize) || null },
+      queryParams: {
+        limit: event.pageSize === USERS_PAGE_SIZE ? null : event.pageSize,
+        offset: event.pageIndex * event.pageSize || null,
+      },
       queryParamsHandling: 'merge',
     });
   }
