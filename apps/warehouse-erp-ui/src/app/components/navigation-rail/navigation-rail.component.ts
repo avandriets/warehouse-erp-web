@@ -1,20 +1,20 @@
 import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
-import { MatIconModule } from '@angular/material/icon';
-import { MatTooltipModule } from '@angular/material/tooltip';
+import { MatIcon } from '@angular/material/icon';
+import { MatTooltip } from '@angular/material/tooltip';
 
-export type NavigationSection = 'home' | 'inventory' | 'purchasing' | 'sales' | 'reports';
+import type { NavigationSection } from '../../types';
 
 @Component({
   selector: 'erp-navigation-rail',
-  standalone: true,
-  imports: [MatIconModule, MatTooltipModule],
+  imports: [MatIcon, MatTooltip],
   templateUrl: './navigation-rail.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class NavigationRailComponent {
-  readonly activeSection = input.required<NavigationSection>();
+  readonly sections = input.required<readonly NavigationSection[]>();
+  readonly activeSection = input.required<string | null>();
   readonly sidebarOpen = input.required<boolean>();
 
-  readonly sectionChange = output<NavigationSection>();
+  readonly sectionChange = output<string>();
   readonly sidebarToggle = output<void>();
 }

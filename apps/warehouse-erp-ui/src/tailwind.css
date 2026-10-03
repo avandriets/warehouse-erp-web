@@ -1,5 +1,9 @@
 @import 'tailwindcss' theme(static);
 
+@theme {
+  --spacing-sidebar: 20rem;
+}
+
 /* Expose Material theme colors as Tailwind utilities. */
 @theme inline {
   --color-surface: var(--mat-sys-surface);
@@ -16,4 +20,11 @@
   --color-hover: var(--mat-sys-surface-container-highest);
   --color-selected: var(--mat-sys-secondary-container);
   --color-on-selected: var(--mat-sys-on-secondary-container);
+}
+
+@layer components {
+  .navigation-grid {
+    @apply grid gap-3;
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 16rem), 1fr));
+  }
 }

@@ -1,24 +1,46 @@
 <div class="flex h-dvh w-full overflow-hidden bg-surface text-on-surface">
-  <erp-navigation-rail [activeSection]="activeSection()"
+  <erp-navigation-rail [sections]="sections"
+                       [activeSection]="activeSection()"
                        [sidebarOpen]="sidebarOpen()"
                        (sectionChange)="selectSection($event)"
-                       (sidebarToggle)="toggleSidebar()" />
+                       (sidebarToggle)="toggleSidebar()">
+    <a railHeader
+       routerLink="/"
+       matTooltip="Home"
+       matTooltipPosition="right"
+       aria-label="Home"
+       class="grid cursor-pointer size-11 place-items-center rounded-xl text-muted transition-colors hover:bg-hover hover:text-on-surface"
+       [attr.aria-current]="activeSection() === null ? 'page' : null"
+       [class.bg-selected]="activeSection() === null"
+       [class.text-on-selected]="activeSection() === null">
+      <mat-icon>home</mat-icon>
+    </a>
 
-  <div class="shrink-0 overflow-hidden transition-[width] duration-200 ease-out"
-       [class.w-[320px]]="sidebarOpen()"
-       [class.w-0]="!sidebarOpen()">
+    <button railFooter
+            type="button"
+            matTooltip="Alexander"
+            matTooltipPosition="right"
+            class="grid cursor-pointer size-9 place-items-center rounded-full bg-primary text-xs font-medium text-on-primary"
+            aria-label="Alexander">
+      AA
+    </button>
+  </erp-navigation-rail>
 
-    <div class="h-full w-[320px] transition-[opacity,transform] duration-150 ease-out"
-         [class.opacity-100]="sidebarOpen()"
-         [class.translate-x-0]="sidebarOpen()"
-         [class.opacity-0]="!sidebarOpen()"
-         [class.-translate-x-3]="!sidebarOpen()">
-
-      <erp-workspace-sidebar [section]="activeSection()" />
+  @if (currentSection() || sidebarOpen()) {
+    <div class="shrink-0 overflow-hidden motion-safe:transition-[width] motion-safe:duration-200 motion-safe:ease-out"
+         [class.w-sidebar]="sidebarOpen()"
+         [class.w-0]="!sidebarOpen()"
+         [attr.inert]="sidebarOpen() ? null : ''">
+      <div class="h-full w-sidebar">
+        <erp-workspace-sidebar [heading]="sidebarHeading()"
+                               [groups]="sidebarGroups()"
+                               [selectedId]="selectedItemId()"
+                               (itemSelect)="selectItem($event)" />
+      </div>
     </div>
-  </div>
+  }
 
-  <main class="min-w-0 flex-1 overflow-auto bg-surface">
+  <main class="min-w-0 flex-1 overflow-auto bg-surface p-6">
     <router-outlet />
   </main>
 </div>
