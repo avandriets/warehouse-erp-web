@@ -1,0 +1,24 @@
+<div class="flex h-dvh w-full overflow-hidden bg-surface text-on-surface">
+  <erp-navigation-rail [activeSection]="activeSection()"
+                       [sidebarOpen]="sidebarOpen()"
+                       (sectionChange)="selectSection($event)"
+                       (sidebarToggle)="toggleSidebar()" />
+
+  <div class="shrink-0 overflow-hidden transition-[width] duration-200 ease-out"
+       [class.w-[320px]]="sidebarOpen()"
+       [class.w-0]="!sidebarOpen()">
+
+    <div class="h-full w-[320px] transition-[opacity,transform] duration-150 ease-out"
+         [class.opacity-100]="sidebarOpen()"
+         [class.translate-x-0]="sidebarOpen()"
+         [class.opacity-0]="!sidebarOpen()"
+         [class.-translate-x-3]="!sidebarOpen()">
+
+      <erp-workspace-sidebar [section]="activeSection()" />
+    </div>
+  </div>
+
+  <main class="min-w-0 flex-1 overflow-auto bg-surface">
+    <router-outlet />
+  </main>
+</div>
