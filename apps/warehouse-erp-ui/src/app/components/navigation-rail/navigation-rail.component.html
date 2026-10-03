@@ -1,0 +1,98 @@
+<aside class="flex h-dvh w-16 shrink-0 flex-col border-r border-outline bg-sidebar py-3">
+  <nav class="flex flex-1 flex-col items-center gap-1.5">
+    <!-- Sidebar toggle -->
+    <button matTooltip="{{ sidebarOpen() ? 'Close sidebar' : 'Open sidebar' }}"
+            type="button"
+            matTooltipPosition="right"
+            class="mb-2 grid size-11 place-items-center rounded-xl text-muted transition-colors hover:bg-hover/70 hover:text-on-surface"
+            (click)="sidebarToggle.emit()">
+      <mat-icon class="!text-[22px]">
+        {{ sidebarOpen() ? 'chevron_left' : 'chevron_right' }}
+      </mat-icon>
+    </button>
+
+    <!-- Home -->
+    <button type="button"
+            matTooltip="Home"
+            matTooltipPosition="right"
+            class="grid size-11 place-items-center rounded-xl text-muted transition-colors hover:bg-hover/70 hover:text-on-surface"
+            [class.bg-selected]="activeSection() === 'home'"
+            [class.text-on-selected]="activeSection() === 'home'"
+            (click)="sectionChange.emit('home')">
+      <mat-icon class="!text-[22px]">
+        home
+      </mat-icon>
+    </button>
+
+    <!-- Inventory -->
+    <button type="button"
+            matTooltip="Inventory"
+            matTooltipPosition="right"
+            class="grid size-11 place-items-center rounded-xl text-muted transition-colors hover:bg-hover/70 hover:text-on-surface"
+            [class.bg-selected]="activeSection() === 'inventory'"
+            [class.text-on-selected]="activeSection() === 'inventory'"
+            (click)="sectionChange.emit('inventory')">
+      <mat-icon class="!text-[22px]">
+        inventory_2
+      </mat-icon>
+    </button>
+
+    <!-- Purchasing -->
+    <button type="button"
+            matTooltip="Purchasing"
+            matTooltipPosition="right"
+            class="grid size-11 place-items-center rounded-xl text-muted transition-colors hover:bg-hover/70 hover:text-on-surface"
+            [class.bg-selected]="activeSection() === 'purchasing'"
+            [class.text-on-selected]="activeSection() === 'purchasing'"
+            (click)="sectionChange.emit('purchasing')">
+      <mat-icon class="!text-[22px]">
+        shopping_cart
+      </mat-icon>
+    </button>
+
+    <!-- Sales -->
+    <button type="button"
+            matTooltip="Sales"
+            matTooltipPosition="right"
+            class="grid size-11 place-items-center rounded-xl text-muted transition-colors hover:bg-hover/70 hover:text-on-surface"
+            [class.bg-selected]="activeSection() === 'sales'"
+            [class.text-on-selected]="activeSection() === 'sales'"
+            (click)="sectionChange.emit('sales')">
+      <mat-icon class="!text-[22px]">
+        point_of_sale
+      </mat-icon>
+    </button>
+
+    <!-- Reports -->
+    <button type="button"
+            matTooltip="Reports"
+            matTooltipPosition="right"
+            class="grid size-11 place-items-center rounded-xl text-muted transition-colors hover:bg-hover/70 hover:text-on-surface"
+            [class.bg-selected]="activeSection() === 'reports'"
+            [class.text-on-selected]="activeSection() === 'reports'"
+            (click)="sectionChange.emit('reports')">
+      <mat-icon class="!text-[22px]">
+        bar_chart
+      </mat-icon>
+    </button>
+
+    <button type="button"
+            matTooltip="More"
+            matTooltipPosition="right"
+            class="mt-1 grid size-11 place-items-center rounded-xl text-muted transition-colors hover:bg-hover/70 hover:text-on-surface">
+      <mat-icon class="!text-[22px]">
+        more_horiz
+      </mat-icon>
+    </button>
+  </nav>
+
+  <!-- Account -->
+  <div class="flex justify-center">
+    <button type="button"
+            matTooltip="Alexander"
+            matTooltipPosition="right"
+            class="grid size-9 place-items-center rounded-full bg-primary text-xs font-medium text-on-primary transition-transform hover:scale-105">
+      AA
+    </button>
+  </div>
+</aside>

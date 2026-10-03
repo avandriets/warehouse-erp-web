@@ -1,2 +1,1 @@
-export * from './app-layout/app-layout';
-export * from './welcome/welcome';
+export * from './app-layout/app-layout.component';

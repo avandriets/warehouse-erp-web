@@ -1,4 +1,3 @@
-@use 'tailwindcss';
 @use '@angular/material' as mat;
 
 $compact-form-field-theme: mat.define-theme(
@@ -24,40 +23,48 @@ html {
       density: 0,
     )
   );
+  // Use Tailwind's neutral surfaces and emerald accent across Material and custom UI.
+  @include mat.theme-overrides(
+    (
+      background: var(--color-white),
+      on-background: var(--color-neutral-900),
+      surface: var(--color-white),
+      surface-bright: var(--color-white),
+      surface-dim: var(--color-neutral-200),
+      surface-container-lowest: var(--color-white),
+      surface-container-low: var(--color-neutral-50),
+      surface-container: var(--color-neutral-100),
+      surface-container-high: var(--color-neutral-100),
+      surface-container-highest: var(--color-neutral-200),
+      surface-variant: var(--color-neutral-100),
+      on-surface: var(--color-neutral-900),
+      on-surface-variant: var(--color-neutral-500),
+      outline: var(--color-neutral-300),
+      outline-variant: var(--color-neutral-200),
+      inverse-surface: var(--color-neutral-800),
+      inverse-on-surface: var(--color-white),
+      primary: var(--color-emerald-700),
+      on-primary: var(--color-white),
+      primary-container: var(--color-emerald-100),
+      on-primary-container: var(--color-emerald-900),
+      primary-fixed: var(--color-emerald-100),
+      primary-fixed-dim: var(--color-emerald-200),
+      on-primary-fixed: var(--color-emerald-950),
+      on-primary-fixed-variant: var(--color-emerald-900),
+      inverse-primary: var(--color-emerald-200),
+      surface-tint: var(--color-emerald-700),
+      secondary: var(--color-neutral-700),
+      on-secondary: var(--color-white),
+      secondary-container: var(--color-neutral-200),
+      on-secondary-container: var(--color-neutral-900),
+      secondary-fixed: var(--color-neutral-200),
+      secondary-fixed-dim: var(--color-neutral-300),
+      on-secondary-fixed: var(--color-neutral-950),
+      on-secondary-fixed-variant: var(--color-neutral-700),
+    )
+  );
   @include mat.form-field-density($compact-form-field-theme);
 
   color-scheme: light;
   min-height: 100%;
-}
-
-body {
-  min-width: 20rem;
-  min-height: 100%;
-  margin: 0;
-  background: var(--mat-sys-surface);
-  color: var(--mat-sys-on-surface);
-  font-family: system-ui, sans-serif;
-}
-
-erp-root {
-  display: block;
-  min-height: 100dvh;
-}
-
-.app-header {
-  @include mat.toolbar-overrides(
-    (
-      container-background-color: var(--mat-sys-primary),
-      container-text-color: var(--mat-sys-on-primary),
-    )
-  );
-  @include mat.button-overrides(
-    (
-      text-label-text-color: var(--mat-sys-on-primary),
-      text-state-layer-color: var(--mat-sys-on-primary),
-      filled-container-color: var(--mat-sys-on-primary),
-      filled-label-text-color: var(--mat-sys-primary),
-      filled-state-layer-color: var(--mat-sys-primary),
-    )
-  );
 }

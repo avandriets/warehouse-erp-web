@@ -3,13 +3,13 @@ import type { Routes } from '@angular/router';
 export const routes: Routes = [
   {
     path: '',
-    loadComponent: () => import('./containers').then(module => module.AppLayout),
+    loadComponent: () => import('./containers').then(module => module.AppLayoutComponent),
     children: [
       {
         path: '',
         pathMatch: 'full',
         title: 'Welcome · Warehouse ERP',
-        loadComponent: () => import('./containers').then(module => module.WelcomePage),
+        loadComponent: () => import('./components').then(module => module.WelcomeComponent),
       },
     ],
   },

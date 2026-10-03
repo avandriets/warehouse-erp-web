@@ -1,0 +1,19 @@
+@import 'tailwindcss' theme(static);
+
+/* Expose Material theme colors as Tailwind utilities. */
+@theme inline {
+  --color-surface: var(--mat-sys-surface);
+  --color-sidebar: var(--mat-sys-surface-container-low);
+  --color-inverse-surface: var(--mat-sys-inverse-surface);
+  --color-on-inverse-surface: var(--mat-sys-inverse-on-surface);
+  --color-surface-container: var(--mat-sys-surface-container);
+  --color-on-surface: var(--mat-sys-on-surface);
+  --color-muted: var(--mat-sys-on-surface-variant);
+  --color-outline: var(--mat-sys-outline-variant);
+  --color-outline-strong: var(--mat-sys-outline);
+  --color-primary: var(--mat-sys-primary);
+  --color-on-primary: var(--mat-sys-on-primary);
+  --color-hover: var(--mat-sys-surface-container-highest);
+  --color-selected: var(--mat-sys-secondary-container);
+  --color-on-selected: var(--mat-sys-on-secondary-container);
+}

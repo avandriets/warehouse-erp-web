@@ -17,7 +17,7 @@
             "input": "apps/warehouse-erp-ui/public"
           }
         ],
-        "styles": ["apps/warehouse-erp-ui/src/styles.scss"],
+        "styles": ["apps/warehouse-erp-ui/src/tailwind.css", "apps/warehouse-erp-ui/src/styles.scss"],
         "outputPath": "dist/apps/warehouse-erp-ui",
         "index": "apps/warehouse-erp-ui/src/index.html"
       },
