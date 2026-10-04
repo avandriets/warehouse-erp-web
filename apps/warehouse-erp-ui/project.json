@@ -4,7 +4,7 @@
   "projectType": "application",
   "prefix": "erp",
   "sourceRoot": "apps/warehouse-erp-ui/src",
-  "tags": ["type:app", "scope:warehouse"],
+  "tags": ["type:app", "scope:shell"],
   "targets": {
     "build": {
       "options": {
@@ -54,7 +54,7 @@
     },
     "serve": {
       "options": {
-        "port": 4300,
+        "port": 4301,
         "proxyConfig": "proxy.conf.json"
       },
       "configurations": {

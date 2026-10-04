@@ -1,8 +1,8 @@
 <ui-page-layout>
   <p pageBreadcrumb>Access management</p>
   <div pageTitle>
-    <h1 class="m-0 text-3xl font-bold tracking-tight text-stone-900">Users</h1>
-    <p class="mt-1 text-sm leading-5 text-stone-600">Employee accounts and ERP access.</p>
+    <h1 class="m-0 text-2xl font-semibold text-[var(--mat-sys-on-surface)]">Users</h1>
+    <p class="mt-1 text-sm leading-5 text-[var(--mat-sys-on-surface-variant)]">Employee accounts and ERP access.</p>
   </div>
   <div pageActions
        class="flex flex-wrap items-center gap-2">
@@ -59,7 +59,7 @@
                 <a class="font-medium text-emerald-700 no-underline hover:underline"
                    [routerLink]="[user.id, 'access']">{{ user.display_name ?? user.email ?? 'Unnamed user' }}</a>
                 @if (user.display_name && user.email) {
-                  <span class="mt-1 block text-xs text-stone-500">{{ user.email }}</span>
+                  <span class="mt-1 block text-xs text-[var(--mat-sys-on-surface-variant)]">{{ user.email }}</span>
                 }
               </td>
             </ng-container>
@@ -71,7 +71,7 @@
               <td *matCellDef="let user"
                   mat-cell>
                 <span [class.text-emerald-700]="user.auth0_subject"
-                      [class.text-stone-500]="!user.auth0_subject">
+                      [class.text-[var(--mat-sys-on-surface-variant)]]="!user.auth0_subject">
                   {{ user.auth0_subject ? 'Auth0 linked' : 'Not linked' }}
                 </span>
               </td>
@@ -118,7 +118,7 @@
                 mat-row></tr>
             <tr *matNoDataRow
                 class="mat-row">
-              <td class="mat-cell px-6 py-14 text-center text-sm text-stone-500"
+              <td class="mat-cell px-6 py-14 text-center text-sm text-[var(--mat-sys-on-surface-variant)]"
                   [attr.colspan]="displayedColumns.length">No users found
               </td>
             </tr>

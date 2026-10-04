@@ -12,9 +12,9 @@
     <ng-template #data>
       <section aria-labelledby="auth0-link-title">
         <h3 id="auth0-link-title"
-            class="mt-0 text-lg font-semibold text-stone-900">Auth0 account linking</h3>
+            class="mt-0 text-lg font-semibold text-[var(--mat-sys-on-surface)]">Auth0 account linking</h3>
         @if (auth0Subject()) {
-          <p class="break-all rounded-lg bg-stone-100 px-3 py-2 font-mono text-sm text-stone-700">
+          <p class="break-all rounded-lg bg-[var(--mat-sys-surface-container)] px-3 py-2 font-mono text-sm text-[var(--mat-sys-on-surface)]">
             {{ auth0Subject() }}
           </p>
         } @else {
@@ -40,7 +40,7 @@
       <section class="mt-8"
                aria-labelledby="assigned-roles-title">
         <h3 id="assigned-roles-title"
-            class="text-lg font-semibold text-stone-900">Assigned roles</h3>
+            class="text-lg font-semibold text-[var(--mat-sys-on-surface)]">Assigned roles</h3>
         <ul class="divide-y divide-stone-200 p-0">
           @for (assignment of assignments(); track assignment.id) {
             <li class="flex flex-col gap-2 py-3 text-sm sm:flex-row sm:items-center sm:justify-between">
@@ -52,7 +52,7 @@
               </button>
             </li>
           } @empty {
-            <li class="py-4 text-sm text-stone-600">No roles assigned yet.</li>
+            <li class="py-4 text-sm text-[var(--mat-sys-on-surface-variant)]">No roles assigned yet.</li>
           }
         </ul>
       </section>

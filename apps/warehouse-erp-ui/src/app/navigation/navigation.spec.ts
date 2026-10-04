@@ -1,6 +1,9 @@
+import { provideHttpClient } from '@angular/common/http';
+import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { RouterTestingHarness } from '@angular/router/testing';
+import { provideAccessManagement } from '@warehouse/access-management';
 
 import { createAppRoutes } from '../app.routes';
 import { LIBRARY_MOUNTS } from '../config/library-mounts.config';
@@ -100,7 +103,13 @@ describe('navigation configuration contracts', () => {
 
   it('resolves every configured library menu entry to a real screen', async () => {
     TestBed.configureTestingModule({
-      providers: [provideTestAuth(), provideRouter(createAppRoutes(MENU_CONFIG, LIBRARY_MOUNTS))],
+      providers: [
+        provideHttpClient(),
+        provideHttpClientTesting(),
+        provideAccessManagement({ apiUrl: '/api' }),
+        provideTestAuth(),
+        provideRouter(createAppRoutes(MENU_CONFIG, LIBRARY_MOUNTS)),
+      ],
     });
     const harness = await RouterTestingHarness.create();
     for (const item of MENU_CONFIG.submenuItems) {
@@ -109,10 +118,20 @@ describe('navigation configuration contracts', () => {
         const library = LIBRARY_MOUNTS.find(entry => entry.id === target.libraryId)!;
         await harness.navigateByUrl(`/${library.path}/${target.path}`);
         const root = harness.fixture.nativeElement as HTMLElement;
-        expect(root.querySelector('md-directory-table')).not.toBeNull();
+        if (target.libraryId === 'master-data-library') {
+          expect(root.querySelector('md-directory-table')).not.toBeNull();
+        } else {
+          const request = TestBed.inject(HttpTestingController).expectOne(
+            req => req.url === `/api/identity/${target.path}`,
+          );
+          request.flush(target.path === 'users' ? { items: [], total: 0 } : []);
+          await harness.fixture.whenStable();
+          expect(root.querySelector('ui-page-layout h1')?.textContent).toContain(item.title);
+        }
         expect(root.querySelector('erp-unavailable')).toBeNull();
         expect(root.querySelector('erp-submenu a.bg-selected')?.textContent?.trim()).toBe(item.title);
       }
     }
+    TestBed.inject(HttpTestingController).verify();
   });
 });

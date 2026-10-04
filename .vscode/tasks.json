@@ -17,20 +17,6 @@
     },
     {
       "type": "npm",
-      "script": "start:admin",
-      "isBackground": true,
-      "problemMatcher": {
-        "owner": "typescript",
-        "pattern": "$tsc",
-        "background": {
-          "activeOnStart": true,
-          "beginsPattern": "Building|Changes detected",
-          "endsPattern": "Local:.*http"
-        }
-      }
-    },
-    {
-      "type": "npm",
       "script": "test",
       "problemMatcher": []
     }

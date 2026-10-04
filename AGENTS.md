@@ -27,8 +27,7 @@
 ## Workspace and scope
 
 - Use npm and the local Nx CLI. Read resolved project metadata with `npx nx show project <name> --json`.
-- `apps/warehouse-erp-ui` is the warehouse application (port 4300).
-- `apps/warehouse-admin-ui` is the thin administration runner application (port 4301).
+- `apps/warehouse-erp-ui` is the warehouse application and administration shell (port 4301).
 - `libs/access-management` is a publishable Angular package that owns users, roles, permissions, and their navigation routes.
 - `libs/auth` owns Auth0 integration, runtime auth configuration, the ERP profile, and permission guards.
 - `libs/shared` owns cross-application components, types with their associated metadata, and pure utilities independent of the applications, domains, and Auth0. Keep those concerns in focused internal collection directories; do not create a separate shared Nx library solely to separate those folders unless explicitly requested.
@@ -48,6 +47,7 @@
 - Keep `@warehouse/shared` buildable because publishable libraries depend on its public API. Declare it as a package dependency or peer dependency instead of bypassing Nx buildable-library boundaries.
 - Extract cohesive features as they grow; do not create empty layers or a library for every component.
 - New libraries need one scope tag (`scope:admin`, `scope:access-management`, `scope:warehouse`, or `scope:shared`) and one type tag (`type:feature`, `type:ui`, `type:data-access`, or `type:util`).
+- The ERP runner uses `scope:shell` to compose warehouse, access-management, and shared libraries. Domain library boundaries remain unchanged.
 - Scope rules: admin can use access-management and shared libraries; access-management can use its own scope and shared libraries; warehouse can use warehouse and shared libraries; shared code can use only shared libraries.
 - Type rules: apps/features can use feature, UI, data-access, and utility libraries; UI can use UI/util; data-access can use data-access/util; util can use only util.
 - Libraries must never import applications. Do not introduce cross-application imports or circular dependencies.
@@ -148,7 +148,7 @@ libs/access-management/
 ### Allowed dependency direction
 
 ```text
-admin application layout ──> access-management primary API
+ERP application layout ──> access-management primary API
                        │
                        └──lazy──> feature/* ──> data-access ──> util
                                              ├──> ui ─────────> util
@@ -189,7 +189,7 @@ When adding another publishable domain package, start with only the layers it ne
 - Angular 21 components, directives, and pipes are standalone by default. Do not write redundant `standalone: true` metadata; specify `standalone: false` only when deliberately declaring an artifact in an NgModule.
 - Prettier formats code; js-beautify formats external HTML. Use `npm run format`, not Prettier on HTML files.
 - Run `npm run check` for formatting, lint, and type checks. Run relevant Nx tests and builds for behavior changes.
-- After shared-library changes, validate affected consumers. `npm test` and `npm run build` cover both applications.
+- After shared-library changes, validate affected consumers. `npm test` and `npm run build` cover the application and libraries.
 - Add meaningful behavior tests for new behavior; do not add tests solely for text or formatting edits.
 - Use mocked HTTP in frontend unit tests. Do not modify the application database for testing.
 - Keep Angular's cache disabled unless a separate change explicitly validates enabling it. For file-watcher limits, use `--poll=1000`.

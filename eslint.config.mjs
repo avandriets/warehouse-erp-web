@@ -39,6 +39,10 @@ export default tseslint.config(
           allow: [],
           depConstraints: [
             {
+              sourceTag: 'scope:shell',
+              onlyDependOnLibsWithTags: ['scope:warehouse', 'scope:access-management', 'scope:shared'],
+            },
+            {
               sourceTag: 'scope:admin',
               onlyDependOnLibsWithTags: ['scope:admin', 'scope:access-management', 'scope:shared'],
             },

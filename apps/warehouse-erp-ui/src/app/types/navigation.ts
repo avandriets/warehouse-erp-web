@@ -13,6 +13,7 @@ export interface ResolvedSubmenuGroup {
 }
 
 export interface PrimaryMenuItem {
+  readonly permission?: string;
   readonly id: string;
   readonly route: string;
   readonly title: string;
@@ -25,6 +26,7 @@ export interface ResolvedPrimaryMenuItem extends PrimaryMenuItem {
 }
 
 export interface LibraryMount {
+  readonly permission?: string;
   readonly id: string;
   readonly path: string;
   readonly loadChildren: LoadChildrenCallback;

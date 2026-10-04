@@ -36,7 +36,7 @@ describe('warehouse navigation', () => {
     expect(root.querySelector('erp-welcome')).not.toBeNull();
     expect(root.querySelector('erp-submenu-overview')).toBeNull();
     expect(root.querySelectorAll('erp-primary-menu button[aria-current]')).toHaveLength(0);
-    expect(root.querySelectorAll('main a')).toHaveLength(3);
+    expect(root.querySelectorAll('main a')).toHaveLength(MENU_CONFIG.primaryMenu.length);
     expect(root.querySelector('main a[href="/master-data"]')?.textContent).toContain('Master data');
     expect(root.querySelector('main a[href="/documents"]')?.textContent).toContain('Documents');
     expect(root.querySelector('main a[href="/reports"]')?.textContent).toContain('Reports');
@@ -67,7 +67,7 @@ describe('warehouse navigation', () => {
     expect(router.url).toBe('/');
     expect(root.querySelector('main h1')?.textContent).toContain('Welcome to Warehouse ERP');
     expect(root.querySelectorAll('erp-primary-menu button[aria-current]')).toHaveLength(0);
-    expect(root.querySelectorAll('erp-submenu section a')).toHaveLength(3);
+    expect(root.querySelectorAll('erp-submenu section a')).toHaveLength(MENU_CONFIG.primaryMenu.length);
     expect(root.querySelector('erp-submenu a.bg-selected')).toBeNull();
 
     root.querySelector<HTMLButtonElement>('erp-primary-menu button[aria-label="Close sidebar"]')!.click();
@@ -217,7 +217,10 @@ describe('independent library mounts and menus', () => {
         },
       ],
     };
-    const libraries = LIBRARY_MOUNTS.map(library => ({ ...library, path: 'custom/catalog' }));
+    const libraries = LIBRARY_MOUNTS.filter(library => library.id === 'master-data-library').map(library => ({
+      ...library,
+      path: 'custom/catalog',
+    }));
     TestBed.configureTestingModule({ providers: [provideTestAuth(), provideRouter(createAppRoutes(menu, libraries))] });
     const harness = await RouterTestingHarness.create('/operations');
     const root = harness.fixture.nativeElement as HTMLElement;

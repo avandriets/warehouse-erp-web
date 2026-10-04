@@ -14,13 +14,13 @@
             [formGroup]="form"
             (ngSubmit)="save()">
         <fieldset>
-          <legend class="mb-4 font-semibold text-stone-900">Role permissions</legend>
+          <legend class="mb-4 font-semibold text-[var(--mat-sys-on-surface)]">Role permissions</legend>
           <div class="grid gap-3 md:grid-cols-2">
             @for (permission of permissions(); track permission.code) {
               <mat-checkbox [name]="permission.code"
                             [formControl]="form.controls[permission.code]">
                 <span class="font-semibold">{{ permission.code }}</span>
-                <span class="block text-xs text-stone-600">{{ permission.description }}</span>
+                <span class="block text-xs text-[var(--mat-sys-on-surface-variant)]">{{ permission.description }}</span>
               </mat-checkbox>
             }
           </div>

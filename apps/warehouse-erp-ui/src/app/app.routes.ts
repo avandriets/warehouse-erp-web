@@ -1,5 +1,5 @@
 import type { Route, Routes } from '@angular/router';
-import { permissionGuard } from '@warehouse/auth';
+import { permissionGuard, WarehouseAuthService } from '@warehouse/auth';
 
 import { PLACEHOLDER_PAGES } from './config/app-placeholders.config';
 import { LIBRARY_MOUNTS } from './config/library-mounts.config';
@@ -19,7 +19,15 @@ export function createAppRoutes(
 
   const featureRoutes: Routes = [
     ...menu.primaryMenu.map(createOverviewRoute),
-    ...libraries.map(library => ({ path: library.path, loadChildren: library.loadChildren })),
+    ...libraries.map(library => ({
+      path: library.path,
+      loadChildren: library.loadChildren,
+      canActivate: [permissionGuard],
+      canActivateChild: [permissionGuard],
+      data: { permission: library.permission },
+    })),
+    { path: 'users', redirectTo: '/administration/users', pathMatch: 'prefix' },
+    { path: 'roles', redirectTo: '/administration/roles', pathMatch: 'prefix' },
     ...placeholders.map(createPlaceholderRoute),
     {
       path: '**',
@@ -33,7 +41,12 @@ export function createAppRoutes(
     {
       path: '',
       providers: [
-        { provide: PRIMARY_MENU_WITH_SUBMENUS_TOKEN, useValue: navigation },
+        {
+          provide: PRIMARY_MENU_WITH_SUBMENUS_TOKEN,
+          useFactory: (auth: WarehouseAuthService) =>
+            navigation.filter(item => !item.permission || auth.can(item.permission)),
+          deps: [WarehouseAuthService],
+        },
         MenuSelectionService,
         ShellSessionService,
       ],
@@ -69,7 +82,8 @@ function createOverviewRoute(primaryMenuItem: PrimaryMenuItem): Route {
     path: primaryMenuItem.route.slice(1),
     pathMatch: 'full',
     title: `${primaryMenuItem.title} · Warehouse ERP`,
-    data: { primaryMenuId: primaryMenuItem.id },
+    canActivate: [permissionGuard],
+    data: { primaryMenuId: primaryMenuItem.id, permission: primaryMenuItem.permission },
     loadComponent: () => import('./components').then(module => module.SubmenuOverviewComponent),
   };
 }

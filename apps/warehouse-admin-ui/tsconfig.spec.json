@@ -1,8 +1,0 @@
-{
-  "extends": "./tsconfig.json",
-  "compilerOptions": {
-    "outDir": "../../out-tsc/warehouse-admin-ui-spec",
-    "types": ["vitest/globals"]
-  },
-  "include": ["src/**/*.spec.ts"]
-}

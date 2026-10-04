@@ -4,7 +4,6 @@
   "scripts": {
     "nx": "nx",
     "start": "nx serve warehouse-erp-ui",
-    "start:admin": "nx serve warehouse-admin-ui",
     "build": "nx run-many -t build",
     "test": "nx run-many -t test",
     "graph": "nx graph",

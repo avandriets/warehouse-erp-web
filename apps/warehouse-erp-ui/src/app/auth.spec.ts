@@ -32,6 +32,7 @@ describe('shell authentication', () => {
   };
 
   beforeEach(() => {
+    auth.can.mockReturnValue(true);
     auth.loading.set(false);
     auth.authenticated.set(false);
     auth.error.set(null);
@@ -131,5 +132,29 @@ describe('shell authentication', () => {
     await harness.navigateByUrl('/master-data/warehouses');
     expect(location.path()).toBe('/master-data/warehouses');
     expect(harness.routeNativeElement?.textContent).toContain('Sign in to continue');
+  });
+  it('hides administration and blocks its deep links without users.manage', async () => {
+    auth.authenticated.set(true);
+    auth.can.mockReturnValue(false);
+    const harness = await open();
+    expect(harness.routeNativeElement?.querySelector('a[href="/administration"]')).toBeNull();
+    expect(harness.routeNativeElement?.querySelector('button[aria-label="Administration"]')).toBeNull();
+    for (const path of [
+      '/administration',
+      '/administration/users',
+      '/administration/roles/test/permissions',
+      '/users/test/access',
+    ]) {
+      await harness.navigateByUrl(path);
+      expect(harness.routeNativeElement?.textContent).toContain('Access unavailable');
+    }
+    expect(auth.can).toHaveBeenCalledWith('users.manage');
+  });
+
+  it('shows administration cards for an authorized user', async () => {
+    auth.authenticated.set(true);
+    const harness = await open('/administration');
+    expect(harness.routeNativeElement?.querySelector('a[href="/administration/users"]')).not.toBeNull();
+    expect(harness.routeNativeElement?.querySelector('a[href="/administration/roles"]')).not.toBeNull();
   });
 });

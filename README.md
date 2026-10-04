@@ -1,18 +1,19 @@
 # Warehouse ERP frontend
 
-An Nx workspace with two thin Angular applications, shared authentication, and a publishable access-management package.
+An Nx workspace with one thin Angular application, shared authentication, and a publishable access-management package.
 
 ```text
-apps/warehouse-erp-ui    — original application, port 4300
-apps/warehouse-admin-ui  — administration runner application, port 4301
+apps/warehouse-erp-ui    — main ERP and administration shell, port 4301
 libs/access-management   — publishable users, roles, and permissions package
 libs/auth                — Auth0, configuration, HTTP interceptor, ERP profile, and route guard
 libs/shared              — shared utilities, imported through @warehouse/shared
 ```
 
-`warehouse-erp-ui` uses a route-level application layout. Unauthenticated users see the top toolbar with a sign-in action and the public welcome page without application navigation.
-The admin application layout composes `@warehouse/access-management`; its domain behavior stays in that package. The backend lives in the
-sibling `warehouse-erp` repository and requires no changes for this migration.
+`warehouse-erp-ui` hosts master data and access management in the same Tailwind/Material shell.
+Authentication is required before entering the application. The Administration menu and routes
+require `users.manage`. Users and roles are available at `/administration/users` and
+`/administration/roles`; old `/users` and `/roles` links redirect to their new locations.
+Domain behavior stays in libraries.
 
 ## Getting started
 
@@ -20,24 +21,22 @@ Tested with Node.js 24.13 and npm 11.6.2.
 
 ```bash
 npm ci
-npm start              # http://localhost:4300
-npm run start:admin    # http://localhost:4301
-npm run build          # production builds of both applications
+npm start              # http://localhost:4301
+npm run build          # production builds of the application and libraries
 npm test               # Vitest: original application, auth, and administrative operations
 npm run graph          # Nx project graph
 ```
 
-You can also use `npx nx build warehouse-admin-ui`, `npx nx test warehouse-admin-ui`, `npx nx serve warehouse-erp-ui`,
+You can also use `npx nx build warehouse-erp-ui`, `npx nx test warehouse-erp-ui`, `npx nx serve warehouse-erp-ui`,
 and `npx nx affected -t build,test --base=<your-base-ref>`.
 Build output is written to `dist/apps/<application>/browser`.
 Nx caches builds and tests and tracks changes to the shared auth library.
 Angular's cache remains disabled, as in the original project.
 If your environment limits the number of file watchers (`EMFILE`), run
-`npm run start:admin -- --poll=1000` (the same option works with `npm start`).
 
 ## Auth0 and API
 
-Each application owns build-time settings in `src/environments/environment.ts` and uses
+The application owns build-time settings in `src/environments/environment.ts` and uses
 `environment.development.ts` through the Nx build target's `fileReplacements`. Changes require a rebuild.
 These files contain public SPA settings, not secrets:
 
@@ -50,11 +49,11 @@ HTTP client providers. `WarehouseAuthService` provides login, signup, logout, an
 The access token is attached only to requests under the configured `apiUrl`.
 The application does not store tokens in localStorage.
 
-In your Auth0 SPA application settings, add **both** origins to all three lists:
+In your Auth0 SPA application settings, add the ERP origin to all three lists:
 
-- Allowed Callback URLs: `http://localhost:4300`, `http://localhost:4301`.
-- Allowed Logout URLs: `http://localhost:4300`, `http://localhost:4301`.
-- Allowed Web Origins: `http://localhost:4300`, `http://localhost:4301`.
+- Allowed Callback URLs: `http://localhost:4301`.
+- Allowed Logout URLs: `http://localhost:4301`.
+- Allowed Web Origins: `http://localhost:4301`.
 
 The audience must match the backend's `AUTH0_AUDIENCE` (`https://api.warehouse-erp`).
 If you use separate Auth0 SPA clients, set the appropriate `clientId` in each application's
@@ -133,7 +132,7 @@ simple-import-sort. Component selectors use the `app` prefix.
 Prettier settings: `printWidth: 180`, `singleQuote: true`, `arrowParens: avoid`.
 External HTML templates are formatted with `js-beautify`: Angular templating, a line width of 180,
 and `force-aligned` attribute wrapping. Prettier skips HTML files.
-The commands cover both applications and all libraries; Nx tracks the ESLint configuration.
+The commands cover the application and all libraries; Nx tracks the ESLint configuration.
 
 ```bash
 npm run lint          # ESLint for all four projects
@@ -151,7 +150,7 @@ into interface messages. The library does not depend on the applications or Auth
 
 ESLint enforces project dependencies using Nx scope and type tags:
 
-- The admin application may use access-management and shared libraries; the access-management package may use only its own scope and shared libraries.
+- The ERP shell may use warehouse, access-management, and shared libraries; the access-management package may use only its own scope and shared libraries.
 - The warehouse application uses warehouse and shared libraries.
 - `auth` is shared data-access code and may depend on `shared` utilities.
 - `shared` cannot import `auth` or application code.
