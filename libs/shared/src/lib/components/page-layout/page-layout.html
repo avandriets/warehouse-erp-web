@@ -18,12 +18,11 @@
     </header>
   }
 
-  <div
-       class="page-filters mt-7 min-h-18 min-w-0 rounded-[10px] border border-[var(--mat-sys-outline-variant)] bg-[var(--mat-sys-surface-container-lowest)] px-4 py-3.5 empty:hidden">
+  <div class="mt-7 min-h-18 min-w-0 rounded-[10px] border border-[var(--mat-sys-outline-variant)] bg-[var(--mat-sys-surface-container-lowest)] px-4 py-3.5 empty:hidden">
     <ng-content select="[pageFilters]"></ng-content>
   </div>
 
-  <div class="page-body min-w-0">
+  <div class="min-w-0">
     <ng-content select="[pageBody]"></ng-content>
   </div>
 </section>

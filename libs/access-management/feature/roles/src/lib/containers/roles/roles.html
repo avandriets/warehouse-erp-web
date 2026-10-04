@@ -26,7 +26,7 @@
     <am-roles-filter class="block w-full sm:w-44 sm:shrink-0" />
     <button mat-icon-button
             type="button"
-            class="size-10! sm:ml-auto"
+            class="sm:ml-auto"
             aria-label="Refresh roles"
             title="Refresh"
             [disabled]="saving() || loading()"
@@ -50,8 +50,7 @@
                  [dataSource]="roles()">
             <ng-container matColumnDef="code">
               <th *matHeaderCellDef
-                  mat-header-cell
-                  class="text-xs! tracking-wide! text-[var(--mat-sys-on-surface-variant)]! uppercase">Code
+                  mat-header-cell>Code
               </th>
               <td *matCellDef="let role"
                   mat-cell>{{ role.code }}
@@ -59,8 +58,7 @@
             </ng-container>
             <ng-container matColumnDef="name">
               <th *matHeaderCellDef
-                  mat-header-cell
-                  class="text-xs! tracking-wide! text-[var(--mat-sys-on-surface-variant)]! uppercase">Name
+                  mat-header-cell>Name
               </th>
               <td *matCellDef="let role"
                   mat-cell>{{ role.name }}
@@ -68,8 +66,7 @@
             </ng-container>
             <ng-container matColumnDef="active">
               <th *matHeaderCellDef
-                  mat-header-cell
-                  class="text-xs! tracking-wide! text-[var(--mat-sys-on-surface-variant)]! uppercase">Active
+                  mat-header-cell>Active
               </th>
               <td *matCellDef="let role"
                   mat-cell>
@@ -78,8 +75,7 @@
             </ng-container>
             <ng-container matColumnDef="actions">
               <th *matHeaderCellDef
-                  mat-header-cell
-                  class="text-xs! tracking-wide! text-[var(--mat-sys-on-surface-variant)]! uppercase">Actions
+                  mat-header-cell>Actions
               </th>
               <td *matCellDef="let role"
                   mat-cell>

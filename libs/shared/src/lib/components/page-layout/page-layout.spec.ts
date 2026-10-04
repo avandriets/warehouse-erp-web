@@ -28,7 +28,7 @@ describe('PageLayout', () => {
     const fixture = TestBed.createComponent(PageLayoutHost);
     await fixture.whenStable();
 
-    const filters = fixture.nativeElement.querySelector('.page-filters');
+    const filters = fixture.nativeElement.querySelector('[pageFilters]').parentElement;
     const body = fixture.nativeElement.querySelector('[pageBody]');
 
     expect(filters.textContent).toContain('Filters');

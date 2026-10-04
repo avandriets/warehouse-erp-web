@@ -3,7 +3,7 @@
   <mat-card-header>
     <mat-card-title>{{ user().display_name ?? user().email }}</mat-card-title>
   </mat-card-header>
-  <mat-card-content class="pt-5!">
+  <mat-card-content>
     <ui-state-container [state]="state()"
                         [resolved]="data"
                         [actionError]="actionError()"

@@ -27,7 +27,7 @@
     <am-users-filter class="block w-full sm:w-44 sm:shrink-0" />
     <button mat-icon-button
             type="button"
-            class="size-10! sm:ml-auto"
+            class="sm:ml-auto"
             aria-label="Refresh users"
             title="Refresh"
             [disabled]="saving() || loading()"
@@ -51,8 +51,7 @@
                  [dataSource]="users()">
             <ng-container matColumnDef="user">
               <th *matHeaderCellDef
-                  mat-header-cell
-                  class="text-xs! tracking-wide! text-[var(--mat-sys-on-surface-variant)]! uppercase">User
+                  mat-header-cell>User
               </th>
               <td *matCellDef="let user"
                   mat-cell>
@@ -65,8 +64,7 @@
             </ng-container>
             <ng-container matColumnDef="authentication">
               <th *matHeaderCellDef
-                  mat-header-cell
-                  class="text-xs! tracking-wide! text-[var(--mat-sys-on-surface-variant)]! uppercase">Authentication
+                  mat-header-cell>Authentication
               </th>
               <td *matCellDef="let user"
                   mat-cell>
@@ -78,8 +76,7 @@
             </ng-container>
             <ng-container matColumnDef="status">
               <th *matHeaderCellDef
-                  mat-header-cell
-                  class="text-xs! tracking-wide! text-[var(--mat-sys-on-surface-variant)]! uppercase">Status
+                  mat-header-cell>Status
               </th>
               <td *matCellDef="let user"
                   mat-cell>
@@ -88,8 +85,7 @@
             </ng-container>
             <ng-container matColumnDef="actions">
               <th *matHeaderCellDef
-                  mat-header-cell
-                  class="text-xs! tracking-wide! text-[var(--mat-sys-on-surface-variant)]! uppercase">Actions
+                  mat-header-cell>Actions
               </th>
               <td *matCellDef="let user"
                   mat-cell>
