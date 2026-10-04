@@ -1,0 +1,41 @@
+        <div class="overflow-x-auto">
+          <table mat-table
+                 class="w-full"
+                 [dataSource]="rows()">
+            <ng-container matColumnDef="code">
+              <th *matHeaderCellDef
+                  mat-header-cell>Code</th>
+              <td *matCellDef="let row"
+                  mat-cell>{{ row.code }}</td>
+            </ng-container>
+            <ng-container matColumnDef="name">
+              <th *matHeaderCellDef
+                  mat-header-cell>Name</th>
+              <td *matCellDef="let row"
+                  mat-cell>{{ row.name }}</td>
+            </ng-container>
+            <ng-container matColumnDef="detail">
+              <th *matHeaderCellDef
+                  mat-header-cell>{{ detailHeading() }}</th>
+              <td *matCellDef="let row"
+                  mat-cell>{{ row.detail }}</td>
+            </ng-container>
+            <ng-container matColumnDef="actions">
+              <th *matHeaderCellDef
+                  mat-header-cell>Actions</th>
+              <td *matCellDef="let row"
+                  mat-cell>
+                <a mat-button
+                   [routerLink]="[row.id, 'edit']"
+                   [attr.aria-label]="'Edit ' + row.name">Edit</a>
+                <a mat-button
+                   [routerLink]="[row.id, 'delete']"
+                   [attr.aria-label]="'Delete ' + row.name">Delete</a>
+              </td>
+            </ng-container>
+            <tr *matHeaderRowDef="columns"
+                mat-header-row></tr>
+            <tr *matRowDef="let row; columns: columns;"
+                mat-row></tr>
+          </table>
+        </div>

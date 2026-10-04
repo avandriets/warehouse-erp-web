@@ -1,0 +1,18 @@
+        <mat-form-field appearance="outline">
+          <mat-label>Code</mat-label>
+          <input matInput
+                 name="code"
+                 maxlength="40"
+                 required
+                 [formControl]="code()" />
+          <mat-error>Enter a code (up to 40 characters).</mat-error>
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Name</mat-label>
+          <input matInput
+                 name="name"
+                 maxlength="120"
+                 required
+                 [formControl]="name()" />
+          <mat-error>Enter a name (up to 120 characters).</mat-error>
+        </mat-form-field>

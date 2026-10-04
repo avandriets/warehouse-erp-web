@@ -1,8 +1,8 @@
-import { ChangeDetectionStrategy, Component } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { MatIcon } from '@angular/material/icon';
 import { RouterLink } from '@angular/router';
 
-import { APP_NAVIGATION } from '../../app-navigation.config';
+import { PRIMARY_MENU_WITH_SUBMENUS_TOKEN } from '../../config/primary-menu-with-submenus.token';
 
 @Component({
   selector: 'erp-welcome',
@@ -11,5 +11,5 @@ import { APP_NAVIGATION } from '../../app-navigation.config';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class WelcomeComponent {
-  readonly sections = APP_NAVIGATION;
+  readonly primaryMenu = inject(PRIMARY_MENU_WITH_SUBMENUS_TOKEN);
 }

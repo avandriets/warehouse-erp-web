@@ -8,13 +8,13 @@
     </div>
 
     <div class="navigation-grid">
-      @for (section of sections; track section.id) {
+      @for (primaryMenuItem of primaryMenu; track primaryMenuItem.id) {
         <a class="group rounded-2xl border border-outline p-5 text-left transition-colors hover:border-outline-strong hover:bg-sidebar"
-           [routerLink]="section.route">
+           [routerLink]="primaryMenuItem.route">
           <div class="mb-5 grid size-10 place-items-center rounded-xl bg-surface-container text-on-surface transition-colors group-hover:bg-hover">
-            <mat-icon>{{ section.icon }}</mat-icon>
+            <mat-icon>{{ primaryMenuItem.icon }}</mat-icon>
           </div>
-          <div class="font-medium text-on-surface">{{ section.title }}</div>
+          <div class="font-medium text-on-surface">{{ primaryMenuItem.title }}</div>
         </a>
       }
     </div>

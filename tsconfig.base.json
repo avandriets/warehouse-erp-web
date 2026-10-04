@@ -21,7 +21,8 @@
       "@warehouse/access-management/feature/roles": ["./libs/access-management/feature/roles/src/index.ts"],
       "@warehouse/access-management/data-access": ["./libs/access-management/data-access/src/index.ts"],
       "@warehouse/access-management/ui": ["./libs/access-management/ui/src/index.ts"],
-      "@warehouse/access-management/util": ["./libs/access-management/util/src/index.ts"]
+      "@warehouse/access-management/util": ["./libs/access-management/util/src/index.ts"],
+      "@warehouse/master-data": ["./libs/master-data/src/index.ts"]
     }
   },
   "angularCompilerOptions": {

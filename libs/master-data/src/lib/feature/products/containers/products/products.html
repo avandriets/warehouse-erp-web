@@ -1,0 +1,63 @@
+<ui-page-layout>
+  <span pageBreadcrumb>Master data</span>
+  <h1 pageTitle
+      class="text-2xl font-semibold">{{ missing() ? 'Record not found' : heading() }}</h1>
+  <div pageActions>
+    @if (mode() === 'list') {
+      <a mat-flat-button
+         routerLink="create">Create {{ singular }}</a>
+    } @else {
+      <button mat-button
+              type="button"
+              (click)="back()">Back to {{ label }}</button>
+    }
+  </div>
+  <div pageBody
+       class="mt-6">
+    <p class="mb-6 text-sm text-muted">Demo data. Changes are stored in memory and reset when the page is reloaded.</p>
+    @if (missing()) {
+      <p role="status">This {{ singular }} does not exist or has been deleted.</p>
+    } @else if (mode() === 'list') {
+      @if (records().length) {
+        <md-directory-table detailHeading="Description"
+                            [rows]="rows()" />
+      } @else {
+        <p role="status">No {{ label.toLowerCase() }} yet. Create the first record.</p>
+      }
+    } @else if (mode() === 'delete') {
+      <p class="mb-5">Delete {{ record()?.name }} ({{ record()?.code }})?</p>
+      <div class="flex gap-3">
+        <button mat-flat-button
+                type="button"
+                (click)="deleteRecord()">Confirm deletion</button>
+        <button mat-button
+                type="button"
+                (click)="back()">Cancel</button>
+      </div>
+    } @else {
+      <form class="flex max-w-xl flex-col gap-3"
+            [formGroup]="form"
+            (ngSubmit)="save()">
+        <md-directory-fields [code]="form.controls.code"
+                             [name]="form.controls.name" />
+        <mat-form-field appearance="outline">
+          <mat-label>{{ 'Description' }}</mat-label>
+          <textarea matInput
+                    formControlName="description"
+                    name="description"
+                    maxlength="300"
+                    rows="3"></textarea>
+        </mat-form-field>
+        @if (error()) {
+          <p role="alert">{{ error() }}</p> }
+        <div class="flex gap-3">
+          <button mat-flat-button
+                  type="submit">Save</button>
+          <button mat-button
+                  type="button"
+                  (click)="back()">Cancel</button>
+        </div>
+      </form>
+    }
+  </div>
+</ui-page-layout>

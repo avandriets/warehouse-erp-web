@@ -1,0 +1,32 @@
+@if (currentPrimaryMenuItem(); as primaryMenuItem) {
+  <div class="flex min-h-full justify-center">
+    <div class="w-full max-w-5xl">
+      <div class="mb-6">
+        <a mat-button
+           routerLink="/">
+          <mat-icon>arrow_back</mat-icon>
+          Home
+        </a>
+        <h1 class="text-2xl font-semibold text-on-surface">{{ primaryMenuItem.title }}</h1>
+        <p class="mt-4 text-base leading-7 text-muted">Choose a page to continue.</p>
+      </div>
+
+      @for (group of primaryMenuItem.groups; track group.title) {
+        <section class="mb-8">
+          <h2 class="mb-4 text-lg font-medium text-muted">{{ group.title }}</h2>
+          <div class="navigation-grid">
+            @for (item of group.items; track item.id) {
+              <a class="group rounded-2xl border border-outline p-5 text-left transition-colors hover:border-outline-strong hover:bg-sidebar"
+                 [routerLink]="item.route">
+                <div class="mb-5 grid size-10 place-items-center rounded-xl bg-surface-container text-on-surface transition-colors group-hover:bg-hover">
+                  <mat-icon>{{ primaryMenuItem.icon }}</mat-icon>
+                </div>
+                <div class="font-medium text-on-surface">{{ item.title }}</div>
+              </a>
+            }
+          </div>
+        </section>
+      }
+    </div>
+  </div>
+}

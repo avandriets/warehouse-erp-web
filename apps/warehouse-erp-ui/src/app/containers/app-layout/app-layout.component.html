@@ -1,18 +1,18 @@
 <div class="flex h-dvh w-full overflow-hidden bg-surface text-on-surface">
-  <erp-navigation-rail [sections]="sections"
-                       [activeSection]="activeSection()"
-                       [sidebarOpen]="sidebarOpen()"
-                       (sectionChange)="selectSection($event)"
-                       (sidebarToggle)="toggleSidebar()">
+  <erp-primary-menu [primaryMenu]="primaryMenu"
+                    [activePrimaryMenuId]="activePrimaryMenuId()"
+                    [sidebarOpen]="sidebarOpen()"
+                    (primaryMenuChange)="selectPrimaryMenu($event)"
+                    (sidebarToggle)="toggleSidebar()">
     <a railHeader
        routerLink="/"
        matTooltip="Home"
        matTooltipPosition="right"
        aria-label="Home"
        class="grid cursor-pointer size-11 place-items-center rounded-xl text-muted transition-colors hover:bg-hover hover:text-on-surface"
-       [attr.aria-current]="activeSection() === null ? 'page' : null"
-       [class.bg-selected]="activeSection() === null"
-       [class.text-on-selected]="activeSection() === null">
+       [attr.aria-current]="activePrimaryMenuId() === null ? 'page' : null"
+       [class.bg-selected]="activePrimaryMenuId() === null"
+       [class.text-on-selected]="activePrimaryMenuId() === null">
       <mat-icon>home</mat-icon>
     </a>
 
@@ -24,18 +24,17 @@
             aria-label="Alexander">
       AA
     </button>
-  </erp-navigation-rail>
+  </erp-primary-menu>
 
-  @if (currentSection() || sidebarOpen()) {
+  @if (currentPrimaryMenuItem() || sidebarOpen()) {
     <div class="shrink-0 overflow-hidden motion-safe:transition-[width] motion-safe:duration-200 motion-safe:ease-out"
          [class.w-sidebar]="sidebarOpen()"
          [class.w-0]="!sidebarOpen()"
          [attr.inert]="sidebarOpen() ? null : ''">
       <div class="h-full w-sidebar">
-        <erp-workspace-sidebar [heading]="sidebarHeading()"
-                               [groups]="sidebarGroups()"
-                               [selectedId]="selectedItemId()"
-                               (itemSelect)="selectItem($event)" />
+        <erp-submenu [heading]="sidebarHeading()"
+                     [groups]="sidebarGroups()"
+                     [selectedId]="selectedItemId()" />
       </div>
     </div>
   }
