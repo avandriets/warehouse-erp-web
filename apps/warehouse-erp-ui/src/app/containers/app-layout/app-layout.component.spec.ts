@@ -5,9 +5,11 @@ import { NavigationEnd, provideRouter, Router } from '@angular/router';
 import { RouterTestingHarness } from '@angular/router/testing';
 import { filter, firstValueFrom } from 'rxjs';
 
-import { createAppRoutes, routes } from '../../app.routes';
+import { createAppRoutes } from '../../app.routes';
+import { PLACEHOLDER_PAGES } from '../../config/app-placeholders.config';
 import { LIBRARY_MOUNTS } from '../../config/library-mounts.config';
 import { MENU_CONFIG } from '../../config/menu.config';
+import { provideTestAuth } from '../../testing/provide-test-auth';
 import type { MenuConfig } from '../../types';
 
 describe('warehouse navigation', () => {
@@ -15,7 +17,13 @@ describe('warehouse navigation', () => {
   let router: Router;
 
   beforeEach(async () => {
-    TestBed.configureTestingModule({ providers: [provideRouter(routes), provideLocationMocks()] });
+    TestBed.configureTestingModule({
+      providers: [
+        provideTestAuth(),
+        provideRouter(createAppRoutes(MENU_CONFIG, LIBRARY_MOUNTS, PLACEHOLDER_PAGES)),
+        provideLocationMocks(),
+      ],
+    });
     router = TestBed.inject(Router);
     router.setUpLocationChangeListener();
     harness = await RouterTestingHarness.create('/');
@@ -210,7 +218,7 @@ describe('independent library mounts and menus', () => {
       ],
     };
     const libraries = LIBRARY_MOUNTS.map(library => ({ ...library, path: 'custom/catalog' }));
-    TestBed.configureTestingModule({ providers: [provideRouter(createAppRoutes(menu, libraries))] });
+    TestBed.configureTestingModule({ providers: [provideTestAuth(), provideRouter(createAppRoutes(menu, libraries))] });
     const harness = await RouterTestingHarness.create('/operations');
     const root = harness.fixture.nativeElement as HTMLElement;
     const router = TestBed.inject(Router);

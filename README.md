@@ -67,6 +67,18 @@ When calling an absolute `apiUrl` directly, add the frontend origin to the backe
 In production, configure a reverse proxy for `/api` and serve the SPA's `index.html` for client-side routes.
 The Angular development proxy is not included in production builds.
 
+## ERP shell authentication
+
+Authentication is mandatory before entering the ERP shell. Unauthenticated visitors see a
+sign-in invitation. The shell and all child routes reuse `@warehouse/auth` and `permissionGuard`,
+which require an ACTIVE ERP profile. Tests provide a mock auth service; there is no application
+configuration for bypassing authentication.
+
+The sign-in action preserves the requested local route, including query parameters and fragment.
+Inactive profiles and profile-service failures show the shared error component outside the shell.
+The `/error` route is reserved. The demo master-data pages do not currently specify additional
+permission codes. Auth0 tenant configuration and backend authorization remain unchanged.
+
 ## Administration
 
 Access requires an active ERP account with the global `users.manage` permission.

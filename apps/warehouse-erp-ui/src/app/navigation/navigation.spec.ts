@@ -5,6 +5,7 @@ import { RouterTestingHarness } from '@angular/router/testing';
 import { createAppRoutes } from '../app.routes';
 import { LIBRARY_MOUNTS } from '../config/library-mounts.config';
 import { MENU_CONFIG } from '../config/menu.config';
+import { provideTestAuth } from '../testing/provide-test-auth';
 import type { LibraryMount, MenuConfig } from '../types';
 import { assembleMenu } from './assemble-menu';
 
@@ -32,6 +33,9 @@ const menu: MenuConfig = {
 const libraries: readonly LibraryMount[] = [{ id: 'catalog-library', path: 'data', loadChildren: async () => [] }];
 
 describe('navigation configuration contracts', () => {
+  it('reserves the shell error route when mounting libraries', () => {
+    expect(() => createAppRoutes(menu, [{ ...libraries[0], path: 'error' }])).toThrow('reserved');
+  });
   it('moves a whole group by changing its parent without changing links or library mounts', () => {
     const moved = { ...menu, submenuGroups: [{ ...menu.submenuGroups[0], primaryMenuId: 'operations' }] };
     const navigation = assembleMenu(moved, libraries);
@@ -95,7 +99,9 @@ describe('navigation configuration contracts', () => {
   });
 
   it('resolves every configured library menu entry to a real screen', async () => {
-    TestBed.configureTestingModule({ providers: [provideRouter(createAppRoutes(MENU_CONFIG, LIBRARY_MOUNTS))] });
+    TestBed.configureTestingModule({
+      providers: [provideTestAuth(), provideRouter(createAppRoutes(MENU_CONFIG, LIBRARY_MOUNTS))],
+    });
     const harness = await RouterTestingHarness.create();
     for (const item of MENU_CONFIG.submenuItems) {
       if ('libraryId' in item.target) {

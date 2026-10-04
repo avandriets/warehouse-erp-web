@@ -18,11 +18,12 @@
 
     <button railFooter
             type="button"
-            matTooltip="Alexander"
+            matTooltip="Sign out"
             matTooltipPosition="right"
-            class="grid cursor-pointer size-9 place-items-center rounded-full bg-primary text-xs font-medium text-on-primary"
-            aria-label="Alexander">
-      AA
+            class="grid size-9 cursor-pointer place-items-center rounded-full bg-primary text-on-primary"
+            [attr.aria-label]="'Sign out ' + session.userName()"
+            (click)="session.logout()">
+      <mat-icon>logout</mat-icon>
     </button>
   </erp-primary-menu>
 
@@ -38,6 +39,7 @@
       </div>
     </div>
   }
+
 
   <main class="min-w-0 flex-1 overflow-auto bg-surface p-6">
     <router-outlet />

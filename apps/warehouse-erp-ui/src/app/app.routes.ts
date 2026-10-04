@@ -1,12 +1,13 @@
 import type { Route, Routes } from '@angular/router';
+import { permissionGuard } from '@warehouse/auth';
 
 import { PLACEHOLDER_PAGES } from './config/app-placeholders.config';
 import { LIBRARY_MOUNTS } from './config/library-mounts.config';
 import { MENU_CONFIG } from './config/menu.config';
 import { PRIMARY_MENU_WITH_SUBMENUS_TOKEN } from './config/primary-menu-with-submenus.token';
 import { assembleMenu, validateRouteConfiguration } from './navigation';
-import { MenuSelectionService } from './services';
-import type { LibraryMount, MenuConfig,PlaceholderPage, PrimaryMenuItem } from './types';
+import { MenuSelectionService, ShellSessionService } from './services';
+import type { LibraryMount, MenuConfig, PlaceholderPage, PrimaryMenuItem } from './types';
 
 export function createAppRoutes(
   menu: MenuConfig,
@@ -16,26 +17,47 @@ export function createAppRoutes(
   const navigation = assembleMenu(menu, libraries);
   validateRouteConfiguration(menu, libraries, placeholders, navigation);
 
+  const featureRoutes: Routes = [
+    ...menu.primaryMenu.map(createOverviewRoute),
+    ...libraries.map(library => ({ path: library.path, loadChildren: library.loadChildren })),
+    ...placeholders.map(createPlaceholderRoute),
+    {
+      path: '**',
+      title: 'Page not found · Warehouse ERP',
+      data: { status: 404 },
+      loadComponent: () => import('./components').then(module => module.UnavailableComponent),
+    },
+  ];
+
   return [
     {
       path: '',
-      providers: [{ provide: PRIMARY_MENU_WITH_SUBMENUS_TOKEN, useValue: navigation }, MenuSelectionService],
-      loadComponent: () => import('./containers').then(module => module.AppLayoutComponent),
+      providers: [
+        { provide: PRIMARY_MENU_WITH_SUBMENUS_TOKEN, useValue: navigation },
+        MenuSelectionService,
+        ShellSessionService,
+      ],
       children: [
         {
-          path: '',
-          pathMatch: 'full',
-          title: 'Welcome · Warehouse ERP',
-          loadComponent: () => import('./components').then(module => module.WelcomeComponent),
-        },
-        ...menu.primaryMenu.map(createOverviewRoute),
-        ...libraries.map(library => ({ path: library.path, loadChildren: library.loadChildren })),
-        ...placeholders.map(createPlaceholderRoute),
-        {
-          path: '**',
-          title: 'Page not found · Warehouse ERP',
-          data: { status: 404 },
+          path: 'error',
+          title: 'Access · Warehouse ERP',
+          data: { status: 503 },
           loadComponent: () => import('./components').then(module => module.UnavailableComponent),
+        },
+        {
+          path: '',
+          canActivate: [permissionGuard],
+          canActivateChild: [permissionGuard],
+          loadComponent: () => import('./containers').then(module => module.AppLayoutComponent),
+          children: [
+            {
+              path: '',
+              pathMatch: 'full',
+              title: 'Welcome · Warehouse ERP',
+              loadComponent: () => import('./components').then(module => module.WelcomeComponent),
+            },
+            ...featureRoutes,
+          ],
         },
       ],
     },

@@ -4,7 +4,7 @@ import { MatTooltip } from '@angular/material/tooltip';
 import { Router, RouterLink, RouterOutlet } from '@angular/router';
 
 import { PrimaryMenuComponent, SubmenuComponent } from '../../components';
-import { MenuSelectionService } from '../../services';
+import { MenuSelectionService, ShellSessionService } from '../../services';
 import type { ResolvedSubmenuGroup } from '../../types';
 
 @Component({
@@ -14,6 +14,7 @@ import type { ResolvedSubmenuGroup } from '../../types';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class AppLayoutComponent {
+  readonly session = inject(ShellSessionService);
   private readonly router = inject(Router);
   private readonly navigation = inject(MenuSelectionService);
 

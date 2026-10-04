@@ -7,10 +7,7 @@ import type {
 } from '../types';
 import { assertPath, assertUnique } from './validate-route-configuration';
 
-export function assembleMenu(
-  menu: MenuConfig,
-  libraries: readonly LibraryMount[],
-): readonly ResolvedPrimaryMenuItem[] {
+export function assembleMenu(menu: MenuConfig, libraries: readonly LibraryMount[]): readonly ResolvedPrimaryMenuItem[] {
   assertUnique(
     menu.primaryMenu.map(item => item.id),
     'primary menu id',

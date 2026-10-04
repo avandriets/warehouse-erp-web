@@ -1,4 +1,4 @@
-import type { LibraryMount, MenuConfig,PlaceholderPage, ResolvedPrimaryMenuItem } from '../types';
+import type { LibraryMount, MenuConfig, PlaceholderPage, ResolvedPrimaryMenuItem } from '../types';
 
 export function assertUnique(values: readonly string[], label: string): void {
   const found = new Set<string>();
@@ -31,6 +31,14 @@ export function validateRouteConfiguration(
   placeholders: readonly PlaceholderPage[],
   navigation: readonly ResolvedPrimaryMenuItem[],
 ): void {
+  const configuredPaths = [
+    ...menu.primaryMenu.map(item => item.route.slice(1)),
+    ...libraries.map(library => library.path),
+    ...placeholders.map(page => page.path),
+  ];
+  if (configuredPaths.some(path => path === 'error' || path.startsWith('error/'))) {
+    throw new Error('The error route is reserved for shell access and service failures.');
+  }
   assertUnique(
     placeholders.map(page => page.path),
     'placeholder path',

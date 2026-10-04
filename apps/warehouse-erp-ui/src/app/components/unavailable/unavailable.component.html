@@ -1,11 +1,29 @@
-<div class="mx-auto w-full max-w-5xl">
+<div class="mx-auto w-full max-w-5xl p-6">
   <ui-error-state>
-    <span errorEyebrow>{{ notFound() ? 'Page not found' : 'Not available yet' }}</span>
+    <span errorEyebrow>{{ accessError() ? 'Warehouse ERP' : notFound() ? 'Page not found' : 'Not available yet' }}</span>
     <h1 errorTitle
         class="text-2xl font-semibold text-on-surface">{{ heading() }}</h1>
-    <p errorDescription>{{ notFound() ? 'The requested page could not be found.' : 'This page is not available yet.' }}</p>
-    <a errorActions
-       mat-button
-       [routerLink]="primaryMenuRoute()">{{ notFound() ? 'All sections' : 'Back to section' }}</a>
+    <p errorDescription>{{ description() }}</p>
+    <div errorActions
+         class="flex flex-wrap gap-3">
+      @if (!session.authenticated() && accessError()) {
+        <button mat-flat-button
+                type="button"
+                [disabled]="session.loading()"
+                (click)="session.login()">Sign in</button>
+      }
+      @if (session.failed()) {
+        <p role="alert">Sign-in could not be completed. Please try again.</p>
+      }
+      @if (status() === 403 || (accessError() && session.authenticated())) {
+        <button mat-button
+                type="button"
+                (click)="session.logout()">Sign out</button>
+      }
+      @if (!accessError()) {
+        <a mat-button
+           [routerLink]="primaryMenuRoute()">{{ accessError() ? 'Return to welcome' : notFound() ? 'All sections' : 'Back to section' }}</a>
+      }
+    </div>
   </ui-error-state>
 </div>
