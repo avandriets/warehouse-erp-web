@@ -12,7 +12,7 @@
       </mat-icon>
     </button>
 
-    <ng-content select="[railHeader]" />
+    <ng-content select="[primaryMenuHeader]" />
 
     @for (primaryMenuItem of primaryMenu(); track primaryMenuItem.id) {
       <button type="button"
@@ -29,11 +29,9 @@
         </mat-icon>
       </button>
     }
-
-    <ng-content select="[railActions]" />
   </nav>
 
   <div class="flex justify-center">
-    <ng-content select="[railFooter]" />
+    <ng-content select="[primaryMenuFooter]" />
   </div>
 </aside>

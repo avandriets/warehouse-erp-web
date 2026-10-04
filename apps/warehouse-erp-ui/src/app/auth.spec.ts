@@ -13,6 +13,10 @@ import { LIBRARY_MOUNTS } from './config/library-mounts.config';
 import { MENU_CONFIG } from './config/menu.config';
 
 const activeUser: CurrentUser = {
+  first_name: null,
+  last_name: null,
+  display_name: null,
+  email: null,
   user_id: 'test-user',
   subject: 'auth0|test-user',
   status: 'ACTIVE',
@@ -79,7 +83,11 @@ describe('shell authentication', () => {
     await harness.navigateByUrl(target);
     expect(harness.routeNativeElement?.querySelector('erp-primary-menu')).not.toBeNull();
     expect(auth.ensureCurrentUser).toHaveBeenCalled();
-    harness.routeNativeElement!.querySelector<HTMLButtonElement>('button[aria-label="Sign out Test User"]')!.click();
+    harness
+      .routeNativeElement!.querySelector<HTMLButtonElement>('button[aria-label="Account menu for Test User"]')!
+      .click();
+    await harness.fixture.whenStable();
+    document.querySelector<HTMLButtonElement>('[role="menuitem"]')!.click();
     expect(auth.logout).toHaveBeenCalled();
   });
 

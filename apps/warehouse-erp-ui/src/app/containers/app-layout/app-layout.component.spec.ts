@@ -104,7 +104,7 @@ describe('warehouse navigation', () => {
     expect(root.querySelector('main')?.textContent).toContain('This page is not available yet.');
   });
 
-  it('navigates from the second-level sidebar and returns to an overview from the rail', async () => {
+  it('navigates from the second-level sidebar and returns to an overview from the primary menu', async () => {
     await harness.navigateByUrl('/documents');
     const root = harness.fixture.nativeElement as HTMLElement;
     const receipts = [...root.querySelectorAll<HTMLAnchorElement>('erp-submenu section a')].find(button =>

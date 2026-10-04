@@ -4,7 +4,7 @@
                     [sidebarOpen]="sidebarOpen()"
                     (primaryMenuChange)="selectPrimaryMenu($event)"
                     (sidebarToggle)="toggleSidebar()">
-    <a railHeader
+    <a primaryMenuHeader
        routerLink="/"
        matTooltip="Home"
        matTooltipPosition="right"
@@ -16,15 +16,10 @@
       <mat-icon>home</mat-icon>
     </a>
 
-    <button railFooter
-            type="button"
-            matTooltip="Sign out"
-            matTooltipPosition="right"
-            class="grid size-9 cursor-pointer place-items-center rounded-full bg-primary text-on-primary"
-            [attr.aria-label]="'Sign out ' + session.userName()"
-            (click)="session.logout()">
-      <mat-icon>logout</mat-icon>
-    </button>
+    <erp-user-menu primaryMenuFooter
+                   [userName]="session.userName()"
+                   [email]="session.email()"
+                   (signOut)="session.logout()" />
   </erp-primary-menu>
 
   @if (currentPrimaryMenuItem() || sidebarOpen()) {

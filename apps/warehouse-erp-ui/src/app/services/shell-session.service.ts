@@ -10,7 +10,20 @@ export class ShellSessionService {
   readonly loading = computed(() => this.auth.loading());
   readonly authenticated = computed(() => this.auth.authenticated());
   readonly failed = computed(() => !!this.auth.error());
-  readonly userName = computed(() => this.auth.user()?.name ?? this.auth.user()?.email ?? 'Account');
+  readonly email = computed(() => this.auth.currentUser?.email?.trim() || this.auth.user()?.email || null);
+  readonly userName = computed(() => {
+    const profile = this.auth.currentUser;
+    const fullName = [profile?.first_name?.trim(), profile?.last_name?.trim()].filter(Boolean).join(' ');
+
+    return (
+      fullName ||
+      profile?.display_name?.trim() ||
+      profile?.email?.trim() ||
+      this.auth.user()?.name?.trim() ||
+      this.auth.user()?.email ||
+      'Account'
+    );
+  });
 
   login(): void {
     const requestedRoute: unknown = this.router.parseUrl(this.router.url).queryParams['returnTo'];

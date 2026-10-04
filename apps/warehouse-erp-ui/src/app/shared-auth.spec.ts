@@ -10,6 +10,10 @@ import { apiError } from '@warehouse/shared';
 import type { Observable } from 'rxjs';
 import { firstValueFrom, of } from 'rxjs';
 const user: CurrentUser = {
+  first_name: null,
+  last_name: null,
+  display_name: null,
+  email: null,
   user_id: 'user-1',
   subject: 'auth0|1',
   status: 'ACTIVE',

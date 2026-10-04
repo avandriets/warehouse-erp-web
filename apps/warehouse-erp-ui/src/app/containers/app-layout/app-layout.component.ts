@@ -3,13 +3,13 @@ import { MatIcon } from '@angular/material/icon';
 import { MatTooltip } from '@angular/material/tooltip';
 import { Router, RouterLink, RouterOutlet } from '@angular/router';
 
-import { PrimaryMenuComponent, SubmenuComponent } from '../../components';
+import { PrimaryMenuComponent, SubmenuComponent, UserMenuComponent } from '../../components';
 import { MenuSelectionService, ShellSessionService } from '../../services';
 import type { ResolvedSubmenuGroup } from '../../types';
 
 @Component({
   selector: 'erp-layout',
-  imports: [RouterOutlet, RouterLink, PrimaryMenuComponent, SubmenuComponent, MatIcon, MatTooltip],
+  imports: [RouterOutlet, RouterLink, PrimaryMenuComponent, SubmenuComponent, UserMenuComponent, MatIcon, MatTooltip],
   templateUrl: './app-layout.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
