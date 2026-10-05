@@ -1,8 +1,8 @@
 <ui-page-layout>
   <p pageBreadcrumb>Access management</p>
   <div pageTitle>
-    <h1 class="m-0 text-2xl font-semibold text-[var(--mat-sys-on-surface)]">Roles and permissions</h1>
-    <p class="mt-1 text-sm leading-5 text-[var(--mat-sys-on-surface-variant)]">Permission sets for working in the ERP system.</p>
+    <h1 class="m-0 text-2xl font-semibold text-on-surface">Roles and permissions</h1>
+    <p class="mt-1 text-sm leading-5 text-muted">Permission sets for working in the ERP system.</p>
   </div>
   <div pageActions
        class="flex flex-wrap items-center gap-2">
@@ -16,17 +16,15 @@
            class="flex flex-col gap-3 sm:flex-row sm:items-center"
            aria-label="Role filters">
     <div class="min-w-40">
-      <h2 class="m-0 text-sm font-semibold text-[var(--mat-sys-on-surface)]">Find roles</h2>
-      <p class="mt-1 text-xs text-[var(--mat-sys-on-surface-variant)]">Search and filter permission sets.</p>
+      <h2 class="m-0 text-sm font-semibold text-on-surface">Find roles</h2>
     </div>
-    <ui-query-param-search class="block w-full sm:w-64 sm:shrink-0"
+    <ui-query-param-search class="block w-full sm:ml-auto sm:w-64 sm:shrink-0"
                            label="Search roles"
                            placeholder="Name or code"
                            [maxLength]="255" />
     <am-roles-filter class="block w-full sm:w-44 sm:shrink-0" />
     <button mat-icon-button
             type="button"
-            class="sm:ml-auto"
             aria-label="Refresh roles"
             title="Refresh"
             [disabled]="saving() || loading()"
@@ -35,19 +33,36 @@
     </button>
   </section>
   <div pageBody>
-
-    <mat-card appearance="outlined"
-              class="mt-4 overflow-hidden">
-      <ui-state-container [state]="state()"
-                          [resolved]="data"
-                          [actionError]="actionError()"
-                          (actionErrorDismissed)="dismissActionError()"
-                          (retry)="load()" />
-      <ng-template #data>
+    <ui-state-container class="mt-4"
+                        [state]="state()"
+                        [resolved]="data"
+                        [empty]="data"
+                        [rejected]="loadError"
+                        [actionError]="actionError()"
+                        (actionErrorDismissed)="dismissActionError()"
+                        (retry)="load()" />
+    <ng-template #loadError
+                 let-message
+                 let-pending="pending">
+      <div class="mb-4 flex flex-col gap-3 rounded-xl border border-error bg-error-container px-4 py-3 text-sm text-on-error-container sm:flex-row sm:items-center"
+           role="alert">
+        <mat-icon class="shrink-0"
+                  aria-hidden="true">error_outline</mat-icon>
+        <p class="m-0 min-w-0 flex-1">{{ message }}</p>
+        <button mat-stroked-button
+                type="button"
+                class="shrink-0 self-start sm:self-auto"
+                [disabled]="pending"
+                (click)="load()">Retry</button>
+      </div>
+    </ng-template>
+    <ng-template #data>
+      <mat-card appearance="outlined"
+                class="overflow-hidden">
         <div class="overflow-x-auto">
           <table mat-table
                  class="w-full"
-                 [dataSource]="roles()">
+                 [dataSource]="visibleRoles()">
             <ng-container matColumnDef="code">
               <th *matHeaderCellDef
                   mat-header-cell>Code
@@ -61,7 +76,9 @@
                   mat-header-cell>Name
               </th>
               <td *matCellDef="let role"
-                  mat-cell>{{ role.name }}
+                  mat-cell>
+                <a class="font-medium text-primary no-underline hover:underline"
+                   [routerLink]="[role.id, 'permissions']">{{ role.name }}</a>
               </td>
             </ng-container>
             <ng-container matColumnDef="active">
@@ -90,27 +107,33 @@
                           [disabled]="saving() || loading() || !role.active"
                           (click)="deactivate(role)">Deactivate
                   </button>
-                  <a mat-button
-                     [routerLink]="[role.id, 'permissions']">Permissions</a>
                 </div>
               </td>
             </ng-container>
             <tr *matHeaderRowDef="displayedColumns"
-                class="bg-[var(--mat-sys-surface-container)]"
+                class="bg-surface-container!"
                 mat-header-row></tr>
             <tr *matRowDef="let row; columns: displayedColumns"
-                class="hover:bg-[var(--mat-sys-primary-container)]"
+                class="hover:bg-primary-container"
                 mat-row></tr>
             <tr *matNoDataRow
                 class="mat-row">
-              <td class="mat-cell px-6 py-14 text-center text-sm text-[var(--mat-sys-on-surface-variant)]"
+              <td class="mat-cell px-6 py-14 text-center text-sm text-muted"
                   [attr.colspan]="displayedColumns.length">No roles found
               </td>
             </tr>
           </table>
         </div>
-      </ng-template>
-    </mat-card>
-
+        <mat-paginator showFirstLastButtons
+                       class="border-t border-outline bg-surface-container!"
+                       aria-label="Roles pagination"
+                       [length]="roles().length"
+                       [pageIndex]="pageIndex()"
+                       [pageSize]="pageSize()"
+                       [pageSizeOptions]="pageSizeOptions"
+                       [disabled]="saving() || loading()"
+                       (page)="page($event)" />
+      </mat-card>
+    </ng-template>
   </div>
 </ui-page-layout>

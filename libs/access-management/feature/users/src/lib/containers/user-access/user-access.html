@@ -2,14 +2,14 @@
   <nav pageBreadcrumb
        class="flex items-center gap-2"
        aria-label="Breadcrumb">
-    <a class="font-medium text-emerald-700 hover:underline"
+    <a class="font-medium text-primary hover:underline"
        routerLink="../..">Users</a>
     <span aria-hidden="true">/</span>
     <span aria-current="page">User access</span>
   </nav>
   <div pageTitle>
-    <h1 class="m-0 text-2xl font-semibold text-[var(--mat-sys-on-surface)]">User access</h1>
-    <p class="mt-1 text-sm leading-5 text-[var(--mat-sys-on-surface-variant)]">Account linking and role assignments.</p>
+    <h1 class="m-0 text-2xl font-semibold text-on-surface">User access</h1>
+    <p class="mt-1 text-sm leading-5 text-muted">Account linking and role assignments.</p>
   </div>
   @if (editor(); as accessEditor) {
     <div pageActions

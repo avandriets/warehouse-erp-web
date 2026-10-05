@@ -4,6 +4,7 @@ import { HttpTestingController, provideHttpClientTesting } from '@angular/common
 import { TestBed } from '@angular/core/testing';
 import { MatButtonHarness } from '@angular/material/button/testing';
 import { MatDialog } from '@angular/material/dialog';
+import { MatPaginatorHarness } from '@angular/material/paginator/testing';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { By } from '@angular/platform-browser';
 import { provideRouter, Router } from '@angular/router';
@@ -61,13 +62,83 @@ describe('roles page', () => {
         provideHttpClient(),
         provideHttpClientTesting(),
         provideAccessManagement({ apiUrl: '/api' }),
-        provideRouter([{ path: 'roles', component: RolesPage }]),
+        provideRouter([
+          { path: 'roles', component: RolesPage },
+          { path: 'roles/:roleId/permissions', children: [] },
+        ]),
       ],
     });
     http = TestBed.inject(HttpTestingController);
   });
 
   afterEach(() => http.verify());
+
+  it('shows a load error outside the table and retries with the current filters', async () => {
+    harness = await RouterTestingHarness.create();
+    await harness.navigateByUrl('/roles?active=true&q=manager', RolesPage);
+    http
+      .expectOne('/api/identity/roles?active=true&q=manager')
+      .flush({ detail: 'Roles unavailable' }, { status: 500, statusText: 'Server Error' });
+    await harness.fixture.whenStable();
+
+    const pageElement: HTMLElement = harness.routeDebugElement!.nativeElement;
+    const alert = pageElement.querySelector('[role="alert"]');
+    expect(alert?.textContent).toContain('Roles unavailable');
+    expect(alert!.closest('mat-card')).toBeNull();
+    expect(alert!.querySelectorAll('button')).toHaveLength(1);
+    expect(pageElement.querySelector('mat-card')).toBeNull();
+    expect(pageElement.querySelector('mat-paginator')).toBeNull();
+
+    const loader = TestbedHarnessEnvironment.loader(harness.fixture);
+    await (await loader.getHarness(MatButtonHarness.with({ text: 'Retry' }))).click();
+    http.expectOne('/api/identity/roles?active=true&q=manager').flush([]);
+    await harness.fixture.whenStable();
+
+    expect(pageElement.querySelector('[role="alert"]')).toBeNull();
+    expect(pageElement.querySelector('mat-card table')?.textContent).toContain('No roles found');
+    expect(pageElement.querySelector('mat-card mat-paginator')).not.toBeNull();
+  });
+
+  it('opens permissions through the role name', async () => {
+    harness = await RouterTestingHarness.create();
+    await harness.navigateByUrl('/roles', RolesPage);
+    http.expectOne('/api/identity/roles').flush([role]);
+    await harness.fixture.whenStable();
+
+    const link: HTMLAnchorElement = harness.routeDebugElement!.query(
+      By.css('a[href="/roles/r1/permissions"]'),
+    ).nativeElement;
+    expect(link.textContent?.trim()).toBe('Manager');
+    link.click();
+    await harness.fixture.whenStable();
+    expect(TestBed.inject(Router).url).toBe('/roles/r1/permissions');
+  });
+
+  it('paginates loaded roles locally and resets the page when filters change', async () => {
+    const roles = Array.from({ length: 26 }, (_, index) => ({ ...role, id: `r${index}` }));
+    harness = await RouterTestingHarness.create();
+    const component = await harness.navigateByUrl('/roles', RolesPage);
+    http.expectOne('/api/identity/roles').flush(roles);
+    await harness.fixture.whenStable();
+    expect(component.visibleRoles()).toEqual(roles.slice(0, 25));
+
+    const loader = TestbedHarnessEnvironment.loader(harness.fixture);
+    const paginator = await loader.getHarness(MatPaginatorHarness);
+    await paginator.goToNextPage();
+    expect(component.visibleRoles()).toEqual(roles.slice(25));
+    http.expectNone(request => request.method === 'GET');
+
+    await changeFilter('true');
+    http.expectOne('/api/identity/roles?active=true').flush(roles);
+    await harness.fixture.whenStable();
+    expect(component.pageIndex()).toBe(0);
+    expect(component.visibleRoles()).toEqual(roles.slice(0, 25));
+
+    const filteredPaginator = await loader.getHarness(MatPaginatorHarness);
+    await filteredPaginator.setPageSize(50);
+    expect(component.visibleRoles()).toEqual(roles);
+    expect(await filteredPaginator.isNextPageDisabled()).toBe(true);
+  });
 
   it('never submits immutable role codes when editing', async () => {
     harness = await RouterTestingHarness.create();

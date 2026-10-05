@@ -77,6 +77,33 @@ describe('users page', () => {
     return component;
   }
 
+  it('shows a load error outside the table and restores pagination after retry', async () => {
+    harness = await RouterTestingHarness.create();
+    await harness.navigateByUrl('/users', UsersPage);
+    http
+      .expectOne('/api/identity/users?limit=25&offset=0')
+      .flush({ message: 'Users are unavailable' }, { status: 500, statusText: 'Server Error' });
+    await harness.fixture.whenStable();
+
+    const pageElement: HTMLElement = harness.routeDebugElement!.nativeElement;
+    const alert = pageElement.querySelector('[role="alert"]');
+    expect(alert).not.toBeNull();
+    expect(pageElement.querySelectorAll('[role="alert"]')).toHaveLength(1);
+    expect(alert!.querySelectorAll('button')).toHaveLength(1);
+    expect(alert!.closest('mat-card')).toBeNull();
+    expect(pageElement.querySelector('mat-card')).toBeNull();
+    expect(pageElement.querySelector('mat-paginator')).toBeNull();
+
+    const loader = TestbedHarnessEnvironment.loader(harness.fixture);
+    await (await loader.getHarness(MatButtonHarness.with({ text: 'Retry' }))).click();
+    http.expectOne('/api/identity/users?limit=25&offset=0').flush(page());
+    await harness.fixture.whenStable();
+
+    expect(pageElement.querySelector('[role="alert"]')).toBeNull();
+    expect(pageElement.querySelector('mat-card table')).not.toBeNull();
+    expect(pageElement.querySelector('mat-card mat-paginator')).not.toBeNull();
+  });
+
   it('creates users with the backend contract and refreshes the list', async () => {
     const component = await create();
     component.open();
@@ -298,7 +325,7 @@ describe('users page', () => {
     http.expectNone(pending => pending.method === 'GET');
   });
 
-  it('navigates to the user access page', async () => {
+  it('navigates to the user access page through the user name', async () => {
     const component = await create();
     component.store.replaceAll([
       {
@@ -313,8 +340,12 @@ describe('users page', () => {
         updated_at: '',
       },
     ]);
-    const loader = TestbedHarnessEnvironment.loader(harness.fixture);
-    await (await loader.getHarness(MatButtonHarness.with({ text: 'Open details' }))).click();
+    harness.fixture.detectChanges();
+    const userLink: HTMLAnchorElement = harness.routeDebugElement!.query(
+      By.css('a[href="/users/u1/access"]'),
+    ).nativeElement;
+    expect(userLink.textContent?.trim()).toBe('Alex');
+    userLink.click();
     await harness.fixture.whenStable();
     expect(TestBed.inject(Router).url).toBe('/users/u1/access');
     expect(TestBed.inject(MatDialog).openDialogs).toHaveLength(0);

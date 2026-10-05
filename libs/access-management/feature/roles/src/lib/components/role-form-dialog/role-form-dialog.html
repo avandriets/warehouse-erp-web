@@ -5,7 +5,7 @@
   <mat-dialog-content>
     @if (actionError()) {
       <p role="alert"
-         class="mb-4 rounded-lg bg-red-50 p-3 text-red-800">{{ actionError() }}</p>
+         class="mb-4 rounded-lg bg-error-container p-3 text-on-error-container">{{ actionError() }}</p>
     }
     <fieldset [disabled]="saving()">
       <div class="grid gap-4">

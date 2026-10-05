@@ -1,9 +1,11 @@
-import { Component, computed, DestroyRef, inject } from '@angular/core';
+import { Component, computed, DestroyRef, inject, signal } from '@angular/core';
 import { takeUntilDestroyed, toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { MatIconModule } from '@angular/material/icon';
+import type { PageEvent } from '@angular/material/paginator';
+import { MatPaginatorModule } from '@angular/material/paginator';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatTableModule } from '@angular/material/table';
 import { ActivatedRoute, RouterLink } from '@angular/router';
@@ -24,6 +26,7 @@ import { RoleFormDialog, RolesFilter } from '../../components';
     MatTableModule,
     MatDialogModule,
     MatIconModule,
+    MatPaginatorModule,
     QueryParamSearch,
     RolesFilter,
     PageLayout,
@@ -41,11 +44,22 @@ export class RolesPage {
   readonly store = inject(RolesStore);
   private readonly params = toSignal(this.route.queryParamMap, { initialValue: this.route.snapshot.queryParamMap });
   private readonly requestParams = computed(() => parseRolesQuery(this.params()));
+  private readonly requestedPageIndex = signal(0);
   readonly roles = this.store.entities;
   readonly loading = this.store.loading;
   readonly saving = this.store.saving;
   readonly error = computed(() => this.store.actionError() ?? this.store.error() ?? '');
   readonly displayedColumns = ['code', 'name', 'active', 'actions'];
+  readonly pageSizeOptions = [25, 50, 100];
+  readonly pageSize = signal(25);
+  readonly pageIndex = computed(() =>
+    Math.min(this.requestedPageIndex(), Math.max(0, Math.ceil(this.roles().length / this.pageSize()) - 1)),
+  );
+  readonly visibleRoles = computed(() => {
+    const offset = this.pageIndex() * this.pageSize();
+
+    return this.roles().slice(offset, offset + this.pageSize());
+  });
 
   readonly state = this.store.entityState;
   readonly actionError = this.store.actionError;
@@ -55,6 +69,7 @@ export class RolesPage {
       .pipe(
         distinctUntilChanged((previous, current) => previous.active === current.active && previous.q === current.q),
         switchMap(params => {
+          this.requestedPageIndex.set(0);
           this.store.reset();
 
           return this.store.load(params);
@@ -88,6 +103,11 @@ export class RolesPage {
         finalize(() => ref.close()),
       )
       .subscribe();
+  }
+
+  page(event: PageEvent): void {
+    this.pageSize.set(event.pageSize);
+    this.requestedPageIndex.set(event.pageIndex);
   }
 
   deactivate(role: RoleRecord): void {

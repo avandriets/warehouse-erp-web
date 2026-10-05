@@ -17,6 +17,13 @@
   --color-outline-strong: var(--mat-sys-outline);
   --color-primary: var(--mat-sys-primary);
   --color-on-primary: var(--mat-sys-on-primary);
+  --color-error: var(--mat-sys-error);
+  --color-error-container: var(--mat-sys-error-container);
+  --color-on-error-container: var(--mat-sys-on-error-container);
+  --color-primary-container: var(--mat-sys-primary-container);
+  --color-on-primary-container: var(--mat-sys-on-primary-container);
+  --color-secondary-container: var(--mat-sys-secondary-container);
+  --color-on-secondary-container: var(--mat-sys-on-secondary-container);
   --color-hover: var(--mat-sys-surface-container-highest);
   --color-selected: var(--mat-sys-secondary-container);
   --color-on-selected: var(--mat-sys-on-secondary-container);

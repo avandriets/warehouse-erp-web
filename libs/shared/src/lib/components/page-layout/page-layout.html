@@ -2,7 +2,7 @@
   @if (header()) {
     <header class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
       <div class="min-w-0 flex-1">
-        <div class="mb-1 text-xs text-[var(--mat-sys-on-surface-variant)] empty:hidden">
+        <div class="mb-1 text-xs text-muted empty:hidden">
           <ng-content select="[pageBreadcrumb]"></ng-content>
         </div>
         <div class="flex min-w-0 items-start gap-3">
@@ -18,7 +18,7 @@
     </header>
   }
 
-  <div class="mt-7 min-h-18 min-w-0 rounded-[10px] border border-[var(--mat-sys-outline-variant)] bg-[var(--mat-sys-surface-container-lowest)] px-4 py-3.5 empty:hidden">
+  <div class="mt-7 min-h-18 min-w-0 rounded-[10px] border border-outline bg-(--mat-sys-surface-container-lowest) px-4 py-3.5 empty:hidden">
     <ng-content select="[pageFilters]"></ng-content>
   </div>
 

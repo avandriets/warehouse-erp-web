@@ -1,5 +1,5 @@
 @if (actionErrorMessage(); as message) {
-  <div class="m-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800"
+  <div class="m-4 rounded-xl border border-error bg-error-container px-4 py-3 text-sm text-on-error-container"
        role="alert">
     <p>{{ message }}</p>
     <button mat-button
@@ -8,16 +8,19 @@
   </div>
 }
 @if (showRejected()) {
-  <div class="m-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800"
-       role="alert">
-    @if (rejected(); as template) { <ng-container [ngTemplateOutlet]="template" /> }
-    @else {
-      <p>{{ errorMessage() }}</p> }
-    <button mat-stroked-button
-            type="button"
-            [disabled]="isPending()"
-            (click)="retry.emit()">Retry</button>
-  </div>
+  @if (rejected(); as template) {
+    <ng-container [ngTemplateOutlet]="template"
+                  [ngTemplateOutletContext]="{ $implicit: errorMessage(), pending: isPending() }" />
+  } @else {
+    <div class="m-4 rounded-xl border border-error bg-error-container px-4 py-3 text-sm text-on-error-container"
+         role="alert">
+      <p>{{ errorMessage() }}</p>
+      <button mat-stroked-button
+              type="button"
+              [disabled]="isPending()"
+              (click)="retry.emit()">Retry</button>
+    </div>
+  }
 }
 @if (showUpdating()) {
   @if (updating(); as template) { <ng-container [ngTemplateOutlet]="template" /> }
@@ -28,7 +31,7 @@
 @if (showEmpty()) {
   @if (empty(); as template) { <ng-container [ngTemplateOutlet]="template" /> }
   @else {
-    <p class="px-6 py-14 text-center text-sm text-stone-500"
+    <p class="px-6 py-14 text-center text-sm text-muted"
        role="status">No data found.</p> }
 }
 @if (showPending()) {

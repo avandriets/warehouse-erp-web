@@ -2,14 +2,14 @@
   <nav pageBreadcrumb
        class="flex items-center gap-2"
        aria-label="Breadcrumb">
-    <a class="font-medium text-emerald-700 hover:underline"
+    <a class="font-medium text-primary hover:underline"
        routerLink="../..">Roles and permissions</a>
     <span aria-hidden="true">/</span>
     <span aria-current="page">Role permissions</span>
   </nav>
   <div pageTitle>
-    <h1 class="m-0 text-2xl font-semibold text-[var(--mat-sys-on-surface)]">Role permissions</h1>
-    <p class="mt-1 text-sm leading-5 text-[var(--mat-sys-on-surface-variant)]">Permissions granted by this role.</p>
+    <h1 class="m-0 text-2xl font-semibold text-on-surface">Role permissions</h1>
+    <p class="mt-1 text-sm leading-5 text-muted">Permissions granted by this role.</p>
   </div>
   @if (editor(); as permissionsEditor) {
     <div pageActions>
