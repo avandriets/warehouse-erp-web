@@ -1,13 +1,13 @@
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
-import { By } from '@angular/platform-browser';
+import { MatDialog } from '@angular/material/dialog';
 import { provideRouter } from '@angular/router';
 import { RouterTestingHarness } from '@angular/router/testing';
 import { provideAccessManagement } from '@warehouse/access-management';
 import type { UserRecord } from '@warehouse/access-management/util';
 
-import { UserAccessEditor } from '../../components';
+import type { RoleAssignmentDialog } from '../../components';
 import { UserAccessPage } from './user-access';
 
 const user: UserRecord = {
@@ -62,23 +62,20 @@ describe('user access page', () => {
     expect(harness.routeNativeElement?.textContent).toContain('Alex');
     expect(harness.routeNativeElement?.textContent).toContain('Assigned roles');
     expect(harness.routeNativeElement?.querySelector('[pageBreadcrumb]')?.textContent).toContain('Users');
-    expect(harness.routeNativeElement?.querySelector('[pageActions] button[form="user-link-form"]')).not.toBeNull();
-    expect(
-      harness.routeNativeElement?.querySelector('[pageActions] button[form="role-assignment-form"]'),
-    ).not.toBeNull();
-
-    const editor = harness.routeDebugElement?.query(By.directive(UserAccessEditor))
-      .componentInstance as UserAccessEditor;
-    editor.assignmentForm.controls.roleId.setValue('r1');
-    editor.assignmentForm.markAsDirty();
+    const buttons = Array.from(harness.routeNativeElement!.querySelectorAll<HTMLButtonElement>('[pageActions] button'));
+    expect(buttons.map(button => button.textContent?.trim())).toEqual(['Account linking', 'Add role']);
+    expect(harness.routeNativeElement?.querySelector('form')).toBeNull();
+    const addRole = buttons[1];
+    expect(addRole.disabled).toBe(false);
+    addRole.click();
     await harness.fixture.whenStable();
-    const assign = harness.routeNativeElement?.querySelector<HTMLButtonElement>(
-      '[pageActions] button[form="role-assignment-form"]',
-    );
-    expect(assign?.disabled).toBe(false);
-    assign?.click();
+    const dialog = TestBed.inject(MatDialog).openDialogs[0].componentInstance as RoleAssignmentDialog;
+    dialog.form.controls.roleId.setValue('r1');
+    dialog.form.markAsDirty();
+    dialog.save();
     const request = http.expectOne('/api/identity/users/u1/role-assignments');
     expect(request.request.body).toEqual({ role_id: 'r1', scope_type: 'GLOBAL', scope_id: null });
     request.flush({ id: 'a1' });
+    await vi.waitFor(() => http.expectOne('/api/identity/users/u1/role-assignments').flush([]));
   });
 });

@@ -1,0 +1,57 @@
+<h2 mat-dialog-title>Add role</h2>
+<form [formGroup]="form"
+      (ngSubmit)="save()">
+  <mat-dialog-content>
+    @if (actionError()) {
+      <p role="alert"
+         class="mb-4 rounded-lg bg-error-container p-3 text-on-error-container">{{ actionError() }}</p>
+    }
+    <div class="grid gap-4">
+      <mat-form-field appearance="outline"
+                      subscriptSizing="fixed"
+                      class="w-full">
+        <mat-label>Role</mat-label>
+        <mat-select name="role"
+                    required
+                    formControlName="roleId">
+          @for (role of roles; track role.id) {
+            <mat-option [value]="role.id">{{ role.name }}</mat-option>
+          }
+        </mat-select>
+        <mat-error>Select a role.</mat-error>
+      </mat-form-field>
+      <mat-form-field appearance="outline"
+                      subscriptSizing="fixed"
+                      class="w-full">
+        <mat-label>Scope</mat-label>
+        <mat-select name="scope"
+                    formControlName="scope">
+          <mat-option value="GLOBAL">Global</mat-option>
+          <mat-option value="COMPANY">Company</mat-option>
+          <mat-option value="WAREHOUSE">Warehouse</mat-option>
+        </mat-select>
+      </mat-form-field>
+      @if (scope() !== 'GLOBAL') {
+        <mat-form-field appearance="outline"
+                        subscriptSizing="fixed"
+                        class="w-full">
+          <mat-label>Scope UUID</mat-label>
+          <input matInput
+                 name="scopeId"
+                 required
+                 formControlName="scopeId" />
+          <mat-error>Enter a valid scope UUID.</mat-error>
+        </mat-form-field>
+      }
+    </div>
+  </mat-dialog-content>
+  <mat-dialog-actions align="end">
+    <button mat-button
+            type="button"
+            mat-dialog-close
+            [disabled]="saving()">Cancel</button>
+    <button mat-flat-button
+            type="submit"
+            [disabled]="!canSave">{{ saving() ? 'Adding…' : 'Add role' }}</button>
+  </mat-dialog-actions>
+</form>

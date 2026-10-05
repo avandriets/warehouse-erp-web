@@ -1,91 +1,46 @@
 import type { OnInit } from '@angular/core';
-import { Component, computed, DestroyRef, effect, inject, input } from '@angular/core';
-import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
-import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { Component, computed, DestroyRef, inject, input, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
-import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatInputModule } from '@angular/material/input';
-import { MatSelectModule } from '@angular/material/select';
+import { MatDialog } from '@angular/material/dialog';
 import { MatSnackBar } from '@angular/material/snack-bar';
+import { MatTableModule } from '@angular/material/table';
 import { AccessApiService, AccessStore, RolesStore, UsersStore } from '@warehouse/access-management/data-access';
-import type { ScopeType, UserRecord } from '@warehouse/access-management/util';
-import { UIStateContainerComponent } from '@warehouse/shared';
-import { forkJoin, tap } from 'rxjs';
+import type { RoleAssignmentRecord, UserRecord } from '@warehouse/access-management/util';
+import { ConfirmDialog, UIStateContainerComponent } from '@warehouse/shared';
+import { concatMap, filter, finalize, forkJoin, tap } from 'rxjs';
+
+import type { RoleAssignmentDialogData } from '../../types';
+import { AccountLinkDialog, RoleAssignmentDialog } from '..';
 
 @Component({
   providers: [AccessApiService, AccessStore, RolesStore, UsersStore],
   selector: 'am-user-access-editor',
-  imports: [
-    ReactiveFormsModule,
-    UIStateContainerComponent,
-    MatButtonModule,
-    MatCardModule,
-    MatFormFieldModule,
-    MatInputModule,
-    MatSelectModule,
-  ],
+  imports: [UIStateContainerComponent, MatButtonModule, MatCardModule, MatTableModule],
   templateUrl: './user-access-editor.html',
 })
 export class UserAccessEditor implements OnInit {
-  private readonly builder = inject(FormBuilder);
+  private readonly dialog = inject(MatDialog);
   private readonly snackBar = inject(MatSnackBar);
   private readonly destroyRef = inject(DestroyRef);
   private readonly rolesStore = inject(RolesStore);
   private readonly accessStore = inject(AccessStore);
   private readonly usersStore = inject(UsersStore);
   readonly user = input.required<UserRecord>();
-  readonly saving = computed(() => this.accessStore.roleAssignmentsSaving() || this.usersStore.saving());
+  private readonly dialogOpen = signal(false);
+  readonly saving = this.accessStore.roleAssignmentsSaving;
   readonly loading = computed(() => this.rolesStore.loading() || this.accessStore.roleAssignmentsLoading());
-  readonly busy = computed(() => this.loading() || this.saving());
+  readonly busy = computed(() => this.loading() || this.saving() || this.dialogOpen());
   readonly roles = this.rolesStore.entities;
   readonly assignments = this.accessStore.roleAssignments.data;
   readonly auth0Subject = computed(() => (this.usersStore.entityById(this.user().id) ?? this.user()).auth0_subject);
-  readonly linkForm = this.builder.nonNullable.group({
-    subject: ['', [Validators.required, Validators.pattern(/\S/)]],
-  });
-  readonly assignmentForm = this.builder.nonNullable.group({
-    roleId: ['', Validators.required],
-    scope: this.builder.nonNullable.control<ScopeType>('GLOBAL'),
-    scopeId: [
-      { value: '', disabled: true },
-      [
-        Validators.required,
-        Validators.pattern(/^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/),
-      ],
-    ],
-  });
-  readonly scope = toSignal(this.assignmentForm.controls.scope.valueChanges, { initialValue: 'GLOBAL' as ScopeType });
-
+  readonly displayedColumns = ['role', 'scope', 'scopeId', 'actions'];
   readonly state = computed(() => ({
     roles: { ...this.rolesStore.entityState(), empty: false },
     assignments: this.accessStore.roleAssignmentsState(),
   }));
-  readonly actionError = computed(() => this.usersStore.actionError() ?? this.accessStore.roleAssignmentsActionError());
-
-  constructor() {
-    effect(() => {
-      const busy = this.busy();
-      if (busy) {
-        this.linkForm.disable({ emitEvent: false });
-        this.assignmentForm.disable({ emitEvent: false });
-      } else {
-        this.linkForm.enable({ emitEvent: false });
-        this.assignmentForm.enable({ emitEvent: false });
-        if (this.scope() === 'GLOBAL') {
-          this.assignmentForm.controls.scopeId.disable({ emitEvent: false });
-        }
-      }
-    });
-  }
-
-  get canAssign(): boolean {
-    return this.assignmentForm.valid && this.assignmentForm.dirty && !this.busy();
-  }
-
-  get canLink(): boolean {
-    return this.linkForm.valid && this.linkForm.dirty && !this.busy();
-  }
+  readonly actionError = this.accessStore.roleAssignmentsActionError;
 
   ngOnInit(): void {
     this.usersStore.upsert(this.user());
@@ -93,7 +48,6 @@ export class UserAccessEditor implements OnInit {
   }
 
   dismissActionError(): void {
-    this.usersStore.dismissActionError();
     this.accessStore.dismissActionError();
   }
 
@@ -107,53 +61,87 @@ export class UserAccessEditor implements OnInit {
     return this.roles().find(role => role.id === id)?.name ?? id;
   }
 
-  link(): void {
-    const id = this.user().id;
-    if (!this.canLink) {
+  openLink(): void {
+    if (this.busy() || this.auth0Subject()) {
       return;
     }
 
-    const subject = this.linkForm.getRawValue().subject.trim();
-    this.usersStore
-      .update({ id, payload: { auth0_subject: subject } })
+    const ref = this.dialog.open<AccountLinkDialog, UserRecord, UserRecord>(AccountLinkDialog, {
+      data: this.user(),
+      width: '560px',
+      maxWidth: '95vw',
+    });
+    this.dialogOpen.set(true);
+    ref
+      .afterClosed()
       .pipe(
-        tap(() => {
-          this.linkForm.markAsPristine();
-          this.snackBar.open('Changes saved.', 'Dismiss', { duration: 4000 });
+        filter((user): user is UserRecord => !!user),
+        tap(user => {
+          this.usersStore.upsert(user);
+          this.snackBar.open('Account linked.', 'Dismiss', { duration: 4000 });
+        }),
+        finalize(() => {
+          this.dialogOpen.set(false);
+          ref.close();
         }),
         takeUntilDestroyed(this.destroyRef),
       )
       .subscribe();
   }
 
-  assign(): void {
-    if (!this.canAssign) {
+  openAssignment(): void {
+    if (this.busy()) {
       return;
     }
 
-    const value = this.assignmentForm.getRawValue();
-    const payload = {
-      role_id: value.roleId,
-      scope_type: value.scope,
-      scope_id: value.scope === 'GLOBAL' ? null : value.scopeId.trim(),
-    };
-    this.accessStore
-      .assignRole(this.user().id, payload)
+    const ref = this.dialog.open<RoleAssignmentDialog, RoleAssignmentDialogData, RoleAssignmentRecord>(
+      RoleAssignmentDialog,
+      {
+        data: { userId: this.user().id, roles: this.roles() },
+        width: '560px',
+        maxWidth: '95vw',
+      },
+    );
+    this.dialogOpen.set(true);
+    ref
+      .afterClosed()
       .pipe(
-        tap(() => {
-          this.assignmentForm.markAsPristine();
-          this.snackBar.open('Role assigned.', 'Dismiss', { duration: 4000 });
+        filter((assignment): assignment is RoleAssignmentRecord => !!assignment),
+        tap(() => this.snackBar.open('Role assigned.', 'Dismiss', { duration: 4000 })),
+        concatMap(() => this.accessStore.listRoleAssignments(this.user().id)),
+        finalize(() => {
+          this.dialogOpen.set(false);
+          ref.close();
         }),
         takeUntilDestroyed(this.destroyRef),
       )
       .subscribe();
   }
 
-  revoke(assignmentId: string): void {
-    this.accessStore
-      .revokeRoleAssignment(this.user().id, assignmentId)
+  revoke(assignment: RoleAssignmentRecord): void {
+    if (this.busy()) {
+      return;
+    }
+
+    const ref = this.dialog.open(ConfirmDialog, {
+      data: {
+        title: 'Remove role?',
+        message: `Remove ${this.roleName(assignment.role_id)} from this user? This assignment will no longer grant permissions.`,
+        confirmText: 'Remove role',
+      },
+      autoFocus: 'first-tabbable',
+    });
+    this.dialogOpen.set(true);
+    ref
+      .afterClosed()
       .pipe(
-        tap(() => this.snackBar.open('Role revoked.', 'Dismiss', { duration: 4000 })),
+        filter(confirmed => confirmed === true),
+        concatMap(() => this.accessStore.revokeRoleAssignment(this.user().id, assignment.id)),
+        tap(() => this.snackBar.open('Role removed.', 'Dismiss', { duration: 4000 })),
+        finalize(() => {
+          this.dialogOpen.set(false);
+          ref.close();
+        }),
         takeUntilDestroyed(this.destroyRef),
       )
       .subscribe();

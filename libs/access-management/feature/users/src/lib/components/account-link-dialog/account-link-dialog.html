@@ -1,0 +1,35 @@
+<h2 mat-dialog-title>Account linking</h2>
+<form [formGroup]="form"
+      (ngSubmit)="save()">
+  <mat-dialog-content>
+    <p class="mb-4 text-sm text-muted">Link an Auth0 account to {{ user.display_name ?? user.email }}.</p>
+    @if (actionError()) {
+      <p role="alert"
+         class="mb-4 rounded-lg bg-error-container p-3 text-on-error-container">{{ actionError() }}</p>
+    }
+    <fieldset [disabled]="saving()">
+      <mat-form-field appearance="outline"
+                      subscriptSizing="fixed"
+                      class="w-full">
+        <mat-label>Auth0 subject</mat-label>
+        <input matInput
+               name="subject"
+               required
+               placeholder="auth0|…"
+               formControlName="subject"/>
+        <mat-error>Enter an Auth0 subject.</mat-error>
+      </mat-form-field>
+    </fieldset>
+  </mat-dialog-content>
+  <mat-dialog-actions align="end">
+    <button mat-button
+            type="button"
+            mat-dialog-close
+            [disabled]="saving()">Cancel
+    </button>
+    <button mat-flat-button
+            type="submit"
+            [disabled]="!canSave">{{ saving() ? 'Linking…' : 'Link account' }}
+    </button>
+  </mat-dialog-actions>
+</form>

@@ -14,18 +14,14 @@
   @if (editor(); as accessEditor) {
     <div pageActions
          class="flex flex-wrap items-center gap-3">
-      @if (!accessEditor.auth0Subject()) {
-        <button mat-stroked-button
-                type="submit"
-                form="user-link-form"
-                [disabled]="!accessEditor.canLink">Link account
-        </button>
-      }
+      <button mat-stroked-button
+              type="button"
+              [disabled]="accessEditor.busy() || !!accessEditor.auth0Subject()"
+              (click)="accessEditor.openLink()">Account linking</button>
       <button mat-flat-button
-              type="submit"
-              form="role-assignment-form"
-              [disabled]="!accessEditor.canAssign">Assign role
-      </button>
+              type="button"
+              [disabled]="accessEditor.busy()"
+              (click)="accessEditor.openAssignment()">Add role</button>
     </div>
   }
   <div pageBody>
