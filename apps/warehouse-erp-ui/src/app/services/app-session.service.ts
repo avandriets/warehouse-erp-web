@@ -3,7 +3,7 @@ import { Router } from '@angular/router';
 import { WarehouseAuthService } from '@warehouse/auth';
 
 @Injectable()
-export class ShellSessionService {
+export class AppSessionService {
   private readonly router = inject(Router);
   private readonly auth = inject(WarehouseAuthService);
 

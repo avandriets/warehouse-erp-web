@@ -4,7 +4,7 @@ import { MatButton } from '@angular/material/button';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { ErrorState } from '@warehouse/shared';
 
-import { ShellSessionService } from '../../services';
+import { AppSessionService } from '../../services';
 
 @Component({
   selector: 'erp-unavailable',
@@ -13,7 +13,7 @@ import { ShellSessionService } from '../../services';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class UnavailableComponent {
-  readonly session = inject(ShellSessionService);
+  readonly session = inject(AppSessionService);
   private readonly route = inject(ActivatedRoute);
   private readonly data = toSignal(this.route.data, { initialValue: this.route.snapshot.data });
 

@@ -6,7 +6,7 @@ import { LIBRARY_MOUNTS } from './config/library-mounts.config';
 import { MENU_CONFIG } from './config/menu.config';
 import { PRIMARY_MENU_WITH_SUBMENUS_TOKEN } from './config/primary-menu-with-submenus.token';
 import { assembleMenu, validateRouteConfiguration } from './navigation';
-import { MenuSelectionService, ShellSessionService } from './services';
+import { AppSessionService, MenuSelectionService } from './services';
 import type { LibraryMount, MenuConfig, PlaceholderPage, PrimaryMenuItem } from './types';
 
 export function createAppRoutes(
@@ -48,7 +48,7 @@ export function createAppRoutes(
           deps: [WarehouseAuthService],
         },
         MenuSelectionService,
-        ShellSessionService,
+        AppSessionService,
       ],
       children: [
         {

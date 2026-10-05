@@ -4,7 +4,7 @@ import { provideRouter } from '@angular/router';
 import type { CurrentUser } from '@warehouse/auth';
 import { WarehouseAuthService } from '@warehouse/auth';
 
-import { ShellSessionService } from './shell-session.service';
+import { AppSessionService } from './app-session.service';
 
 const profile: CurrentUser = {
   user_id: 'employee',
@@ -23,7 +23,7 @@ describe('account menu profile', () => {
     TestBed.configureTestingModule({
       providers: [
         provideRouter([]),
-        ShellSessionService,
+        AppSessionService,
         {
           provide: WarehouseAuthService,
           useValue: {
@@ -35,7 +35,7 @@ describe('account menu profile', () => {
         },
       ],
     });
-    const session = TestBed.inject(ShellSessionService);
+    const session = TestBed.inject(AppSessionService);
     expect(session.userName()).toBe('Ada Lovelace');
     expect(session.email()).toBe('ada@erp.test');
     current.set({ ...profile, first_name: 'Grace', last_name: 'Hopper' });
