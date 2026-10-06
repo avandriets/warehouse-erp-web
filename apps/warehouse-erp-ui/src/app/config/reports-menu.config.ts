@@ -13,6 +13,7 @@ export const REPORTS_LINKS: readonly SubmenuItem[] = [
     id: 'stock-balances',
     submenuGroupId: 'reports-inventory',
     title: 'Stock balances',
+    icon: 'assessment',
     target: {
       route: '/reports/stock-balances',
     },

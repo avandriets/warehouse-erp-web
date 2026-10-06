@@ -7,15 +7,12 @@
       <p class="mt-4 text-base leading-7 text-muted">Choose a section to get started.</p>
     </div>
 
-    <div class="navigation-grid">
+    <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
       @for (primaryMenuItem of primaryMenu; track primaryMenuItem.id) {
-        <a class="group rounded-2xl border border-outline p-5 text-left transition-colors hover:border-outline-strong hover:bg-sidebar"
-           [routerLink]="primaryMenuItem.route">
-          <div class="mb-5 grid size-10 place-items-center rounded-xl bg-surface-container text-on-surface transition-colors group-hover:bg-hover">
-            <mat-icon>{{ primaryMenuItem.icon }}</mat-icon>
-          </div>
-          <div class="font-medium text-on-surface">{{ primaryMenuItem.title }}</div>
-        </a>
+        <erp-navigation-card [route]="primaryMenuItem.route"
+                             [icon]="primaryMenuItem.icon"
+                             [title]="primaryMenuItem.title"
+                             [description]="primaryMenuItem.description" />
       }
     </div>
   </div>

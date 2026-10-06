@@ -1,0 +1,17 @@
+<a class="group flex h-full items-center rounded-2xl border border-outline text-left no-underline transition-colors hover:border-primary hover:bg-sidebar focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+   [class]="compact() ? 'min-h-20 gap-3 p-4' : 'min-h-28 gap-4 p-5'"
+   [routerLink]="route()">
+  <span class="grid shrink-0 place-items-center rounded-xl bg-primary-container text-primary"
+        [class]="compact() ? 'size-10' : 'size-12'">
+    <mat-icon aria-hidden="true">{{ icon() }}</mat-icon>
+  </span>
+  <span class="min-w-0 flex-1">
+    <span class="block font-medium text-on-surface">{{ title() }}</span>
+    @if (description()) {
+      <span class="mt-1 block leading-5 text-muted"
+            [class]="compact() ? 'text-xs' : 'text-sm'">{{ description() }}</span>
+    }
+  </span>
+  <mat-icon class="shrink-0 text-muted transition-colors group-hover:text-primary"
+            aria-hidden="true">chevron_right</mat-icon>
+</a>

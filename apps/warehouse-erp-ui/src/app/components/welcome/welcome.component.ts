@@ -1,12 +1,11 @@
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
-import { MatIcon } from '@angular/material/icon';
-import { RouterLink } from '@angular/router';
 
 import { PRIMARY_MENU_WITH_SUBMENUS_TOKEN } from '../../config/primary-menu-with-submenus.token';
+import { NavigationCard } from '..';
 
 @Component({
   selector: 'erp-welcome',
-  imports: [MatIcon, RouterLink],
+  imports: [NavigationCard],
   templateUrl: './welcome.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

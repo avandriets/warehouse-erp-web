@@ -5,10 +5,11 @@ import { MatIcon } from '@angular/material/icon';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 
 import { PRIMARY_MENU_WITH_SUBMENUS_TOKEN } from '../../config/primary-menu-with-submenus.token';
+import { NavigationCard } from '..';
 
 @Component({
   selector: 'erp-submenu-overview',
-  imports: [MatIcon, MatButton, RouterLink],
+  imports: [MatIcon, MatButton, RouterLink, NavigationCard],
   templateUrl: './submenu-overview.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

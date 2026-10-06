@@ -12,13 +12,35 @@ import {
 
 export const MENU_CONFIG: MenuConfig = {
   primaryMenu: [
-    { id: 'master-data', title: 'Master data', icon: 'category', sidebarTitle: 'Master data', route: '/master-data' },
-    { id: 'documents', title: 'Documents', icon: 'description', sidebarTitle: 'Documents', route: '/documents' },
-    { id: 'reports', title: 'Reports', icon: 'bar_chart', sidebarTitle: 'Reports', route: '/reports' },
+    {
+      id: 'master-data',
+      title: 'Master data',
+      description: 'Products, categories and warehouses.',
+      icon: 'category',
+      sidebarTitle: 'Master data',
+      route: '/master-data',
+    },
+    {
+      id: 'documents',
+      title: 'Documents',
+      description: 'Receipts, shipments and stock movements.',
+      icon: 'description',
+      sidebarTitle: 'Documents',
+      route: '/documents',
+    },
+    {
+      id: 'reports',
+      title: 'Reports',
+      description: 'Stock balances and warehouse activity.',
+      icon: 'bar_chart',
+      sidebarTitle: 'Reports',
+      route: '/reports',
+    },
     {
       id: 'administration',
       route: '/administration',
       title: 'Administration',
+      description: 'Users, roles and access.',
       sidebarTitle: 'Administration',
       icon: 'admin_panel_settings',
       permission: 'users.manage',

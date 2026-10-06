@@ -77,7 +77,13 @@ export function assembleMenu(menu: MenuConfig, libraries: readonly LibraryMount[
       assertPath(target.path, 'library entry path', false, true);
       route = `/${[library.path, target.path].filter(Boolean).join('/')}`;
     }
-    items.push({ id: item.id, title: item.title, route });
+    items.push({
+      id: item.id,
+      title: item.title,
+      route,
+      ...(item.icon ? { icon: item.icon } : {}),
+      ...(item.description ? { description: item.description } : {}),
+    });
   }
 
   return menu.primaryMenu.map(item => ({

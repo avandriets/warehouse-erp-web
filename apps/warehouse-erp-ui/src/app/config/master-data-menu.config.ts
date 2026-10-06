@@ -28,6 +28,7 @@ export const MASTER_DATA_LINKS: readonly SubmenuItem[] = [
     id: 'products',
     submenuGroupId: 'master-data-products',
     title: 'Products',
+    icon: 'inventory_2',
     target: {
       libraryId: 'master-data-library',
       path: 'products',
@@ -37,6 +38,7 @@ export const MASTER_DATA_LINKS: readonly SubmenuItem[] = [
     id: 'categories',
     submenuGroupId: 'master-data-products',
     title: 'Categories',
+    icon: 'category',
     target: {
       route: '/master-data/categories',
     },
@@ -45,6 +47,7 @@ export const MASTER_DATA_LINKS: readonly SubmenuItem[] = [
     id: 'units',
     submenuGroupId: 'master-data-products',
     title: 'Units of measurement',
+    icon: 'straighten',
     target: {
       route: '/master-data/units',
     },
@@ -53,6 +56,7 @@ export const MASTER_DATA_LINKS: readonly SubmenuItem[] = [
     id: 'warehouses',
     submenuGroupId: 'master-data-warehouses',
     title: 'Warehouses and locations',
+    icon: 'warehouse',
     target: {
       libraryId: 'master-data-library',
       path: 'warehouses',
@@ -62,6 +66,8 @@ export const MASTER_DATA_LINKS: readonly SubmenuItem[] = [
     id: 'storage-analytics',
     submenuGroupId: 'master-data-warehouses',
     title: 'Storage analytics',
+    icon: 'insights',
+    description: 'Configure how stock is grouped for analysis.',
     target: {
       route: '/master-data/storage-analytics',
     },
@@ -70,6 +76,7 @@ export const MASTER_DATA_LINKS: readonly SubmenuItem[] = [
     id: 'counterparties',
     submenuGroupId: 'master-data-business',
     title: 'Counterparties',
+    icon: 'handshake',
     target: {
       route: '/master-data/counterparties',
     },
@@ -78,6 +85,8 @@ export const MASTER_DATA_LINKS: readonly SubmenuItem[] = [
     id: 'price-types',
     submenuGroupId: 'master-data-business',
     title: 'Price types',
+    icon: 'sell',
+    description: 'Price categories for buying and selling.',
     target: {
       route: '/master-data/price-types',
     },
@@ -86,6 +95,8 @@ export const MASTER_DATA_LINKS: readonly SubmenuItem[] = [
     id: 'operation-reasons',
     submenuGroupId: 'master-data-accounting',
     title: 'Write-off and adjustment reasons',
+    icon: 'fact_check',
+    description: 'Reasons for stock write-offs and corrections.',
     target: {
       route: '/master-data/operation-reasons',
     },
@@ -94,6 +105,8 @@ export const MASTER_DATA_LINKS: readonly SubmenuItem[] = [
     id: 'vat-rates',
     submenuGroupId: 'master-data-accounting',
     title: 'VAT rates and treatments',
+    icon: 'percent',
+    description: 'Tax rates and VAT handling.',
     target: {
       route: '/master-data/vat-rates',
     },
@@ -102,6 +115,7 @@ export const MASTER_DATA_LINKS: readonly SubmenuItem[] = [
     id: 'currencies',
     submenuGroupId: 'master-data-accounting',
     title: 'Currencies',
+    icon: 'currency_exchange',
     target: {
       route: '/master-data/currencies',
     },

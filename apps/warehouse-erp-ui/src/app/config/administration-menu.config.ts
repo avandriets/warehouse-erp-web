@@ -9,12 +9,14 @@ export const ADMINISTRATION_LINKS: readonly SubmenuItem[] = [
     id: 'admin-users',
     submenuGroupId: 'administration-access',
     title: 'Users',
+    icon: 'people',
     target: { libraryId: 'access-management-library', path: 'users' },
   },
   {
     id: 'admin-roles',
     submenuGroupId: 'administration-access',
     title: 'Roles and permissions',
+    icon: 'admin_panel_settings',
     target: { libraryId: 'access-management-library', path: 'roles' },
   },
 ];

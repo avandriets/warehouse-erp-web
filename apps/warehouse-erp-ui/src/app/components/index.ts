@@ -1,3 +1,4 @@
+export * from './navigation-card/navigation-card';
 export * from './primary-menu/primary-menu.component';
 export * from './submenu/submenu.component';
 export * from './submenu-overview/submenu-overview.component';
