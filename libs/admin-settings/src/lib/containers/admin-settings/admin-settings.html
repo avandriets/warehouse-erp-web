@@ -1,0 +1,152 @@
+<ui-page-layout>
+  <a pageBreadcrumb
+     routerLink="/administration">Administration</a>
+  <h1 pageTitle
+      class="m-0 text-2xl font-semibold">Settings</h1>
+  <button pageActions
+          mat-stroked-button
+          type="button"
+          [disabled]="state().pending"
+          (click)="load()">Reload settings</button>
+  <div pageBody
+       class="mt-6">
+    <ui-state-container [state]="state()"
+                        [resolved]="settingsContent"
+                        [actionError]="actionError()"
+                        (actionErrorDismissed)="dismissActionError()"
+                        (retry)="load()" />
+    <ng-template #settingsContent>
+      <mat-tab-group>
+        <mat-tab label="Enterprise">
+          <form class="mt-6 max-w-4xl"
+                [formGroup]="enterpriseForm"
+                (ngSubmit)="saveEnterprise()">
+            <fieldset class="m-0 grid grid-cols-1 gap-x-5 gap-y-2 border-0 p-0 md:grid-cols-2"
+                      [disabled]="state().pending">
+              @for (field of enterpriseFields; track field.key) {
+                <mat-form-field appearance="outline"
+                                [class.md:col-span-2]="field.multiline">
+                  <mat-label>{{ field.label }}</mat-label>
+                  @if (field.multiline) { <textarea matInput
+                              rows="3"
+                              [formControlName]="field.key"></textarea> }
+                  @else { <input matInput
+                           [formControlName]="field.key" /> }
+                  @if (enterpriseForm.controls[field.key].invalid) {
+                    <mat-error>{{ field.key === 'logo_url' ? 'Enter a valid HTTPS URL.' : 'Use at most 255 characters.' }}</mat-error> }
+                </mat-form-field>
+              }
+            </fieldset>
+            <button mat-flat-button
+                    type="submit"
+                    [disabled]="state().pending || enterpriseForm.invalid || !enterpriseForm.dirty">{{ state().savingSection === 'enterprise' ? 'Saving…' : 'Save enterprise' }}</button>
+          </form>
+        </mat-tab>
+        <mat-tab label="Accounting">
+          <form class="mt-6 max-w-3xl"
+                [formGroup]="accountingForm"
+                (ngSubmit)="saveAccounting()">
+            <fieldset class="m-0 flex flex-col gap-5 border-0 p-0"
+                      [disabled]="state().pending">
+              <mat-checkbox formControlName="cost_accounting_enabled">Enable cost accounting</mat-checkbox>
+              <p class="m-0 text-sm text-muted">Cost accounting requires all negative-stock allowances to be disabled. Cost mode and valuation are structural settings; server
+                restrictions apply.</p>
+              <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+                <mat-form-field appearance="outline">
+                  <mat-label>Valuation method</mat-label>
+                  <mat-select formControlName="cost_valuation_method">
+                    <mat-option value="MOVING_WEIGHTED_AVERAGE">Moving weighted average</mat-option>
+                    <mat-option value="FIFO">FIFO</mat-option>
+                  </mat-select>
+                </mat-form-field>
+                <mat-form-field appearance="outline">
+                  <mat-label>Changes locked through</mat-label>
+                  <input matInput
+                         type="date"
+                         formControlName="changes_locked_through" />
+                  <mat-hint>Changes on or before this date are prohibited.</mat-hint>
+                </mat-form-field>
+                <mat-form-field appearance="outline">
+                  <mat-label>Accounting time zone</mat-label>
+                  <input matInput
+                         formControlName="accounting_timezone"
+                         placeholder="Europe/Madrid" />
+                  <mat-hint>IANA time zone, for example UTC or Europe/Madrid.</mat-hint>
+                  <mat-error>Enter an accounting time zone.</mat-error>
+                </mat-form-field>
+                <mat-form-field appearance="outline">
+                  <mat-label>Price entry mode</mat-label>
+                  <mat-select formControlName="price_entry_mode">
+                    <mat-option value="TAX_EXCLUSIVE">Excluding VAT</mat-option>
+                    <mat-option value="TAX_INCLUSIVE">Including VAT</mat-option>
+                  </mat-select>
+                </mat-form-field>
+              </div>
+              <mat-checkbox formControlName="vat_enabled">Enable VAT</mat-checkbox>
+            </fieldset>
+            <button mat-flat-button
+                    type="submit"
+                    class="mt-6"
+                    [disabled]="state().pending || accountingForm.invalid || !accountingForm.dirty">{{ state().savingSection === 'accounting' ? 'Saving…' : 'Save accounting' }}</button>
+          </form>
+          <section class="mt-10 max-w-3xl border-t border-outline pt-6"
+                   aria-labelledby="negative-title">
+            <h2 id="negative-title"
+                class="m-0 mb-4 text-lg font-semibold">Negative stock</h2>
+            <form [formGroup]="negativeForm"
+                  (ngSubmit)="saveNegative()">
+              <mat-checkbox formControlName="allowed">Allow negative stock</mat-checkbox>
+              <p class="text-sm text-muted">Global default for inventory policies. More specific overrides may apply.</p>
+              @if (negativeUnavailable()) {
+                <p role="status"
+                   class="text-sm text-muted">Negative stock is unavailable with cost accounting enabled. Save accounting changes before editing this policy.</p> }
+              @if (scopedNegative()) {
+                <p class="text-sm text-error">Enabled scoped negative-stock overrides exist. They must also be cleared before enabling cost accounting.</p> }
+              <button mat-flat-button
+                      type="submit"
+                      [disabled]="negativeForm.disabled || state().pending || !negativeForm.dirty">{{ state().savingSection === 'negative' ? 'Saving…' : 'Save negative-stock policy' }}</button>
+            </form>
+          </section>
+        </mat-tab>
+        <mat-tab label="Documents">
+          <p class="mt-6 text-sm text-muted">Numbering changes apply to future documents. Save each document type separately.</p>
+          <div class="grid grid-cols-1 gap-5 xl:grid-cols-2">
+            @for (editor of numbering(); track editor.record.document_type) {
+              <form class="rounded-xl border border-outline p-5"
+                    [formGroup]="editor.form"
+                    (ngSubmit)="saveNumbering(editor)">
+                <h2 class="m-0 mb-5 text-lg font-semibold">{{ documentLabel(editor.record.document_type) }}</h2>
+                <fieldset class="m-0 grid grid-cols-1 gap-4 border-0 p-0 sm:grid-cols-2"
+                          [disabled]="state().pending">
+                  <mat-form-field appearance="outline">
+                    <mat-label>Prefix</mat-label>
+                    <input matInput
+                           formControlName="prefix"
+                           maxlength="32" />
+                    <mat-error>Use at most 32 characters.</mat-error>
+                  </mat-form-field>
+                  <mat-form-field appearance="outline">
+                    <mat-label>Number of digits</mat-label>
+                    <input matInput
+                           type="number"
+                           formControlName="numeric_width"
+                           min="1"
+                           max="18"
+                           step="1" />
+                    <mat-error>Enter a whole number from 1 to 18.</mat-error>
+                  </mat-form-field>
+                  <mat-checkbox formControlName="reset_annually"
+                                class="sm:col-span-2">Reset numbering annually</mat-checkbox>
+                </fieldset>
+                <button mat-flat-button
+                        type="submit"
+                        class="mt-5"
+                        [disabled]="state().pending || editor.form.invalid || !editor.form.dirty">{{ state().savingSection === editor.record.document_type ? 'Saving…' : 'Save rule' }}</button>
+              </form>
+            }
+          </div>
+        </mat-tab>
+      </mat-tab-group>
+    </ng-template>
+  </div>
+</ui-page-layout>

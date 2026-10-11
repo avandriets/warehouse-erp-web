@@ -44,7 +44,21 @@ export function createAppRoutes(
         {
           provide: PRIMARY_MENU_WITH_SUBMENUS_TOKEN,
           useFactory: (auth: WarehouseAuthService) =>
-            navigation.filter(item => !item.permission || auth.can(item.permission)),
+            navigation
+              .filter(
+                item =>
+                  (!item.permission || auth.can(item.permission)) &&
+                  (!item.anyPermission || item.anyPermission.some(permission => auth.can(permission))),
+              )
+              .map(item => ({
+                ...item,
+                groups: item.groups
+                  .map(group => ({
+                    ...group,
+                    items: group.items.filter(link => !link.permission || auth.can(link.permission)),
+                  }))
+                  .filter(group => group.items.length),
+              })),
           deps: [WarehouseAuthService],
         },
         MenuSelectionService,
@@ -83,7 +97,11 @@ function createOverviewRoute(primaryMenuItem: PrimaryMenuItem): Route {
     pathMatch: 'full',
     title: `${primaryMenuItem.title} · Warehouse ERP`,
     canActivate: [permissionGuard],
-    data: { primaryMenuId: primaryMenuItem.id, permission: primaryMenuItem.permission },
+    data: {
+      primaryMenuId: primaryMenuItem.id,
+      permission: primaryMenuItem.permission,
+      anyPermission: primaryMenuItem.anyPermission,
+    },
     loadComponent: () => import('./components').then(module => module.SubmenuOverviewComponent),
   };
 }

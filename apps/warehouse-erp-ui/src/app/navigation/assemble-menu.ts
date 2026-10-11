@@ -79,6 +79,7 @@ export function assembleMenu(menu: MenuConfig, libraries: readonly LibraryMount[
     }
     items.push({
       id: item.id,
+      ...(item.permission ? { permission: item.permission } : {}),
       title: item.title,
       route,
       ...(item.icon ? { icon: item.icon } : {}),

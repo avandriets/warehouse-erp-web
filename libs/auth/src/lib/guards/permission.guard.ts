@@ -26,7 +26,10 @@ export const permissionGuard: CanActivateFn = (route, state) => {
 
     return auth.ensureCurrentUser().pipe(
       map(user =>
-        user.status === 'ACTIVE' && (!route.data['permission'] || auth.can(route.data['permission']))
+        user.status === 'ACTIVE' &&
+        (!route.data['permission'] || auth.can(route.data['permission'])) &&
+        (!route.data['anyPermission'] ||
+          (route.data['anyPermission'] as string[]).some(permission => auth.can(permission)))
           ? true
           : errorRedirect(403),
       ),

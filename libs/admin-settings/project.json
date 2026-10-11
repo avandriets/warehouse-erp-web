@@ -1,0 +1,35 @@
+{
+  "name": "admin-settings",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/admin-settings/src",
+  "prefix": "admin",
+  "tags": ["scope:admin", "type:feature"],
+  "projectType": "library",
+  "// targets": "to see all targets run: nx show project admin-settings --web",
+  "targets": {
+    "lint": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "eslint \"libs/admin-settings/**/*.ts\" \"libs/admin-settings/**/*.html\" --no-error-on-unmatched-pattern"
+      }
+    },
+    "typecheck": {
+      "executor": "nx:run-commands",
+      "options": {
+        "commands": [
+          "ngc -p libs/admin-settings/tsconfig.lib.json --noEmit",
+          "tsc -p libs/admin-settings/tsconfig.spec.json --noEmit"
+        ],
+        "parallel": false
+      }
+    },
+    "test": {
+      "executor": "@nx/angular:unit-test",
+      "options": {
+        "tsConfig": "libs/admin-settings/tsconfig.spec.json",
+        "watch": false,
+        "buildTarget": "warehouse-erp-ui:build:development"
+      }
+    }
+  }
+}

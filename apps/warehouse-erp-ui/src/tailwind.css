@@ -1,7 +1,13 @@
 @import 'tailwindcss' theme(static);
 
-@theme {
+/* Retain palette tokens referenced by the Material theme in styles.scss. */
+@theme static {
   --spacing-sidebar: 20rem;
+  --color-brown-100: #efebe9;
+  --color-brown-200: #d7ccc8;
+  --color-brown-700: #795548;
+  --color-brown-900: #3e2723;
+  --color-brown-950: #291a17;
 }
 
 /* Expose Material theme colors as Tailwind utilities. */
@@ -25,6 +31,6 @@
   --color-secondary-container: var(--mat-sys-secondary-container);
   --color-on-secondary-container: var(--mat-sys-on-secondary-container);
   --color-hover: var(--mat-sys-surface-container-highest);
-  --color-selected: var(--mat-sys-secondary-container);
-  --color-on-selected: var(--mat-sys-on-secondary-container);
+  --color-selected: var(--mat-sys-primary-container);
+  --color-on-selected: var(--mat-sys-on-primary-container);
 }

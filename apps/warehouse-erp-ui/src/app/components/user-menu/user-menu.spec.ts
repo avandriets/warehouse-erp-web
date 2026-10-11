@@ -2,10 +2,12 @@ import { OverlayContainer } from '@angular/cdk/overlay';
 import { TestbedHarnessEnvironment } from '@angular/cdk/testing/testbed';
 import { TestBed } from '@angular/core/testing';
 import { MatMenuHarness } from '@angular/material/menu/testing';
+import { provideRouter, Router } from '@angular/router';
 
 import { UserMenuComponent } from './user-menu';
 
 describe('user menu', () => {
+  beforeEach(() => TestBed.configureTestingModule({ providers: [provideRouter([{ path: 'profile', children: [] }])] }));
   it('opens account details and signs out only when the action is selected', async () => {
     const fixture = TestBed.createComponent(UserMenuComponent);
     fixture.componentRef.setInput('userName', 'Alex Example');
@@ -24,6 +26,18 @@ describe('user menu', () => {
     await item.click();
     expect(signOut).toHaveBeenCalledOnce();
     expect(await menu.isOpen()).toBe(false);
+  });
+
+  it('opens the own-profile screen from the account menu', async () => {
+    const fixture = TestBed.createComponent(UserMenuComponent);
+    fixture.componentRef.setInput('userName', 'Alex Example');
+    await fixture.whenStable();
+    const menu = await TestbedHarnessEnvironment.loader(fixture).getHarness(MatMenuHarness);
+    await menu.open();
+    const [item] = await menu.getItems({ text: /My profile/ });
+    await item.click();
+    await fixture.whenStable();
+    expect(TestBed.inject(Router).url).toBe('/profile');
   });
 
   it('can dismiss the menu without signing out and handles a missing name', async () => {

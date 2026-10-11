@@ -4,6 +4,7 @@ import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { RouterTestingHarness } from '@angular/router/testing';
 import { provideAccessManagement } from '@warehouse/access-management';
+import { AUTH_CONFIG } from '@warehouse/auth';
 
 import { createAppRoutes } from '../app.routes';
 import { LIBRARY_MOUNTS } from '../config/library-mounts.config';
@@ -107,6 +108,7 @@ describe('navigation configuration contracts', () => {
         provideHttpClient(),
         provideHttpClientTesting(),
         provideAccessManagement({ apiUrl: '/api' }),
+        { provide: AUTH_CONFIG, useValue: { apiUrl: '/api' } },
         provideTestAuth(),
         provideRouter(createAppRoutes(MENU_CONFIG, LIBRARY_MOUNTS)),
       ],
@@ -120,6 +122,16 @@ describe('navigation configuration contracts', () => {
         const root = harness.fixture.nativeElement as HTMLElement;
         if (target.libraryId === 'master-data-library') {
           expect(root.querySelector('md-directory-table')).not.toBeNull();
+        } else if (target.path === 'settings') {
+          const http = TestBed.inject(HttpTestingController);
+          http.expectOne('/api/settings/enterprise').flush({ version: 1 });
+          http
+            .expectOne('/api/settings/accounting')
+            .flush({ version: 1, cost_accounting_enabled: false, accounting_timezone: 'UTC' });
+          http.expectOne('/api/settings/document-numbering').flush([]);
+          http.expectOne('/api/settings/definitions/inventory.negative_stock_allowed/values').flush([]);
+          await harness.fixture.whenStable();
+          expect(root.querySelector('ui-page-layout h1')?.textContent).toContain('Settings');
         } else {
           const request = TestBed.inject(HttpTestingController).expectOne(
             req => req.url === `/api/identity/${target.path}`,

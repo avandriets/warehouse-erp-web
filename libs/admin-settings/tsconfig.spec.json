@@ -1,0 +1,8 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "outDir": "../../out-tsc/admin-settings-spec",
+    "types": ["vitest/globals"]
+  },
+  "include": ["src/**/*.spec.ts"]
+}

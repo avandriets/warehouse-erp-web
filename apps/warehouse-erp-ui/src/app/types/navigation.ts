@@ -1,6 +1,7 @@
 import type { LoadChildrenCallback } from '@angular/router';
 
 export interface ResolvedSubmenuItem {
+  readonly permission?: string;
   readonly icon?: string;
   readonly description?: string;
   readonly id: string;
@@ -15,6 +16,7 @@ export interface ResolvedSubmenuGroup {
 }
 
 export interface PrimaryMenuItem {
+  readonly anyPermission?: readonly string[];
   readonly description?: string;
   readonly permission?: string;
   readonly id: string;
@@ -44,6 +46,7 @@ export interface SubmenuGroup {
 export type MenuTarget = { readonly libraryId: string; readonly path: string } | { readonly route: string };
 
 export interface SubmenuItem {
+  readonly permission?: string;
   readonly icon?: string;
   readonly description?: string;
   readonly id: string;

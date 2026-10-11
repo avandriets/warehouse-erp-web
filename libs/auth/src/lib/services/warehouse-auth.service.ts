@@ -2,10 +2,10 @@ import { inject, Injectable, signal } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { AuthService } from '@auth0/auth0-angular';
 import type { Observable } from 'rxjs';
-import { finalize, of, shareReplay, tap } from 'rxjs';
+import { finalize, map, of, shareReplay, switchMap, tap } from 'rxjs';
 
 import { AUTH_CONFIG } from '../providers';
-import type { CurrentUser } from '../types';
+import type { CurrentUser, OwnProfileUpdate } from '../types';
 import { IdentityApiService } from './identity-api.service';
 
 @Injectable({ providedIn: 'root' })
@@ -59,6 +59,24 @@ export class WarehouseAuthService {
     );
 
     return this.currentUserRequest$;
+  }
+
+  updateOwnProfile(payload: OwnProfileUpdate): Observable<CurrentUser> {
+    return this.ensureCurrentUser().pipe(
+      switchMap(current =>
+        this.identityApi.updateOwnProfile(payload).pipe(
+          map(profile => ({
+            ...current,
+            first_name: profile.first_name,
+            last_name: profile.last_name,
+            display_name: profile.display_name,
+            email: profile.email,
+            status: profile.status,
+          })),
+        ),
+      ),
+      tap(user => (this.currentUser = user)),
+    );
   }
 
   can(permission: string): boolean {

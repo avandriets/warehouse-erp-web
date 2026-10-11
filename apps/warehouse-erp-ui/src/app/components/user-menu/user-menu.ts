@@ -3,10 +3,11 @@ import { MatDivider } from '@angular/material/divider';
 import { MatIcon } from '@angular/material/icon';
 import { MatMenu, MatMenuItem, MatMenuTrigger } from '@angular/material/menu';
 import { MatTooltip } from '@angular/material/tooltip';
+import { RouterLink } from '@angular/router';
 
 @Component({
   selector: 'erp-user-menu',
-  imports: [MatDivider, MatIcon, MatMenu, MatMenuItem, MatMenuTrigger, MatTooltip],
+  imports: [MatDivider, MatIcon, MatMenu, MatMenuItem, MatMenuTrigger, MatTooltip, RouterLink],
   templateUrl: './user-menu.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

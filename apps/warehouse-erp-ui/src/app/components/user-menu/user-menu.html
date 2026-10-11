@@ -25,8 +25,14 @@
     </div>
   </div>
   <mat-divider />
+  <a mat-menu-item
+     routerLink="/profile">
+    <mat-icon>manage_accounts</mat-icon>
+    <span>My profile</span>
+  </a>
   <button mat-menu-item
           type="button"
+          aria-label="Sign out"
           (click)="signOut.emit()">
     <mat-icon>logout</mat-icon>
     <span>Sign out</span>

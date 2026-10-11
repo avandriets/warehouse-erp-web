@@ -87,7 +87,7 @@ describe('shell authentication', () => {
       .routeNativeElement!.querySelector<HTMLButtonElement>('button[aria-label="Account menu for Test User"]')!
       .click();
     await harness.fixture.whenStable();
-    document.querySelector<HTMLButtonElement>('[role="menuitem"]')!.click();
+    document.querySelector<HTMLButtonElement>('[role="menuitem"][aria-label="Sign out"]')!.click();
     expect(auth.logout).toHaveBeenCalled();
   });
 

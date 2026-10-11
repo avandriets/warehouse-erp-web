@@ -8,6 +8,31 @@ $compact-form-field-theme: mat.define-theme(
   )
 );
 
+@mixin accent-theme($palette) {
+  @include mat.theme-overrides(
+    (
+      primary: var(--color-#{$palette}-700),
+      on-primary: var(--color-white),
+      primary-container: var(--color-#{$palette}-100),
+      on-primary-container: var(--color-#{$palette}-900),
+      primary-fixed: var(--color-#{$palette}-100),
+      primary-fixed-dim: var(--color-#{$palette}-200),
+      on-primary-fixed: var(--color-#{$palette}-950),
+      on-primary-fixed-variant: var(--color-#{$palette}-900),
+      inverse-primary: var(--color-#{$palette}-200),
+      surface-tint: var(--color-#{$palette}-700),
+      tertiary: var(--color-#{$palette}-700),
+      on-tertiary: var(--color-white),
+      tertiary-container: var(--color-#{$palette}-100),
+      on-tertiary-container: var(--color-#{$palette}-900),
+      tertiary-fixed: var(--color-#{$palette}-100),
+      tertiary-fixed-dim: var(--color-#{$palette}-200),
+      on-tertiary-fixed: var(--color-#{$palette}-950),
+      on-tertiary-fixed-variant: var(--color-#{$palette}-900),
+    )
+  );
+}
+
 html {
   @include mat.theme(
     (
@@ -23,7 +48,7 @@ html {
       density: 0,
     )
   );
-  // Use Tailwind's neutral surfaces and emerald accent across Material and custom UI.
+  // Shared neutral surfaces; accent colors are selected independently.
   @include mat.theme-overrides(
     (
       background: var(--color-white),
@@ -43,16 +68,6 @@ html {
       outline-variant: var(--color-neutral-200),
       inverse-surface: var(--color-neutral-800),
       inverse-on-surface: var(--color-white),
-      primary: var(--color-emerald-700),
-      on-primary: var(--color-white),
-      primary-container: var(--color-emerald-100),
-      on-primary-container: var(--color-emerald-900),
-      primary-fixed: var(--color-emerald-100),
-      primary-fixed-dim: var(--color-emerald-200),
-      on-primary-fixed: var(--color-emerald-950),
-      on-primary-fixed-variant: var(--color-emerald-900),
-      inverse-primary: var(--color-emerald-200),
-      surface-tint: var(--color-emerald-700),
       secondary: var(--color-neutral-700),
       on-secondary: var(--color-white),
       secondary-container: var(--color-neutral-200),
@@ -63,8 +78,15 @@ html {
       on-secondary-fixed-variant: var(--color-neutral-700),
     )
   );
+  // Enable exactly one accent palette; comment out the other line.
+  //@include accent-theme('emerald'); // Green
+  @include accent-theme('brown'); // Brown
   @include mat.form-field-density($compact-form-field-theme);
 
   color-scheme: light;
   min-height: 100%;
+}
+
+:focus-visible {
+  outline-color: var(--mat-sys-primary);
 }
