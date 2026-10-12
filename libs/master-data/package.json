@@ -6,7 +6,10 @@
     "@angular/router": "^21.2.0",
     "@angular/forms": "^21.2.0",
     "@angular/material": "^21.2.0",
-    "@warehouse/shared": "^0.0.1"
+    "@warehouse/shared": "^0.0.1",
+    "@angular/common": "^21.2.0",
+    "@ngrx/signals": "^21.1.1",
+    "rxjs": "^7.8.0"
   },
   "sideEffects": false
 }

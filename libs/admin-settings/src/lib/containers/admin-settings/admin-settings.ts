@@ -12,6 +12,7 @@ import { RouterLink } from '@angular/router';
 import { PageLayout, UIStateContainerComponent } from '@warehouse/shared';
 import { finalize } from 'rxjs';
 
+import { CurrencySelect } from '../../components';
 import { SettingsStore } from '../../data-access/stores';
 import type {
   AccountingFields,
@@ -27,6 +28,7 @@ import type { NumberingEditor } from '../types';
   selector: 'admin-settings',
   providers: [SettingsStore],
   imports: [
+    CurrencySelect,
     ReactiveFormsModule,
     MatButtonModule,
     MatCheckboxModule,
@@ -82,6 +84,7 @@ export class AdminSettings {
     logo_url: new FormControl('', { nonNullable: true, validators: Validators.pattern(/^https:\/\/[^\s]+$/) }),
   });
   readonly accountingForm = new FormGroup({
+    currency_id: new FormControl<string | null>(null),
     cost_accounting_enabled: new FormControl(false, { nonNullable: true }),
     cost_valuation_method: new FormControl<AccountingFields['cost_valuation_method']>('MOVING_WEIGHTED_AVERAGE', {
       nonNullable: true,

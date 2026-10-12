@@ -12,7 +12,7 @@ print templates, so the editor exposes only their numbers and omits caption fiel
 
 Cost accounting makes the negative-stock control unavailable. Enabling cost accounting requires
 all saved negative-stock overrides to be false; scoped overrides are reported but are outside
-this global-policy editor. Existing currency and default VAT references are preserved.
+this global-policy editor. The Accounting tab exposes an accounting-currency selector with bounded server-side code/name search over active currencies; the current currency is resolved by id even when outside the search results. It saves `currency_id` through the existing accounting PATCH and version check. Default VAT references are preserved.
 
 `SettingsApiService` owns stateless HTTP transport. `SettingsAdapterService` implements the
 shared request adapter: it loads the complete `SettingsSnapshot`, computes changed fields and

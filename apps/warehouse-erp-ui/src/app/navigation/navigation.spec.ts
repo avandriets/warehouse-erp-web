@@ -120,7 +120,25 @@ describe('navigation configuration contracts', () => {
         const library = LIBRARY_MOUNTS.find(entry => entry.id === target.libraryId)!;
         await harness.navigateByUrl(`/${library.path}/${target.path}`);
         const root = harness.fixture.nativeElement as HTMLElement;
-        if (target.libraryId === 'master-data-library') {
+        if (
+          target.libraryId === 'master-data-library' &&
+          ['operation-reasons', 'price-types', 'currencies'].includes(target.path)
+        ) {
+          const reasons = target.path === 'operation-reasons';
+          TestBed.inject(HttpTestingController)
+            .expectOne(req => req.url === `/api/reference-data/${reasons ? 'adjustment-reasons' : target.path}`)
+            .flush({ items: [], total: 0 });
+          if (target.path === 'currencies') {
+            TestBed.inject(HttpTestingController)
+              .expectOne('/api/reference-data/currency-rates')
+              .flush({ base_currency: null, settings_version: 1, batch: null });
+          }
+          await harness.fixture.whenStable();
+          expect(root.querySelector(reasons ? 'md-adjustment-reasons' : `md-${target.path}`)).not.toBeNull();
+          expect(root.querySelector('ui-page-layout h1')?.textContent).toContain(
+            reasons ? 'Adjustment reasons' : item.title,
+          );
+        } else if (target.libraryId === 'master-data-library') {
           expect(root.querySelector('md-directory-table')).not.toBeNull();
         } else if (target.path === 'settings') {
           const http = TestBed.inject(HttpTestingController);
@@ -136,7 +154,7 @@ describe('navigation configuration contracts', () => {
           const request = TestBed.inject(HttpTestingController).expectOne(
             req => req.url === `/api/identity/${target.path}`,
           );
-          request.flush(target.path === 'users' ? { items: [], total: 0 } : []);
+          request.flush(['users', 'operation-reasons'].includes(target.path) ? { items: [], total: 0 } : []);
           await harness.fixture.whenStable();
           expect(root.querySelector('ui-page-layout h1')?.textContent).toContain(item.title);
         }

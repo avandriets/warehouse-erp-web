@@ -1,6 +1,9 @@
+import { inject } from '@angular/core';
 import { ACCESS_MANAGEMENT_ROUTES } from '@warehouse/access-management';
-import { permissionGuard } from '@warehouse/auth';
+import { permissionGuard, WarehouseAuthService } from '@warehouse/auth';
+import type { MasterDataConfig } from '@warehouse/master-data';
 
+import { environment } from '../../environments/environment';
 import type { LibraryMount } from '../types';
 
 export const LIBRARY_MOUNTS: readonly LibraryMount[] = [
@@ -32,6 +35,26 @@ export const LIBRARY_MOUNTS: readonly LibraryMount[] = [
   {
     id: 'master-data-library',
     path: 'master-data',
-    loadChildren: () => import('@warehouse/master-data').then(module => module.MASTER_DATA_ROUTES),
+    loadChildren: () =>
+      import('@warehouse/master-data').then(module => [
+        {
+          path: '',
+          providers: [
+            {
+              provide: module.MASTER_DATA_CONFIG,
+              useFactory: (): MasterDataConfig => {
+                const auth = inject(WarehouseAuthService);
+
+                return {
+                  apiUrl: environment.auth.apiUrl,
+                  hasPermission: permission => auth.can(permission),
+                  permissionGuard,
+                };
+              },
+            },
+          ],
+          children: module.MASTER_DATA_ROUTES,
+        },
+      ]),
   },
 ];

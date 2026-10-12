@@ -23,23 +23,8 @@ export const PLACEHOLDER_PAGES: readonly PlaceholderPage[] = [
     primaryMenuRoute: '/master-data',
   },
   {
-    path: 'master-data/price-types',
-    title: 'Price types',
-    primaryMenuRoute: '/master-data',
-  },
-  {
-    path: 'master-data/operation-reasons',
-    title: 'Write-off and adjustment reasons',
-    primaryMenuRoute: '/master-data',
-  },
-  {
     path: 'master-data/vat-rates',
     title: 'VAT rates and treatments',
-    primaryMenuRoute: '/master-data',
-  },
-  {
-    path: 'master-data/currencies',
-    title: 'Currencies',
     primaryMenuRoute: '/master-data',
   },
   {

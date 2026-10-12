@@ -52,6 +52,8 @@
               <p class="m-0 text-sm text-muted">Cost accounting requires all negative-stock allowances to be disabled. Cost mode and valuation are structural settings; server
                 restrictions apply.</p>
               <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+                <admin-currency-select formControlName="currency_id"
+                                       class="block md:col-span-2" />
                 <mat-form-field appearance="outline">
                   <mat-label>Valuation method</mat-label>
                   <mat-select formControlName="cost_valuation_method">

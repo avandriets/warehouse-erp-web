@@ -88,7 +88,8 @@ export const MASTER_DATA_LINKS: readonly SubmenuItem[] = [
     icon: 'sell',
     description: 'Price categories for buying and selling.',
     target: {
-      route: '/master-data/price-types',
+      libraryId: 'master-data-library',
+      path: 'price-types',
     },
   },
   {
@@ -98,7 +99,8 @@ export const MASTER_DATA_LINKS: readonly SubmenuItem[] = [
     icon: 'fact_check',
     description: 'Reasons for stock write-offs and corrections.',
     target: {
-      route: '/master-data/operation-reasons',
+      libraryId: 'master-data-library',
+      path: 'operation-reasons',
     },
   },
   {
@@ -117,7 +119,8 @@ export const MASTER_DATA_LINKS: readonly SubmenuItem[] = [
     title: 'Currencies',
     icon: 'currency_exchange',
     target: {
-      route: '/master-data/currencies',
+      libraryId: 'master-data-library',
+      path: 'currencies',
     },
   },
 ];

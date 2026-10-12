@@ -2,6 +2,31 @@
 
 A standalone Angular feature package, mounted through its single public export `MASTER_DATA_ROUTES`.
 
+## Adjustment reasons
+
+The backend-backed Adjustment reasons directory uses the existing `operation-reasons` menu destination:
+
+- `operation-reasons`: paginated code/name search with active/archived/all filters.
+- `operation-reasons/create`: create a reason.
+- `operation-reasons/:id/edit`: edit a reason or reactivate an archived reason. Codes are immutable.
+- Delete opens a confirmation dialog and archives via `PATCH` with `active=false` and `expected_version`. There is no delete route or destructive DELETE request.
+
+`AdjustmentReasonsApiService` owns transport to `/reference-data/adjustment-reasons`; the dedicated `AdjustmentReasonsAdapterService` connects this contract to `AdjustmentReasonsStore` using shared `withEntityData`. Each page/dialog has an isolated store. The list follows the Users screen: PageLayout filter panel, shared debounced query search, compact status and refresh controls, outlined Material card/table, status badges, and paging footer. Search, status, page size and offset live in URL parameters and are preserved through create/edit navigation. The footer uses the same Material paginator as Users. The API returns `{ items, total }`, with the total matching the current search/status filters. The paginator displays the exact total and provides first/last page controls. The shared state container renders loading, empty, error and update states; snackbars report request failures and successful mutations. Failed edits preserve form values, and version conflicts offer explicit reload.
+
+The shell provides `MASTER_DATA_CONFIG` on the lazy route mount: `apiUrl`, `hasPermission`, and `permissionGuard`. The package has no Auth0 dependency. List/create/edit routes require `catalog.read`, `catalog.create`, and `catalog.edit`, respectively; buttons follow the same permissions. Backend authorization remains authoritative.
+
+## Price types
+
+The Price types directory uses the same layout and workflow as Adjustment reasons, with its own API service, adapter, and store. Routes are `price-types`, `price-types/create`, and `price-types/:id/edit`; the existing menu now mounts these routes. Each record contains an immutable code, name, default tax-inclusive/exclusive price entry mode, and active state. Delete archives through a confirmation dialog and versioned `PATCH`. Errors preserve form input and are shown once in the shared state container, with snackbar notifications for request outcomes.
+
+The backend list endpoint `/reference-data/price-types` returns `{ items, total }`; search, status, and pagination are preserved in URL parameters. The list uses the standard Material paginator and the same filter panel, table, and status styles as Users. Routes and mutation actions use catalog read/create/edit permissions.
+
+## Currencies
+
+Currencies follows the same list/create/edit and archive-dialog workflow through its own API, adapter, and store. Fields are a three-letter immutable code, name, symbol, display/rounding decimal places (0–9), and rounding mode. Routes are `currencies`, `currencies/create`, and `currencies/:id/edit`; permissions are `settings.read` and `settings.manage`.
+
+The list displays accounting-currency and import metadata in a compact line above the table. Rate import is a secondary action beside Add currency; the single filter-panel refresh rereads both the list and saved rates without downloading new rates. Accounting currency is selected in Administration → Settings → Accounting; this list displays that setting. “Load exchange rates” calls the backend, which fetches Frankfurter data and persists snapshots. Rates display quote units per one accounting-currency unit, with observation dates, source, import timestamp, and unavailable currency codes. Switching the base never relabels rates from a different base. Failures retain the last saved snapshot; no automatic conversion of monetary documents is introduced. A separate request adapter/store owns these settings and rate actions. The backend requires migration `20261011_0010` for rate storage.
+
 ## Demo directories
 
 Products and warehouses each provide the following relative routes:

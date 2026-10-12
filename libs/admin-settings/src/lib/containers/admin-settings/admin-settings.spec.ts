@@ -99,6 +99,25 @@ describe('enterprise settings', () => {
     expect(page.enterpriseForm.pristine).toBe(true);
   });
 
+  it('saves the selected accounting currency through the existing settings endpoint and preserves it on conflict', () => {
+    const page = open();
+    page.accountingForm.controls.currency_id.setValue('eur');
+    page.saveAccounting();
+    const request = http.expectOne('/api/settings/accounting');
+    expect(request.request.body).toEqual({ currency_id: 'eur', expected_version: 5 });
+    request.flush({ detail: 'Version conflict' }, { status: 409, statusText: 'Conflict' });
+    expect(page.accountingForm.controls.currency_id.value).toBe('eur');
+    expect(page.accountingForm.enabled).toBe(true);
+    page.saveAccounting();
+    http.expectOne('/api/settings/accounting').flush({ ...accounting, currency_id: 'eur', version: 6 });
+    expect(page.accountingForm.pristine).toBe(true);
+    page.accountingForm.controls.currency_id.setValue(null);
+    page.saveAccounting();
+    const clear = http.expectOne('/api/settings/accounting');
+    expect(clear.request.body).toEqual({ currency_id: null, expected_version: 6 });
+    clear.flush({ ...accounting, version: 7 });
+  });
+
   it('keeps negative stock disabled until the saved cost mode is disabled', () => {
     const page = open(true);
     expect(page.negativeForm.controls.allowed.disabled).toBe(true);

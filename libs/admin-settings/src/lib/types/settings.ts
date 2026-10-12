@@ -22,6 +22,7 @@ export interface VersionedRecord {
 export interface EnterpriseSettings extends EnterpriseFields, VersionedRecord {}
 
 export interface AccountingFields {
+  currency_id: string | null;
   cost_accounting_enabled: boolean;
   cost_valuation_method: 'MOVING_WEIGHTED_AVERAGE' | 'FIFO';
   changes_locked_through: string | null;
@@ -31,7 +32,6 @@ export interface AccountingFields {
 }
 
 export interface AccountingSettings extends AccountingFields, VersionedRecord {
-  currency_id: string | null;
   default_vat_rate_id: string | null;
 }
 
