@@ -1,12 +1,17 @@
 import { computed, inject } from '@angular/core';
-import { signalStore, withComputed, withMethods } from '@ngrx/signals';
+import { MatSnackBar } from '@angular/material/snack-bar';
+import { signalStore, type, withComputed, withMethods } from '@ngrx/signals';
+import { eventGroup, Events, withEventHandlers } from '@ngrx/signals/events';
 import type { CurrentUser, OwnProfileUpdate } from '@warehouse/auth';
+import type { EntityDataSuccess } from '@warehouse/shared';
 import { apiError, withRequestData } from '@warehouse/shared';
 import type { Observable } from 'rxjs';
-import { defer, EMPTY } from 'rxjs';
+import { defer, EMPTY, filter, tap } from 'rxjs';
 
 import type { ProfileSaveRequest } from '../../types';
 import { ProfileAdapterService } from '../services';
+
+const profileEvents = eventGroup({ source: 'Profile API', events: { saved: type<EntityDataSuccess<CurrentUser>>() } });
 
 export const ProfileStore = signalStore(
   withRequestData<CurrentUser, void, ProfileSaveRequest>({
@@ -19,6 +24,7 @@ export const ProfileStore = signalStore(
     saveError: 'Could not save profile.',
     errorMessage: apiError,
     concurrency: 'exhaust',
+    events: profileEvents,
   }),
   withComputed(store => ({
     state: computed(() => ({
@@ -50,4 +56,15 @@ export const ProfileStore = signalStore(
       });
     },
   })),
+  withEventHandlers(store => {
+    const events = inject(Events);
+    const snackBar = inject(MatSnackBar);
+
+    return {
+      saved: events.on(profileEvents.saved).pipe(
+        filter(({ payload }) => store.saveCorrelationId() === payload.correlationId),
+        tap(() => snackBar.open('Profile saved.', 'Dismiss', { duration: 4000 })),
+      ),
+    };
+  }),
 );

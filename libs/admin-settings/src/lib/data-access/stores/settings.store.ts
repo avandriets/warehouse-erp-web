@@ -1,9 +1,12 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import { computed, inject } from '@angular/core';
-import { patchState, signalStore, withComputed, withMethods, withState } from '@ngrx/signals';
+import { MatSnackBar } from '@angular/material/snack-bar';
+import { patchState, signalStore, type, withComputed, withMethods, withState } from '@ngrx/signals';
+import { eventGroup, Events, withEventHandlers } from '@ngrx/signals/events';
+import type { EntityDataSuccess } from '@warehouse/shared';
 import { apiError, withRequestData } from '@warehouse/shared';
 import type { Observable } from 'rxjs';
-import { defer, EMPTY, finalize } from 'rxjs';
+import { defer, EMPTY, filter, finalize, tap } from 'rxjs';
 
 import type { SettingsSaveRequest, SettingsSnapshot, SettingsUpdate } from '../../types';
 import { SettingsAdapterService } from '../services';
@@ -15,6 +18,11 @@ function settingsError(error: unknown): string {
 
   return error instanceof Error && !(error instanceof HttpErrorResponse) ? error.message : apiError(error);
 }
+
+const settingsEvents = eventGroup({
+  source: 'Settings API',
+  events: { saved: type<EntityDataSuccess<SettingsSnapshot>>() },
+});
 
 export const SettingsStore = signalStore(
   withState({ savingSection: null as string | null }),
@@ -28,6 +36,7 @@ export const SettingsStore = signalStore(
     saveError: 'Could not save settings.',
     errorMessage: settingsError,
     concurrency: 'exhaust',
+    events: settingsEvents,
   }),
   withComputed(store => ({
     state: computed(() => ({
@@ -70,4 +79,15 @@ export const SettingsStore = signalStore(
       });
     },
   })),
+  withEventHandlers(store => {
+    const events = inject(Events);
+    const snackBar = inject(MatSnackBar);
+
+    return {
+      saved: events.on(settingsEvents.saved).pipe(
+        filter(({ payload }) => store.saveCorrelationId() === payload.correlationId),
+        tap(() => snackBar.open('Settings saved.', 'Dismiss', { duration: 4000 })),
+      ),
+    };
+  }),
 );

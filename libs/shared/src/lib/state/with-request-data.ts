@@ -49,6 +49,7 @@ export const withRequestData = <TData, TParams = void, TSave = never>(
     data: null,
     loaded: false,
     saving: false,
+    saveCorrelationId: null,
     actionError: null,
     error: null,
     operations: {},
@@ -176,7 +177,7 @@ export const withRequestData = <TData, TParams = void, TSave = never>(
 
             const correlationId = createCorrelationId();
             cancelLoads.next();
-            patchState(store, { saving: true, actionError: null });
+            patchState(store, { saving: true, actionError: null, saveCorrelationId: correlationId });
 
             return defer(() => save(payload)).pipe(
               take(1),

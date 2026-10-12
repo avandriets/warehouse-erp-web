@@ -4,7 +4,6 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatDialog } from '@angular/material/dialog';
-import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatTableModule } from '@angular/material/table';
 import { AccessApiService, AccessStore, RolesStore, UsersStore } from '@warehouse/access-management/data-access';
 import type { RoleAssignmentRecord, UserRecord } from '@warehouse/access-management/util';
@@ -22,7 +21,6 @@ import { AccountLinkDialog, RoleAssignmentDialog } from '..';
 })
 export class UserAccessEditor implements OnInit {
   private readonly dialog = inject(MatDialog);
-  private readonly snackBar = inject(MatSnackBar);
   private readonly destroyRef = inject(DestroyRef);
   private readonly rolesStore = inject(RolesStore);
   private readonly accessStore = inject(AccessStore);
@@ -78,7 +76,6 @@ export class UserAccessEditor implements OnInit {
         filter((user): user is UserRecord => !!user),
         tap(user => {
           this.usersStore.upsert(user);
-          this.snackBar.open('Account linked.', 'Dismiss', { duration: 4000 });
         }),
         finalize(() => {
           this.dialogOpen.set(false);
@@ -107,7 +104,6 @@ export class UserAccessEditor implements OnInit {
       .afterClosed()
       .pipe(
         filter((assignment): assignment is RoleAssignmentRecord => !!assignment),
-        tap(() => this.snackBar.open('Role assigned.', 'Dismiss', { duration: 4000 })),
         concatMap(() => this.accessStore.listRoleAssignments(this.user().id)),
         finalize(() => {
           this.dialogOpen.set(false);
@@ -137,7 +133,6 @@ export class UserAccessEditor implements OnInit {
       .pipe(
         filter(confirmed => confirmed === true),
         concatMap(() => this.accessStore.revokeRoleAssignment(this.user().id, assignment.id)),
-        tap(() => this.snackBar.open('Role removed.', 'Dismiss', { duration: 4000 })),
         finalize(() => {
           this.dialogOpen.set(false);
           ref.close();

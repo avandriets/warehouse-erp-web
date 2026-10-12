@@ -19,7 +19,7 @@
                         [resolved]="editor"
                         [actionError]="actionError()"
                         (actionErrorDismissed)="dismissActionError()"
-                        (retry)="load()"/>
+                        (retry)="load()" />
     <ng-template #editor>
       <form class="flex max-w-xl flex-col gap-3"
             [formGroup]="form"
@@ -29,7 +29,7 @@
           <input matInput
                  formControlName="code"
                  name="code"
-                 maxlength="64"/>
+                 maxlength="64" />
           @if (editing) {
             <mat-hint>Codes cannot be changed.</mat-hint>
           }
@@ -42,7 +42,7 @@
           <input matInput
                  formControlName="name"
                  name="name"
-                 maxlength="255"/>
+                 maxlength="255" />
           @if (form.controls.name.invalid) {
             <mat-error>Enter a name (up to 255 characters).</mat-error>
           }

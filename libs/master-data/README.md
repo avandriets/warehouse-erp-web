@@ -27,6 +27,12 @@ Currencies follows the same list/create/edit and archive-dialog workflow through
 
 The list displays accounting-currency and import metadata in a compact line above the table. Rate import is a secondary action beside Add currency; the single filter-panel refresh rereads both the list and saved rates without downloading new rates. Accounting currency is selected in Administration → Settings → Accounting; this list displays that setting. “Load exchange rates” calls the backend, which fetches Frankfurter data and persists snapshots. Rates display quote units per one accounting-currency unit, with observation dates, source, import timestamp, and unavailable currency codes. Switching the base never relabels rates from a different base. Failures retain the last saved snapshot; no automatic conversion of monetary documents is introduced. A separate request adapter/store owns these settings and rate actions. The backend requires migration `20261011_0010` for rate storage.
 
+## VAT rates and treatments
+
+The `vat-rates` list/create/edit routes use a dedicated HTTP API service and store. The `withEntityData` adapter object in the store maps pagination and trims write payloads, without a separate adapter service. The routes use the same PageLayout, filter panel, Material table/paginator, icon actions, state container, archive dialog, and snackbar pattern as the other dictionaries. Permissions are `settings.read` and `settings.manage`. The list API returns `{ items, total }`. Store event handlers show success/failure snackbars from `withEntityData` events; correlation ids isolate notifications between store instances. The archive dialog supplies its update-success message through a scoped token. Components retain only form/dialog cleanup and navigation.
+
+Treatments remain distinct: `TAXABLE`, `ZERO_RATE`, and `NO_VAT`. Taxable percentages must be positive, at most 100, and use at most four fractional digits. Decimal values travel as strings. Choosing Zero-rated or No VAT sets the rate to zero and disables percentage entry. Codes are immutable; edits and archiving use `expected_version`. Default/settings and Product references remain protected by backend validation. No country-specific rates are seeded automatically.
+
 ## Demo directories
 
 Products and warehouses each provide the following relative routes:

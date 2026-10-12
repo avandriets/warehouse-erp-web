@@ -122,7 +122,7 @@ describe('navigation configuration contracts', () => {
         const root = harness.fixture.nativeElement as HTMLElement;
         if (
           target.libraryId === 'master-data-library' &&
-          ['operation-reasons', 'price-types', 'currencies'].includes(target.path)
+          ['operation-reasons', 'price-types', 'currencies', 'vat-rates'].includes(target.path)
         ) {
           const reasons = target.path === 'operation-reasons';
           TestBed.inject(HttpTestingController)

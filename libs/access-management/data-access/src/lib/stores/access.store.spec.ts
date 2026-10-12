@@ -2,6 +2,7 @@ import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { Injector } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
+import { MatSnackBar } from '@angular/material/snack-bar';
 import { provideAccessManagement } from '@warehouse/access-management';
 
 import { AccessApiService } from '../services';
@@ -10,10 +11,12 @@ import { AccessStore } from './access.store';
 const payload = { role_id: 'r1', scope_type: 'GLOBAL', scope_id: null } as const;
 
 describe('AccessStore', () => {
+  const snackBar = { open: vi.fn() };
   let http: HttpTestingController;
   let store: InstanceType<typeof AccessStore>;
 
   beforeEach(() => {
+    snackBar.open.mockClear();
     TestBed.configureTestingModule({
       providers: [
         provideHttpClient(),
@@ -21,6 +24,7 @@ describe('AccessStore', () => {
         provideAccessManagement({ apiUrl: '/api' }),
         AccessApiService,
         AccessStore,
+        { provide: MatSnackBar, useValue: snackBar },
       ],
     });
     http = TestBed.inject(HttpTestingController);
@@ -53,6 +57,7 @@ describe('AccessStore', () => {
     request.flush([{ id: 'p1', code: 'users.manage' }]);
     expect(store.rolePermissions.data()).toEqual([{ id: 'p1', code: 'users.manage' }]);
     expect(store.rolePermissionsSaving()).toBe(false);
+    expect(snackBar.open).toHaveBeenCalledExactlyOnceWith('Changes saved.', 'Dismiss', { duration: 4000 });
     http.expectNone(pending => pending.method === 'GET');
   });
 
@@ -66,12 +71,14 @@ describe('AccessStore', () => {
       .flush({ detail: 'Denied' }, { status: 409, statusText: 'Conflict' });
     expect(store.roleAssignments.data()).toEqual([{ id: 'a1' }]);
     expect(store.roleAssignmentsActionError()).toBe('Denied');
+    expect(snackBar.open).not.toHaveBeenCalled();
     store.revokeRoleAssignment('u1', 'a1').subscribe();
     expect(store.roleAssignmentsActionError()).toBeNull();
     const request = http.expectOne('/api/identity/users/u1/role-assignments/a1');
     expect(request.request.method).toBe('DELETE');
     request.flush(null);
     expect(store.roleAssignments.data()).toEqual([]);
+    expect(snackBar.open).toHaveBeenCalledExactlyOnceWith('Role removed.', 'Dismiss', { duration: 4000 });
     expect(store.roleAssignmentsSaving()).toBe(false);
     http.expectNone(pending => pending.method === 'GET');
   });
@@ -90,6 +97,7 @@ describe('AccessStore', () => {
     request.flush({ id: 'a1' });
     expect(store.roleAssignments.data()).toEqual([{ id: 'a1' }]);
     expect(other.roleAssignments.data()).toEqual([{ id: 'a2' }]);
+    expect(snackBar.open).toHaveBeenCalledExactlyOnceWith('Role assigned.', 'Dismiss', { duration: 4000 });
     http.expectNone(pending => pending.method === 'GET');
     injector.destroy();
   });

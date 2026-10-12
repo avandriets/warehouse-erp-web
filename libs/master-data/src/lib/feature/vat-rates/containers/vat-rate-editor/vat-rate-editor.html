@@ -1,0 +1,93 @@
+<ui-page-layout>
+  <nav pageBreadcrumb
+       class="flex items-center gap-2"
+       aria-label="Breadcrumb">
+    <span>Master data</span>
+    <span aria-hidden="true">/</span>
+    <a class="font-medium text-primary hover:underline"
+       queryParamsHandling="preserve"
+       [routerLink]="editing ? '../..' : '..'">VAT rates and treatments</a>
+    <span aria-hidden="true">/</span>
+    <span aria-current="page">{{ editing ? 'Edit' : 'Create' }}</span>
+  </nav>
+  <div pageTitle>
+    <h1 class="m-0 text-2xl font-semibold text-on-surface">{{ editing ? 'Edit VAT rate' : 'Create VAT rate' }}</h1>
+  </div>
+  <div pageBody
+       class="mt-6">
+    <ui-state-container [state]="state()"
+                        [resolved]="editor"
+                        [actionError]="actionError()"
+                        (actionErrorDismissed)="dismissActionError()"
+                        (retry)="load()" />
+    <ng-template #editor>
+      <form class="flex max-w-xl flex-col gap-3"
+            [formGroup]="form"
+            (ngSubmit)="save()">
+        <mat-form-field appearance="outline">
+          <mat-label>Code</mat-label>
+          <input matInput
+                 formControlName="code"
+                 name="code"
+                 maxlength="64" />
+          @if (editing) {
+            <mat-hint>Codes cannot be changed.</mat-hint>
+          }
+          @if (form.controls.code.invalid) {
+            <mat-error>Enter a code (up to 64 characters).</mat-error>
+          }
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Name</mat-label>
+          <input matInput
+                 formControlName="name"
+                 name="name"
+                 maxlength="255" />
+          @if (form.controls.name.invalid) {
+            <mat-error>Enter a name (up to 255 characters).</mat-error>
+          }
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>VAT treatment</mat-label>
+          <mat-select formControlName="treatment">
+            @for (mode of treatments; track mode) {
+              <mat-option [value]="mode">{{ labels[mode] }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Rate (%)</mat-label>
+          <input matInput
+                 formControlName="rate"
+                 name="rate"
+                 inputmode="decimal" />
+          @if (form.controls.treatment.value === 'TAXABLE') {
+            <mat-hint>More than 0, up to 100, with at most four decimal places.</mat-hint>
+          } @else { <mat-hint>Zero-rated and No VAT use a rate of 0.</mat-hint> }
+          <mat-error>Enter a rate greater than 0 and no more than 100, using up to four decimal places.</mat-error>
+        </mat-form-field>
+        @if (editing) {
+          <mat-checkbox formControlName="active">Active</mat-checkbox>
+        }
+        <div class="flex gap-3">
+          <button mat-flat-button
+                  type="submit"
+                  [disabled]="state().pending">Save
+          </button>
+          <button mat-button
+                  type="button"
+                  [disabled]="state().pending"
+                  (click)="back()">Cancel
+          </button>
+          @if (editing && actionError()) {
+            <button mat-stroked-button
+                    type="button"
+                    [disabled]="state().pending"
+                    (click)="load()">Reload record
+            </button>
+          }
+        </div>
+      </form>
+    </ng-template>
+  </div>
+</ui-page-layout>

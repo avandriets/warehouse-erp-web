@@ -6,4 +6,5 @@ export * from './currency-rates-adapter.service';
 export * from './price-types-adapter.service';
 export * from './price-types-api.service';
 export { ProductStoreService } from './product-store.service';
+export * from './vat-rates-api.service';
 export { WarehouseStoreService } from './warehouse-store.service';

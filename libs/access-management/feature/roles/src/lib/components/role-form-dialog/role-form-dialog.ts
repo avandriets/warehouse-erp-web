@@ -6,13 +6,13 @@ import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
-import { RolesStore } from '@warehouse/access-management/data-access';
+import { ROLES_SUCCESS_MESSAGE, RolesStore } from '@warehouse/access-management/data-access';
 import type { RoleRecord } from '@warehouse/access-management/util';
 import { finalize, tap } from 'rxjs';
 
 @Component({
   selector: 'am-role-form-dialog',
-  providers: [RolesStore],
+  providers: [RolesStore, { provide: ROLES_SUCCESS_MESSAGE, useValue: 'Changes saved.' }],
   imports: [
     ReactiveFormsModule,
     MatButtonModule,

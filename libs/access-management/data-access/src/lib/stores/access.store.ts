@@ -1,15 +1,24 @@
 import { DestroyRef, inject } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { MatSnackBar } from '@angular/material/snack-bar';
 import { tapResponse } from '@ngrx/operators';
-import { patchState, signalStore, withMethods, withState } from '@ngrx/signals';
+import { patchState, signalStore, type, withMethods, withProps, withState } from '@ngrx/signals';
+import { Dispatcher, eventGroup, Events, withEventHandlers } from '@ngrx/signals/events';
 import type { PermissionRecord, RoleAssignmentCreate, RoleAssignmentRecord } from '@warehouse/access-management/util';
-import type { CallOperation } from '@warehouse/shared';
+import type { CallOperation, EntityDataSuccess } from '@warehouse/shared';
 import { apiError, withCallState } from '@warehouse/shared';
 import type { Observable } from 'rxjs';
-import { defer, EMPTY, Subject, take, takeUntil } from 'rxjs';
+import { defer, EMPTY, filter, Subject, take, takeUntil, tap } from 'rxjs';
 
 import { AccessApiService } from '../services';
 import type { AccessResourceKey, AccessState } from '../types';
+
+const accessEvents = eventGroup({
+  source: 'Access API',
+  events: { saved: type<EntityDataSuccess<string>>() },
+});
+
+let notificationSequence = 0;
 
 const initialState: AccessState = {
   permissions: { data: [], contextId: null },
@@ -19,11 +28,13 @@ const initialState: AccessState = {
 
 export const AccessStore = signalStore(
   withState(initialState),
+  withProps(() => ({ _notificationOwner: `access-store-${++notificationSequence}` })),
   withCallState({ collection: 'permissions' }),
   withCallState({ collection: 'rolePermissions' }),
   withCallState({ collection: 'roleAssignments' }),
   withMethods(store => {
     const api = inject(AccessApiService);
+    const dispatcher = inject(Dispatcher);
     const destroyRef = inject(DestroyRef);
     const cancelled = {
       permissions: { load: new Subject<void>(), save: new Subject<void>() },
@@ -37,6 +48,7 @@ export const AccessStore = signalStore(
       request: () => Observable<T>,
       accept: (result: T) => void,
       contextId?: string,
+      successMessage?: string,
     ): Observable<T> {
       return defer(() => {
         if (contextId !== undefined && store[key]().contextId !== contextId) {
@@ -59,6 +71,11 @@ export const AccessStore = signalStore(
             next: result => {
               accept(result);
               store[`${key}CallSucceeded`](operation);
+              if (successMessage) {
+                dispatcher.dispatch(
+                  accessEvents.saved({ correlationId: store._notificationOwner, data: successMessage }),
+                );
+              }
             },
             error: error => {
               store[`${key}CallFailed`](operation, apiError(error));
@@ -104,6 +121,7 @@ export const AccessStore = signalStore(
             store.rolePermissionsSetLoaded();
           },
           roleId,
+          'Changes saved.',
         );
       },
       listRoleAssignments(userId: string): Observable<RoleAssignmentRecord[]> {
@@ -131,6 +149,7 @@ export const AccessStore = signalStore(
             }));
           },
           userId,
+          'Role assigned.',
         );
       },
       revokeRoleAssignment(userId: string, assignmentId: string): Observable<void> {
@@ -147,6 +166,7 @@ export const AccessStore = signalStore(
             }));
           },
           userId,
+          'Role removed.',
         );
       },
       dismissActionError(): void {
@@ -163,6 +183,17 @@ export const AccessStore = signalStore(
         store.roleAssignmentsResetCallState();
         patchState(store, initialState);
       },
+    };
+  }),
+  withEventHandlers(store => {
+    const events = inject(Events);
+    const snackBar = inject(MatSnackBar);
+
+    return {
+      saved: events.on(accessEvents.saved).pipe(
+        filter(({ payload }) => payload.correlationId === store._notificationOwner),
+        tap(({ payload }) => snackBar.open(payload.data, 'Dismiss', { duration: 4000 })),
+      ),
     };
   }),
 );

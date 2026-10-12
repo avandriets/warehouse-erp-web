@@ -23,11 +23,6 @@ export const PLACEHOLDER_PAGES: readonly PlaceholderPage[] = [
     primaryMenuRoute: '/master-data',
   },
   {
-    path: 'master-data/vat-rates',
-    title: 'VAT rates and treatments',
-    primaryMenuRoute: '/master-data',
-  },
-  {
     path: 'documents/initial-receipts',
     title: 'Opening stock',
     primaryMenuRoute: '/documents',

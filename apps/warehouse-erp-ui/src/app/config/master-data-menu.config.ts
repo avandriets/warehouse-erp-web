@@ -110,7 +110,8 @@ export const MASTER_DATA_LINKS: readonly SubmenuItem[] = [
     icon: 'percent',
     description: 'Tax rates and VAT handling.',
     target: {
-      route: '/master-data/vat-rates',
+      libraryId: 'master-data-library',
+      path: 'vat-rates',
     },
   },
   {

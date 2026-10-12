@@ -157,9 +157,12 @@ describe('withRequestData save adapter', () => {
     store.save([2]).subscribe();
     expect(save).toHaveBeenCalledTimes(1);
     expect(store.saving()).toBe(true);
+    const correlationId = store.saveCorrelationId();
+    expect(correlationId).toEqual(expect.any(String));
     response.next({ values: [1, 3] });
     expect(store.data()).toEqual({ values: [1, 3] });
     expect(store.loaded()).toBe(true);
+    expect(store.saveCorrelationId()).toBe(correlationId);
     expect(store.saving()).toBe(false);
     expect(read).not.toHaveBeenCalled();
   });

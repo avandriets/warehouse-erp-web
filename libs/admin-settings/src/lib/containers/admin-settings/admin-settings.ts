@@ -6,7 +6,6 @@ import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
-import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatTabsModule } from '@angular/material/tabs';
 import { RouterLink } from '@angular/router';
 import { PageLayout, UIStateContainerComponent } from '@warehouse/shared';
@@ -45,7 +44,6 @@ import type { NumberingEditor } from '../types';
 })
 export class AdminSettings {
   private readonly store = inject(SettingsStore);
-  private readonly snackBar = inject(MatSnackBar);
 
   readonly state = this.store.state;
   readonly validationError = signal('');
@@ -278,7 +276,6 @@ export class AdminSettings {
       .subscribe(snapshot => {
         this.validationError.set('');
         apply(snapshot);
-        this.snackBar.open('Settings saved.', 'Dismiss', { duration: 4000 });
       });
   }
 }

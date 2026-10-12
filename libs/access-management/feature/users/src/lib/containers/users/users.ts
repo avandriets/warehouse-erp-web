@@ -6,7 +6,6 @@ import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { MatIconModule } from '@angular/material/icon';
 import type { PageEvent } from '@angular/material/paginator';
 import { MatPaginatorModule } from '@angular/material/paginator';
-import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatTableModule } from '@angular/material/table';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { UsersStore } from '@warehouse/access-management/data-access';
@@ -14,7 +13,7 @@ import { StatusBadge } from '@warehouse/access-management/ui';
 import type { UserRecord } from '@warehouse/access-management/util';
 import { parseUsersQuery, USERS_PAGE_SIZE, USERS_PAGE_SIZES } from '@warehouse/access-management/util';
 import { ConfirmDialog, PageLayout, QueryParamSearch, UIStateContainerComponent } from '@warehouse/shared';
-import { concatMap, distinctUntilChanged, filter, finalize, of, switchMap, tap } from 'rxjs';
+import { concatMap, distinctUntilChanged, filter, finalize, of, switchMap } from 'rxjs';
 
 import { UserFormDialog, UsersFilter } from '../../components';
 
@@ -38,7 +37,6 @@ import { UserFormDialog, UsersFilter } from '../../components';
 })
 export class UsersPage {
   private readonly dialog = inject(MatDialog);
-  private readonly snackBar = inject(MatSnackBar);
   private readonly destroyRef = inject(DestroyRef);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
@@ -99,7 +97,6 @@ export class UsersPage {
       .afterClosed()
       .pipe(
         filter((result): result is UserRecord => Boolean(result)),
-        tap(() => this.snackBar.open('Changes saved.', 'Dismiss', { duration: 4000 })),
         concatMap(() => this.store.load(this.requestParams())),
         takeUntilDestroyed(this.destroyRef),
         finalize(() => ref.close()),

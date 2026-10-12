@@ -6,7 +6,6 @@ import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { MatIconModule } from '@angular/material/icon';
 import type { PageEvent } from '@angular/material/paginator';
 import { MatPaginatorModule } from '@angular/material/paginator';
-import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatTableModule } from '@angular/material/table';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { RolesStore } from '@warehouse/access-management/data-access';
@@ -14,7 +13,7 @@ import { StatusBadge } from '@warehouse/access-management/ui';
 import type { RoleRecord } from '@warehouse/access-management/util';
 import { parseRolesQuery } from '@warehouse/access-management/util';
 import { ConfirmDialog, PageLayout, QueryParamSearch, UIStateContainerComponent } from '@warehouse/shared';
-import { concatMap, distinctUntilChanged, filter, finalize, switchMap, tap } from 'rxjs';
+import { concatMap, distinctUntilChanged, filter, finalize, switchMap } from 'rxjs';
 
 import { RoleFormDialog, RolesFilter } from '../../components';
 
@@ -38,7 +37,6 @@ import { RoleFormDialog, RolesFilter } from '../../components';
 })
 export class RolesPage {
   private readonly dialog = inject(MatDialog);
-  private readonly snackBar = inject(MatSnackBar);
   private readonly destroyRef = inject(DestroyRef);
   private readonly route = inject(ActivatedRoute);
   readonly store = inject(RolesStore);
@@ -97,7 +95,6 @@ export class RolesPage {
       .afterClosed()
       .pipe(
         filter((result): result is RoleRecord => Boolean(result)),
-        tap(() => this.snackBar.open('Changes saved.', 'Dismiss', { duration: 4000 })),
         concatMap(() => this.store.load(this.requestParams())),
         takeUntilDestroyed(this.destroyRef),
         finalize(() => ref.close()),

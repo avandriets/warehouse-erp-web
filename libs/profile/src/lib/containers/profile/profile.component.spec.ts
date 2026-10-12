@@ -99,7 +99,7 @@ describe('own profile', () => {
       first_name: 'Grace',
     });
     expect(page.state()).toMatchObject({ pending: false, resolved: true, saving: false });
-    expect(snackBar.open).toHaveBeenCalledWith('Profile saved.', 'Dismiss', { duration: 4000 });
+    expect(snackBar.open).toHaveBeenCalledExactlyOnceWith('Profile saved.', 'Dismiss', { duration: 4000 });
   });
 
   it('skips writes when normalized fields are unchanged', () => {
@@ -126,6 +126,17 @@ describe('own profile', () => {
     fixture.detectChanges();
     expect(fixture.componentInstance.state()).toMatchObject({ resolved: true, rejected: false, pending: false });
     expect(fixture.nativeElement.querySelector('form')).not.toBeNull();
+  });
+
+  it('does not notify when a pending save is cancelled by page destruction', () => {
+    const fixture = TestBed.createComponent(ProfileComponent);
+    http.expectOne('/api/identity/me').flush(user);
+    fixture.componentInstance.form.patchValue({ first_name: 'Grace' });
+    fixture.componentInstance.save();
+    const request = http.expectOne('/api/identity/me');
+    fixture.destroy();
+    expect(request.cancelled).toBe(true);
+    expect(snackBar.open).not.toHaveBeenCalled();
   });
 
   it('cancels pending work when the page is destroyed', () => {

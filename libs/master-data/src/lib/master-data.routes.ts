@@ -13,6 +13,7 @@ export const MASTER_DATA_ROUTES: Routes = [
       },
       { path: 'price-types', loadChildren: () => import('./feature/price-types').then(m => m.PRICE_TYPES_ROUTES) },
       { path: 'currencies', loadChildren: () => import('./feature/currencies').then(m => m.CURRENCIES_ROUTES) },
+      { path: 'vat-rates', loadChildren: () => import('./feature/vat-rates').then(m => m.VAT_RATES_ROUTES) },
       { path: 'products', loadChildren: () => import('./feature/products').then(m => m.PRODUCTS_ROUTES) },
       { path: 'warehouses', loadChildren: () => import('./feature/warehouses').then(m => m.WAREHOUSES_ROUTES) },
     ],

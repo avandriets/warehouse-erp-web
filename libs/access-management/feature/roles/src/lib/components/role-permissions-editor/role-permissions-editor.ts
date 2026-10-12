@@ -4,7 +4,6 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormControl, FormRecord, ReactiveFormsModule } from '@angular/forms';
 import { MatCardModule } from '@angular/material/card';
 import { MatCheckboxModule } from '@angular/material/checkbox';
-import { MatSnackBar } from '@angular/material/snack-bar';
 import { AccessApiService, AccessStore } from '@warehouse/access-management/data-access';
 import type { RoleRecord } from '@warehouse/access-management/util';
 import { UIStateContainerComponent } from '@warehouse/shared';
@@ -17,7 +16,6 @@ import { forkJoin, Subject, takeUntil, tap } from 'rxjs';
   templateUrl: './role-permissions-editor.html',
 })
 export class RolePermissionsEditor implements OnChanges {
-  private readonly snackBar = inject(MatSnackBar);
   private readonly destroyRef = inject(DestroyRef);
   private readonly store = inject(AccessStore);
   readonly role = input.required<RoleRecord>();
@@ -91,7 +89,6 @@ export class RolePermissionsEditor implements OnChanges {
     this.store
       .replaceRolePermissions(roleId, codes)
       .pipe(
-        tap(() => this.snackBar.open('Changes saved.', 'Dismiss', { duration: 4000 })),
         tap(() => this.updateSelection()),
         takeUntil(this.selectionChanged),
         takeUntilDestroyed(this.destroyRef),

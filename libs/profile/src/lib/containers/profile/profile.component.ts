@@ -4,7 +4,6 @@ import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angula
 import { MatButtonModule } from '@angular/material/button';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
-import { MatSnackBar } from '@angular/material/snack-bar';
 import type { CurrentUser } from '@warehouse/auth';
 import { PageLayout, UIStateContainerComponent } from '@warehouse/shared';
 import { finalize } from 'rxjs';
@@ -27,7 +26,6 @@ import { ProfileStore } from '../../data-access/stores';
 })
 export class ProfileComponent {
   private readonly store = inject(ProfileStore);
-  private readonly snackBar = inject(MatSnackBar);
   private readonly destroyRef = inject(DestroyRef);
   readonly state = this.store.state;
   readonly actionError = this.store.actionError;
@@ -82,7 +80,6 @@ export class ProfileComponent {
       )
       .subscribe(user => {
         this.reset(user);
-        this.snackBar.open('Profile saved.', 'Dismiss', { duration: 4000 });
       });
   }
 

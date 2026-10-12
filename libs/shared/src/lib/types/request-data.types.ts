@@ -44,6 +44,7 @@ export interface RequestDataState<TData> {
   data: TData | null;
   loaded: boolean;
   saving: boolean;
+  saveCorrelationId: string | null;
   actionError: string | null;
   error: string | null;
   operations: Readonly<Record<string, EntityDataOperationState>>;

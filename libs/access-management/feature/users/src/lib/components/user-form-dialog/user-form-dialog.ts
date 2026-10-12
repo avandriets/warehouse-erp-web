@@ -5,13 +5,13 @@ import { MatButtonModule } from '@angular/material/button';
 import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
-import { UsersStore } from '@warehouse/access-management/data-access';
+import { USERS_SUCCESS_MESSAGE, UsersStore } from '@warehouse/access-management/data-access';
 import type { UserRecord } from '@warehouse/access-management/util';
 import { finalize, tap } from 'rxjs';
 
 @Component({
   selector: 'am-user-form-dialog',
-  providers: [UsersStore],
+  providers: [UsersStore, { provide: USERS_SUCCESS_MESSAGE, useValue: 'Changes saved.' }],
   imports: [ReactiveFormsModule, MatButtonModule, MatDialogModule, MatFormFieldModule, MatInputModule],
   templateUrl: './user-form-dialog.html',
 })

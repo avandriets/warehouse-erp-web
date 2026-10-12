@@ -1,6 +1,8 @@
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
+import { Injector } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
+import { MatSnackBar } from '@angular/material/snack-bar';
 import { AUTH_CONFIG } from '@warehouse/auth';
 
 import type { SettingsSnapshot } from '../../types';
@@ -41,12 +43,15 @@ const snapshot: SettingsSnapshot = {
 };
 
 describe('SettingsStore and its aggregate adapter', () => {
+  const snackBar = { open: vi.fn() };
   let http: HttpTestingController;
   let store: InstanceType<typeof SettingsStore>;
   beforeEach(() => {
+    snackBar.open.mockClear();
     TestBed.configureTestingModule({
       providers: [
         SettingsStore,
+        { provide: MatSnackBar, useValue: snackBar },
         provideHttpClient(),
         provideHttpClientTesting(),
         { provide: AUTH_CONFIG, useValue: { apiUrl: '/api' } },
@@ -63,6 +68,31 @@ describe('SettingsStore and its aggregate adapter', () => {
     http.expectOne('/api/settings/document-numbering').flush(snapshot.numbering);
     http.expectOne('/api/settings/definitions/inventory.negative_stock_allowed/values').flush(snapshot.negative);
   }
+
+  it('notifies only the owning store after a successful save, never after failure or cancellation', () => {
+    const scope = Injector.create({ parent: TestBed.inject(Injector), providers: [SettingsStore] });
+    const other = scope.get(SettingsStore);
+    try {
+      store.setData(snapshot);
+      other.setData(snapshot);
+      store.update({ section: 'accounting', values: { ...snapshot.accounting, vat_enabled: true } }).subscribe();
+      http.expectOne('/api/settings/accounting').flush({ ...snapshot.accounting, vat_enabled: true, version: 2 });
+      expect(snackBar.open).toHaveBeenCalledExactlyOnceWith('Settings saved.', 'Dismiss', { duration: 4000 });
+      snackBar.open.mockClear();
+      other.update({ section: 'accounting', values: { ...snapshot.accounting, vat_enabled: true } }).subscribe();
+      http.expectOne('/api/settings/accounting').flush({}, { status: 409, statusText: 'Conflict' });
+      expect(snackBar.open).not.toHaveBeenCalled();
+      const cancelled = other
+        .update({ section: 'accounting', values: { ...snapshot.accounting, vat_enabled: true } })
+        .subscribe();
+      const request = http.expectOne('/api/settings/accounting');
+      cancelled.unsubscribe();
+      expect(request.cancelled).toBe(true);
+      expect(snackBar.open).not.toHaveBeenCalled();
+    } finally {
+      scope.destroy();
+    }
+  });
 
   it('loads all settings as one snapshot and keeps requests cold', () => {
     const load = store.reload();

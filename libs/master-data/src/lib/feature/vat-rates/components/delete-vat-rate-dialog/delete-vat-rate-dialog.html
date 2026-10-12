@@ -1,0 +1,17 @@
+<h2 mat-dialog-title>Delete VAT rate?</h2>
+<mat-dialog-content>
+  <ui-state-container [state]="state()"
+                      [resolved]="confirmation"
+                      [actionError]="actionError()"
+                      (actionErrorDismissed)="dismissActionError()" />
+  <ng-template #confirmation>
+    <p>Archive {{ record.name }} ({{ record.code }})? Existing references and history will be preserved.</p>
+  </ng-template>
+</mat-dialog-content>
+<mat-dialog-actions align="end"><button mat-button
+          type="button"
+          [mat-dialog-close]="false"
+          [disabled]="state().pending">Cancel</button><button mat-flat-button
+          type="button"
+          [disabled]="state().pending"
+          (click)="confirm()">Archive</button></mat-dialog-actions>
