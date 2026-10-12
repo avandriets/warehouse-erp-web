@@ -1,0 +1,203 @@
+<ui-page-layout>
+  <p pageBreadcrumb>Master data</p>
+  <div pageTitle>
+    <h1 class="m-0 text-2xl font-semibold text-on-surface">Currencies</h1>
+    <p class="mt-1 text-sm leading-5 text-muted">Currencies, accounting currency and exchange rates.</p>
+  </div>
+  <div pageActions
+       class="flex flex-wrap items-center gap-2">
+    @if (canCreate()) {
+      <a mat-flat-button
+         routerLink="create"
+         queryParamsHandling="preserve"
+         [attr.aria-disabled]="state().pending"
+         [disabled]="state().pending">Add currency</a>
+    }
+    @if (canEdit()) {
+      <button mat-stroked-button
+              type="button"
+              [disabled]="!rates()?.base_currency || state().pending || ratesState().pending"
+              (click)="downloadRates()">Load exchange rates</button>
+    }
+  </div>
+  <section pageFilters
+           class="flex flex-col gap-3 sm:flex-row sm:items-center"
+           aria-label="Currency filters">
+    <div class="min-w-40">
+      <h2 class="m-0 text-sm font-semibold text-on-surface">Find currencies</h2>
+    </div>
+    <ui-query-param-search class="block w-full sm:ml-auto sm:w-64 sm:shrink-0"
+                           label="Search currencies"
+                           placeholder="Code or name"
+                           [maxLength]="255"
+                           [resetParams]="{ offset: null }" />
+    <div class="block w-full sm:w-44 sm:shrink-0">
+      <mat-form-field appearance="outline"
+                      subscriptSizing="dynamic"
+                      class="w-full">
+        <span matTextPrefix
+              class="mr-3 shrink-0 text-xs text-muted">Status</span>
+        <mat-select aria-label="Status"
+                    [formControl]="status">
+          <mat-option value="true">Active</mat-option><mat-option value="false">Archived</mat-option><mat-option value="all">All currencies</mat-option>
+        </mat-select>
+      </mat-form-field>
+    </div>
+    <button mat-icon-button
+            type="button"
+            aria-label="Refresh currencies and saved rates"
+            title="Refresh currencies and saved rates"
+            [disabled]="state().pending || ratesState().pending"
+            (click)="load()"><mat-icon>refresh</mat-icon></button>
+  </section>
+  <div pageBody>
+    <ui-state-container class="block mt-4"
+                        [state]="ratesState()"
+                        [resolved]="accounting"
+                        [actionError]="ratesError()"
+                        (actionErrorDismissed)="dismissRatesError()"
+                        (retry)="loadRatesOverview()" />
+    <ng-template #accounting>
+      <div class="mb-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm leading-6 text-muted"
+           aria-label="Accounting currency and exchange-rate information">
+        @if (rates()?.base_currency; as base) {
+          <span>Accounting currency: <strong class="font-medium text-on-surface"
+                    [attr.title]="base.name">{{ base.code }}</strong></span>
+          @if (rates()?.batch; as batch) {
+            <span aria-hidden="true">·</span>
+            <span>Rates loaded: {{ batch.fetched_at | date:'medium' }}</span>
+            <span aria-hidden="true">·</span>
+            <span>Source: {{ batch.source }}</span>
+          }
+          @else { <span>Rates not loaded.</span> }
+        }
+        @else { <span>Accounting currency not selected. Choose it in Administration → Settings → Accounting.</span> }
+      </div>
+      @if (rates()?.batch?.missing_codes?.length) {
+        <p class="m-0 mb-2 text-sm text-muted">Rates unavailable for: {{ rates()?.batch?.missing_codes?.join(', ') }}.</p>
+      }
+    </ng-template>
+    <ui-state-container class="mt-4"
+                        [state]="state()"
+                        [resolved]="data"
+                        [empty]="data"
+                        [rejected]="loadError"
+                        (retry)="load()" />
+    <ng-template #loadError
+                 let-message
+                 let-pending="pending">
+      <div class="mb-4 flex flex-col gap-3 rounded-xl border border-error bg-error-container px-4 py-3 text-sm text-on-error-container sm:flex-row sm:items-center"
+           role="alert">
+        <mat-icon class="shrink-0"
+                  aria-hidden="true">error_outline</mat-icon>
+        <p class="m-0 min-w-0 flex-1">{{ message }}</p>
+        <button mat-stroked-button
+                type="button"
+                class="shrink-0 self-start sm:self-auto"
+                [disabled]="pending"
+                (click)="load()">Retry</button>
+      </div>
+    </ng-template>
+    <ng-template #data>
+      <mat-card appearance="outlined"
+                class="overflow-hidden">
+        <div class="overflow-x-auto">
+          <table mat-table
+                 class="w-full"
+                 [dataSource]="records()">
+            <ng-container matColumnDef="code">
+              <th *matHeaderCellDef
+                  mat-header-cell>Code</th>
+              <td *matCellDef="let record"
+                  mat-cell>{{ record.code }}
+                @if (rates()?.base_currency?.id === record.id) { <span class="ml-2 text-xs text-primary">Accounting</span> }
+              </td>
+            </ng-container>
+            <ng-container matColumnDef="name">
+              <th *matHeaderCellDef
+                  mat-header-cell>Name</th>
+              <td *matCellDef="let record"
+                  mat-cell>
+                @if (canEdit()) { <a class="font-medium text-primary no-underline hover:underline"
+                     queryParamsHandling="preserve"
+                     [routerLink]="[record.id, 'edit']">{{ record.name }}</a> }
+                @else { <span class="font-medium">{{ record.name }}</span> }
+              </td>
+            </ng-container>
+            <ng-container matColumnDef="symbol">
+              <th *matHeaderCellDef
+                  mat-header-cell>Symbol</th>
+              <td *matCellDef="let record"
+                  mat-cell>{{ record.symbol }}</td>
+            </ng-container>
+            <ng-container matColumnDef="rate">
+              <th *matHeaderCellDef
+                  mat-header-cell>Rate per 1 {{ rates()?.base_currency?.code ?? 'accounting currency' }}</th>
+              <td *matCellDef="let record"
+                  mat-cell>
+                @if (rates()?.base_currency?.id === record.id) { <span>1</span> }
+                @else if (rateFor(record); as rate) { <span>{{ rate.rate }}</span>
+                  <p class="m-0 text-xs text-muted">{{ rate.date | date:'mediumDate' }}</p> }
+                @else { <span class="text-muted">Not loaded</span> }
+              </td>
+            </ng-container>
+            <ng-container matColumnDef="status">
+              <th *matHeaderCellDef
+                  mat-header-cell>Status</th>
+              <td *matCellDef="let record"
+                  mat-cell>
+                <span class="inline-flex rounded-full px-2.5 py-1 text-xs font-semibold"
+                      [class.bg-primary-container]="record.active"
+                      [class.text-on-primary-container]="record.active"
+                      [class.bg-secondary-container]="!record.active"
+                      [class.text-on-secondary-container]="!record.active">{{ record.active ? 'Active' : 'Archived' }}</span>
+              </td>
+            </ng-container>
+            <ng-container matColumnDef="actions">
+              <th *matHeaderCellDef
+                  mat-header-cell>Actions</th>
+              <td *matCellDef="let record"
+                  mat-cell>
+                <div class="flex items-center gap-1">@if (canEdit()) {
+                    <a mat-icon-button
+                       matTooltip="Edit"
+                       queryParamsHandling="preserve"
+                       [routerLink]="[record.id, 'edit']"
+                       [disabled]="state().pending"
+                       [attr.aria-label]="'Edit ' + record.name"><mat-icon aria-hidden="true">edit</mat-icon></a>
+                    @if (record.active) { <button mat-icon-button
+                              matTooltip="Delete"
+                              type="button"
+                              [disabled]="state().pending || ratesState().pending || rates()?.base_currency?.id === record.id"
+                              [attr.aria-label]="'Delete ' + record.name"
+                              (click)="deleteRecord(record)"><mat-icon aria-hidden="true">delete_outline</mat-icon></button> }
+                  }
+                </div>
+              </td>
+            </ng-container>
+            <tr *matHeaderRowDef="displayedColumns"
+                class="bg-surface-container!"
+                mat-header-row></tr>
+            <tr *matRowDef="let row; columns: displayedColumns"
+                class="hover:bg-primary-container"
+                mat-row></tr>
+            <tr *matNoDataRow
+                class="mat-row">
+              <td class="mat-cell px-6 py-14 text-center text-sm text-muted"
+                  [attr.colspan]="displayedColumns.length">No currencies found</td>
+            </tr>
+          </table>
+        </div>
+        <mat-paginator class="border-t border-outline bg-surface-container!"
+                       aria-label="Currencies pagination"
+                       showFirstLastButtons
+                       [length]="total()"
+                       [pageIndex]="pageIndex()"
+                       [pageSize]="pageSize()"
+                       [pageSizeOptions]="pageSizeOptions"
+                       [disabled]="state().pending"
+                       (page)="page($event)" />
+      </mat-card>
+    </ng-template>
+  </div>
+</ui-page-layout>

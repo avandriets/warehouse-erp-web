@@ -1,0 +1,156 @@
+<ui-page-layout>
+  <p pageBreadcrumb>Master data</p>
+  <div pageTitle>
+    <h1 class="m-0 text-2xl font-semibold text-on-surface">Adjustment reasons</h1>
+    <p class="mt-1 text-sm leading-5 text-muted">Reasons for stock write-offs and corrections.</p>
+  </div>
+  <div pageActions
+       class="flex flex-wrap items-center gap-2">
+    @if (canCreate()) {
+      <a mat-flat-button
+         routerLink="create"
+         queryParamsHandling="preserve"
+         [attr.aria-disabled]="state().pending"
+         [disabled]="state().pending">Add reason</a>
+    }
+  </div>
+  <section pageFilters
+           class="flex flex-col gap-3 sm:flex-row sm:items-center"
+           aria-label="Adjustment reason filters">
+    <div class="min-w-40">
+      <h2 class="m-0 text-sm font-semibold text-on-surface">Find reasons</h2>
+    </div>
+    <ui-query-param-search class="block w-full sm:ml-auto sm:w-64 sm:shrink-0"
+                           label="Search adjustment reasons"
+                           placeholder="Code or name"
+                           [maxLength]="255"
+                           [resetParams]="{ offset: null }" />
+    <div class="block w-full sm:w-44 sm:shrink-0">
+      <mat-form-field appearance="outline"
+                      subscriptSizing="dynamic"
+                      class="w-full">
+        <span matTextPrefix
+              class="mr-3 shrink-0 text-xs text-muted">Status</span>
+        <mat-select aria-label="Status"
+                    [formControl]="status">
+          <mat-option value="true">Active</mat-option><mat-option value="false">Archived</mat-option><mat-option value="all">All reasons</mat-option>
+        </mat-select>
+      </mat-form-field>
+    </div>
+    <button mat-icon-button
+            type="button"
+            aria-label="Refresh adjustment reasons"
+            title="Refresh"
+            [disabled]="state().pending"
+            (click)="load()"><mat-icon>refresh</mat-icon></button>
+  </section>
+  <div pageBody>
+    <ui-state-container class="mt-4"
+                        [state]="state()"
+                        [resolved]="data"
+                        [empty]="data"
+                        [rejected]="loadError"
+                        (retry)="load()" />
+    <ng-template #loadError
+                 let-message
+                 let-pending="pending">
+      <div class="mb-4 flex flex-col gap-3 rounded-xl border border-error bg-error-container px-4 py-3 text-sm text-on-error-container sm:flex-row sm:items-center"
+           role="alert">
+        <mat-icon class="shrink-0"
+                  aria-hidden="true">error_outline</mat-icon>
+        <p class="m-0 min-w-0 flex-1">{{ message }}</p>
+        <button mat-stroked-button
+                type="button"
+                class="shrink-0 self-start sm:self-auto"
+                [disabled]="pending"
+                (click)="load()">Retry</button>
+      </div>
+    </ng-template>
+    <ng-template #data>
+      <mat-card appearance="outlined"
+                class="overflow-hidden">
+        <div class="overflow-x-auto">
+          <table mat-table
+                 class="w-full"
+                 [dataSource]="records()">
+            <ng-container matColumnDef="code">
+              <th *matHeaderCellDef
+                  mat-header-cell>Code</th>
+              <td *matCellDef="let record"
+                  mat-cell>{{ record.code }}</td>
+            </ng-container>
+            <ng-container matColumnDef="name">
+              <th *matHeaderCellDef
+                  mat-header-cell>Name</th>
+              <td *matCellDef="let record"
+                  mat-cell>
+                @if (canEdit()) { <a class="font-medium text-primary no-underline hover:underline"
+                     queryParamsHandling="preserve"
+                     [routerLink]="[record.id, 'edit']">{{ record.name }}</a> }
+                @else { <span class="font-medium">{{ record.name }}</span> }
+              </td>
+            </ng-container>
+            <ng-container matColumnDef="operation">
+              <th *matHeaderCellDef
+                  mat-header-cell>Operation</th>
+              <td *matCellDef="let record"
+                  mat-cell>{{ operationLabel(record.operation) }}</td>
+            </ng-container>
+            <ng-container matColumnDef="status">
+              <th *matHeaderCellDef
+                  mat-header-cell>Status</th>
+              <td *matCellDef="let record"
+                  mat-cell>
+                <span class="inline-flex rounded-full px-2.5 py-1 text-xs font-semibold"
+                      [class.bg-primary-container]="record.active"
+                      [class.text-on-primary-container]="record.active"
+                      [class.bg-secondary-container]="!record.active"
+                      [class.text-on-secondary-container]="!record.active">{{ record.active ? 'Active' : 'Archived' }}</span>
+              </td>
+            </ng-container>
+            <ng-container matColumnDef="actions">
+              <th *matHeaderCellDef
+                  mat-header-cell>Actions</th>
+              <td *matCellDef="let record"
+                  mat-cell>
+                <div class="flex flex-wrap gap-1">@if (canEdit()) {
+                    <a mat-button
+                       queryParamsHandling="preserve"
+                       [routerLink]="[record.id, 'edit']"
+                       [disabled]="state().pending"
+                       [attr.aria-label]="'Edit ' + record.name">Edit</a>
+                    @if (record.active) { <button mat-button
+                              type="button"
+                              [disabled]="state().pending"
+                              [attr.aria-label]="'Delete ' + record.name"
+                              (click)="deleteRecord(record)">Delete</button> }
+                  }
+                </div>
+              </td>
+            </ng-container>
+            <tr *matHeaderRowDef="displayedColumns"
+                class="bg-surface-container!"
+                mat-header-row></tr>
+            <tr *matRowDef="let row; columns: displayedColumns"
+                class="hover:bg-primary-container"
+                mat-row></tr>
+            <tr *matNoDataRow
+                class="mat-row">
+              <td class="mat-cell px-6 py-14 text-center text-sm text-muted"
+                  [attr.colspan]="displayedColumns.length">No adjustment reasons found</td>
+            </tr>
+          </table>
+        </div>
+        <mat-paginator class="border-t border-outline bg-surface-container!"
+                       aria-label="Adjustment reasons pagination"
+                       showFirstLastButtons
+                       [length]="total()"
+                       [pageIndex]="pageIndex()"
+                       [pageSize]="pageSize()"
+                       [pageSizeOptions]="pageSizeOptions"
+                       [disabled]="state().pending"
+                       (page)="page($event)" />
+      </mat-card>
+    </ng-template>
+  </div>
+</ui-page-layout>

@@ -1,0 +1,35 @@
+<mat-form-field appearance="outline"
+                class="w-full">
+  <mat-label>Accounting currency</mat-label>
+  <input matInput
+         placeholder="Code or name"
+         maxlength="255"
+         [formControl]="value"
+         [matAutocomplete]="currencies"
+         (focus)="search()"
+         (blur)="touched()" />
+  @if (value.value) {
+    <button mat-icon-button
+            matSuffix
+            type="button"
+            aria-label="Clear accounting currency"
+            [disabled]="value.disabled"
+            (click)="clear()"><mat-icon>close</mat-icon></button>
+  }
+  <mat-autocomplete #currencies="matAutocomplete"
+                    [displayWith]="displayValue">
+    @for (option of options(); track option.id) { <mat-option [value]="option">{{ option.code }} — {{ option.name }}</mat-option> }
+    @if (!loading() && !options().length) { <mat-option disabled>No active currencies found</mat-option> }
+  </mat-autocomplete>
+  <mat-hint>
+    @if (loading()) { Loading currencies… }
+    @else if (error()) { {{ error() }} }
+    @else if (validate()) { Choose a currency from the search results. }
+    @else if (total() > options().length) { Showing the first {{ options().length }} matches. Refine your search. }
+    @else { Base currency for accounting and exchange rates. }
+  </mat-hint>
+</mat-form-field>
+@if (error()) { <button mat-button
+          type="button"
+          [disabled]="value.disabled"
+          (click)="retry()">Retry currencies</button> }
