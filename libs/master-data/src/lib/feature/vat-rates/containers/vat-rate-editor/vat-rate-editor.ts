@@ -2,19 +2,21 @@ import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/c
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
-import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import type { UIStateStatus } from '@warehouse/shared';
-import { PageLayout, UIStateContainerComponent } from '@warehouse/shared';
+import { entityEditorState, PageLayout, UIStateContainerComponent } from '@warehouse/shared';
 import { distinctUntilChanged, finalize, map } from 'rxjs';
 
+import { MASTER_DATA_CONFIG } from '../../../../config';
 import { VatRatesApiService } from '../../../../data-access/services';
 import { VatRatesStore } from '../../../../data-access/stores';
-import type { TaxTreatment } from '../../../../types';
+import type { TaxTreatment, VatRate } from '../../../../types';
 import { TAX_TREATMENT_LABELS, TAX_TREATMENTS } from '../../../../types';
+import { createDirectoryStatusActions } from '../../../../util';
+import { DeleteVatRateDialog } from '../../components';
 
 @Component({
   selector: 'md-vat-rate-editor',
@@ -25,7 +27,6 @@ import { TAX_TREATMENT_LABELS, TAX_TREATMENTS } from '../../../../types';
     UIStateContainerComponent,
     ReactiveFormsModule,
     MatButtonModule,
-    MatCheckboxModule,
     MatFormFieldModule,
     MatInputModule,
     MatSelectModule,
@@ -35,6 +36,7 @@ import { TAX_TREATMENT_LABELS, TAX_TREATMENTS } from '../../../../types';
 })
 export class VatRateEditor {
   private readonly store = inject(VatRatesStore);
+  private readonly config = inject(MASTER_DATA_CONFIG);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
 
@@ -44,16 +46,24 @@ export class VatRateEditor {
   readonly id = computed(() => this.params().get('id') ?? '');
   readonly labels = TAX_TREATMENT_LABELS;
   readonly treatments = TAX_TREATMENTS;
-  readonly state = computed<UIStateStatus<string>>(() => {
-    const operation = this.store.operationById(this.id());
-
-    return {
-      resolved: !this.editing || !!this.store.entityById(this.id()),
-      rejected: this.editing && operation?.type === 'getById' && operation.status === 'error',
-      pending: this.store.saving() || (this.editing && (!operation || operation.status === 'pending')),
-      err: operation?.error ?? null,
-    };
+  readonly record = computed(() => this.store.entityById(this.id()));
+  readonly canManage = computed(() => this.config.hasPermission('settings.manage'));
+  readonly statusActions = createDirectoryStatusActions<VatRate>({
+    pending: (): boolean => !!this.state().pending,
+    canEdit: () => this.config.hasPermission('settings.manage'),
+    archiveDialog: DeleteVatRateDialog,
+    restore: record =>
+      this.store.update({ id: record.id, payload: { active: true, expected_version: record.version } }),
+    accept: record => this.store.upsert(record),
   });
+  readonly state = computed<UIStateStatus<string>>(() =>
+    entityEditorState({
+      editing: this.editing,
+      exists: !!this.store.entityById(this.id()),
+      operation: this.store.operationById(this.id()),
+      saving: this.store.saving() || this.statusActions.busy(),
+    }),
+  );
   readonly actionError = computed(() => (this.state().rejected ? null : this.store.actionError()));
   readonly form = new FormGroup({
     code: new FormControl('', {
@@ -77,7 +87,6 @@ export class VatRateEditor {
         Validators.max(100),
       ],
     }),
-    active: new FormControl(true, { nonNullable: true }),
   });
 
   constructor() {
@@ -93,17 +102,10 @@ export class VatRateEditor {
 
   load(): void {
     this.store.reset();
-    this.form.reset({ code: '', name: '', treatment: 'TAXABLE', rate: '', active: true }, { emitEvent: false });
-    this.applyRateTreatment();
-    if (!this.editing) {
-      return;
+    this.resetForm();
+    if (this.editing) {
+      this.store.getById(this.id()).subscribe(record => this.fillForm(record));
     }
-
-    this.form.controls.code.disable();
-    this.store.getById(this.id()).subscribe(record => {
-      this.form.reset(record, { emitEvent: false });
-      this.applyRateTreatment();
-    });
   }
 
   dismissActionError(): void {
@@ -131,28 +133,35 @@ export class VatRateEditor {
             name: values.name,
             treatment: values.treatment,
             rate: values.treatment === 'TAXABLE' ? values.rate : '0',
-            active: values.active,
             expected_version: record.version,
           },
         })
-      : this.store.create({ ...values, rate: values.treatment === 'TAXABLE' ? values.rate : '0' });
-    request
-      .pipe(
-        finalize(() => {
-          this.form.enable({ emitEvent: false });
-          this.applyRateTreatment();
-          if (this.editing) {
-            this.form.controls.code.disable();
-          }
-        }),
-      )
-      .subscribe(() => {
-        this.back();
-      });
+      : this.store.create({ ...values, active: true, rate: values.treatment === 'TAXABLE' ? values.rate : '0' });
+    request.pipe(finalize(() => this.applyFormLocks())).subscribe(() => {
+      this.back();
+    });
   }
 
   back(): void {
     void this.router.navigate(['.'], { relativeTo: this.route.parent, queryParamsHandling: 'preserve' });
+  }
+
+  private resetForm(): void {
+    this.form.reset({ code: '', name: '', treatment: 'TAXABLE', rate: '' }, { emitEvent: false });
+    this.applyFormLocks();
+  }
+
+  private fillForm(record: VatRate): void {
+    this.form.reset(record, { emitEvent: false });
+    this.applyFormLocks();
+  }
+
+  private applyFormLocks(): void {
+    this.form.enable({ emitEvent: false });
+    this.applyRateTreatment();
+    if (this.editing) {
+      this.form.controls.code.disable({ emitEvent: false });
+    }
   }
 
   private applyRateTreatment(): void {

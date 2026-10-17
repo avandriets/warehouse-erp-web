@@ -178,20 +178,19 @@ describe('VAT rates routes and backend workflow', () => {
     expect(snackBar.open).toHaveBeenCalled();
   });
 
-  it('reactivates an archived VAT rate and changes its treatment using the record version', async () => {
+  it('edits an archived VAT rate without changing its status', async () => {
     const page = await harness.navigateByUrl('/custom/vat-rates/vat-1/edit', VatRateEditor);
     http.expectOne(`${base}/vat-1`).flush({ ...vatRate, active: false });
-    page.form.patchValue({ active: true, treatment: 'NO_VAT' });
+    page.form.patchValue({ treatment: 'NO_VAT' });
     page.save();
     const request = http.expectOne(`${base}/vat-1`);
     expect(request.request.body).toEqual({
       name: 'VAT standard',
-      active: true,
       treatment: 'NO_VAT',
       rate: '0',
       expected_version: 3,
     });
-    request.flush({ ...vatRate, active: true, treatment: 'NO_VAT', rate: '0', version: 4 });
+    request.flush({ ...vatRate, active: false, treatment: 'NO_VAT', rate: '0', version: 4 });
     await harness.fixture.whenStable();
     http.expectOne(req => req.url === base).flush({ items: [vatRate], total: 1 });
   });
@@ -258,7 +257,6 @@ describe('VAT rates routes and backend workflow', () => {
       name: 'Changed rate',
       treatment: 'TAXABLE',
       rate: '20.1234',
-      active: true,
       expected_version: 3,
     });
     expect(update.request.body.code).toBeUndefined();
@@ -378,7 +376,7 @@ describe('VAT rate archive dialog', () => {
     expect(snackBar.open).toHaveBeenCalled();
     page.confirm();
     http.expectOne(`${base}/vat-1`).flush({ ...vatRate, active: false, version: 4 });
-    expect(dialogRef.close).toHaveBeenCalledWith(true);
+    expect(dialogRef.close).toHaveBeenCalledWith({ ...vatRate, active: false, version: 4 });
     expect(snackBar.open).toHaveBeenCalledWith('VAT rate archived.', 'Dismiss', { duration: 4000 });
   });
 });

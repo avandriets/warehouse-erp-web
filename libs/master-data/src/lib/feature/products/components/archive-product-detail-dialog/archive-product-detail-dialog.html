@@ -1,0 +1,18 @@
+<h2 mat-dialog-title>Archive {{ data.kind }}?</h2>
+<mat-dialog-content>
+  <ui-state-container [state]="state()"
+                      [resolved]="confirmation"
+                      [actionError]="actionError()"
+                      (actionErrorDismissed)="dismissError()" />
+  <ng-template #confirmation>
+    <p>The record will become inactive. Existing references will be preserved.</p>
+  </ng-template>
+</mat-dialog-content>
+<mat-dialog-actions align="end">
+  <button mat-button
+          [mat-dialog-close]="false"
+          [disabled]="state().pending">Cancel</button>
+  <button mat-flat-button
+          [disabled]="state().pending"
+          (click)="confirm()">Archive</button>
+</mat-dialog-actions>

@@ -1,32 +1,32 @@
-import { ChangeDetectionStrategy, Component, computed, DestroyRef, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
-import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
-import { MatSnackBar } from '@angular/material/snack-bar';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import type { UIStateStatus } from '@warehouse/shared';
-import { PageLayout, UIStateContainerComponent } from '@warehouse/shared';
+import { entityEditorState, PageLayout, UIStateContainerComponent } from '@warehouse/shared';
 import { distinctUntilChanged, finalize, map } from 'rxjs';
 
-import { CurrenciesAdapterService, CurrenciesApiService } from '../../../../data-access/services';
+import { MASTER_DATA_CONFIG } from '../../../../config';
+import { CurrenciesApiService } from '../../../../data-access/services';
 import { CurrenciesStore } from '../../../../data-access/stores';
-import type { CurrencyRoundingMode } from '../../../../types';
+import type { Currency, CurrencyRoundingMode } from '../../../../types';
 import { CURRENCY_ROUNDING_LABELS, CURRENCY_ROUNDING_MODES } from '../../../../types';
+import { createDirectoryStatusActions } from '../../../../util';
+import { DeleteCurrencyDialog } from '../../components';
 
 @Component({
   selector: 'md-currency-editor',
-  providers: [CurrenciesApiService, CurrenciesAdapterService, CurrenciesStore],
+  providers: [CurrenciesApiService, CurrenciesStore],
   imports: [
     PageLayout,
     RouterLink,
     UIStateContainerComponent,
     ReactiveFormsModule,
     MatButtonModule,
-    MatCheckboxModule,
     MatFormFieldModule,
     MatInputModule,
     MatSelectModule,
@@ -36,10 +36,9 @@ import { CURRENCY_ROUNDING_LABELS, CURRENCY_ROUNDING_MODES } from '../../../../t
 })
 export class CurrencyEditor {
   private readonly store = inject(CurrenciesStore);
+  private readonly config = inject(MASTER_DATA_CONFIG);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
-  private readonly snackBar = inject(MatSnackBar);
-  private readonly destroyRef = inject(DestroyRef);
 
   private readonly params = toSignal(this.route.paramMap, { initialValue: this.route.snapshot.paramMap });
 
@@ -47,16 +46,24 @@ export class CurrencyEditor {
   readonly id = computed(() => this.params().get('id') ?? '');
   readonly labels = CURRENCY_ROUNDING_LABELS;
   readonly roundingModes = CURRENCY_ROUNDING_MODES;
-  readonly state = computed<UIStateStatus<string>>(() => {
-    const operation = this.store.operationById(this.id());
-
-    return {
-      resolved: !this.editing || !!this.store.entityById(this.id()),
-      rejected: this.editing && operation?.type === 'getById' && operation.status === 'error',
-      pending: this.store.saving() || (this.editing && (!operation || operation.status === 'pending')),
-      err: operation?.error ?? null,
-    };
+  readonly record = computed(() => this.store.entityById(this.id()));
+  readonly canManage = computed(() => this.config.hasPermission('settings.manage'));
+  readonly statusActions = createDirectoryStatusActions<Currency>({
+    pending: (): boolean => !!this.state().pending,
+    canEdit: () => this.config.hasPermission('settings.manage'),
+    archiveDialog: DeleteCurrencyDialog,
+    restore: record =>
+      this.store.update({ id: record.id, payload: { active: true, expected_version: record.version } }),
+    accept: record => this.store.upsert(record),
   });
+  readonly state = computed<UIStateStatus<string>>(() =>
+    entityEditorState({
+      editing: this.editing,
+      exists: !!this.store.entityById(this.id()),
+      operation: this.store.operationById(this.id()),
+      saving: this.store.saving() || this.statusActions.busy(),
+    }),
+  );
   readonly actionError = computed(() => (this.state().rejected ? null : this.store.actionError()));
   readonly form = new FormGroup({
     code: new FormControl('', {
@@ -88,7 +95,6 @@ export class CurrencyEditor {
       nonNullable: true,
       validators: Validators.required,
     }),
-    active: new FormControl(true, { nonNullable: true }),
   });
 
   constructor() {
@@ -103,30 +109,10 @@ export class CurrencyEditor {
 
   load(): void {
     this.store.reset();
-    this.form.reset({
-      code: '',
-      name: '',
-      symbol: '',
-      display_decimal_places: 2,
-      rounding_decimal_places: 2,
-      rounding_mode: 'HALF_UP',
-      active: true,
-    });
-    if (!this.editing) {
-      return;
+    this.resetForm();
+    if (this.editing) {
+      this.store.getById(this.id()).subscribe(record => this.fillForm(record));
     }
-
-    this.form.controls.code.disable();
-    this.store
-      .getById(this.id())
-      .pipe(
-        finalize(() => {
-          if (!this.destroyRef.destroyed && this.store.actionError()) {
-            this.snackBar.open(this.store.actionError()!, 'Dismiss', { duration: 6000 });
-          }
-        }),
-      )
-      .subscribe(record => this.form.reset(record));
   }
 
   dismissActionError(): void {
@@ -156,32 +142,40 @@ export class CurrencyEditor {
             display_decimal_places: values.display_decimal_places,
             rounding_decimal_places: values.rounding_decimal_places,
             rounding_mode: values.rounding_mode,
-            active: values.active,
             expected_version: record.version,
           },
         })
-      : this.store.create(values);
-    request
-      .pipe(
-        finalize(() => {
-          this.form.enable({ emitEvent: false });
-          if (this.editing) {
-            this.form.controls.code.disable();
-          }
-          if (!this.destroyRef.destroyed && this.store.actionError()) {
-            this.snackBar.open(this.store.actionError()!, 'Dismiss', { duration: 6000 });
-          }
-        }),
-      )
-      .subscribe(() => {
-        this.snackBar.open(this.editing ? 'Currency saved.' : 'Currency created.', 'Dismiss', {
-          duration: 4000,
-        });
-        this.back();
-      });
+      : this.store.create({ ...values, active: true });
+    request.pipe(finalize(() => this.applyFormLocks())).subscribe(() => {
+      this.back();
+    });
   }
 
   back(): void {
     void this.router.navigate(['.'], { relativeTo: this.route.parent, queryParamsHandling: 'preserve' });
+  }
+
+  private resetForm(): void {
+    this.form.reset({
+      code: '',
+      name: '',
+      symbol: '',
+      display_decimal_places: 2,
+      rounding_decimal_places: 2,
+      rounding_mode: 'HALF_UP',
+    });
+    this.applyFormLocks();
+  }
+
+  private fillForm(record: Currency): void {
+    this.form.reset(record);
+    this.applyFormLocks();
+  }
+
+  private applyFormLocks(): void {
+    this.form.enable({ emitEvent: false });
+    if (this.editing) {
+      this.form.controls.code.disable({ emitEvent: false });
+    }
   }
 }

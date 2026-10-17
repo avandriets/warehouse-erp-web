@@ -1,0 +1,246 @@
+<ui-page-layout>
+  <p pageBreadcrumb>Master data</p>
+  <div pageTitle>
+    <h1 class="m-0 text-2xl font-semibold text-on-surface">Units of measurement</h1>
+    <p class="mt-1 text-sm leading-5 text-muted">Dimensions, precision and fixed unit conversions.</p>
+  </div>
+  <div pageActions
+       class="flex flex-wrap items-center gap-2">
+    @if (canCreate()) {
+      <a mat-flat-button
+         routerLink="create"
+         queryParamsHandling="preserve"
+         [attr.aria-disabled]="state().pending"
+         [disabled]="state().pending">Add unit</a>
+    }
+  </div>
+  <section pageFilters
+           class="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center"
+           aria-label="Unit filters">
+    <div class="min-w-40">
+      <h2 class="m-0 text-sm font-semibold text-on-surface">Find units</h2>
+    </div>
+    <ui-query-param-search class="block w-full sm:ml-auto sm:w-64 sm:shrink-0"
+                           label="Search units"
+                           placeholder="Code or name"
+                           [maxLength]="255"
+                           [resetParams]="{ offset: null }" />
+    <div class="block w-full sm:w-44 sm:shrink-0">
+      <mat-form-field appearance="outline"
+                      subscriptSizing="dynamic"
+                      class="w-full">
+        <span matTextPrefix
+              class="mr-3 shrink-0 text-xs text-muted">Status</span>
+        <mat-select aria-label="Status"
+                    [formControl]="status">
+          <mat-option value="true">Active</mat-option>
+          <mat-option value="false">Archived</mat-option>
+          <mat-option value="all">All units</mat-option>
+        </mat-select>
+      </mat-form-field>
+    </div>
+    <div class="block w-full sm:w-48 sm:shrink-0">
+      <mat-form-field appearance="outline"
+                      subscriptSizing="dynamic"
+                      class="w-full">
+        <span matTextPrefix
+              class="mr-3 shrink-0 text-xs text-muted">Dimension</span>
+        <mat-select aria-label="Dimension"
+                    [formControl]="dimension">
+          <mat-option value="all">All</mat-option>
+          @for (mode of dimensions; track mode) {
+            <mat-option [value]="mode">{{ labels[mode] }}
+            </mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+    </div>
+    <button mat-icon-button
+            type="button"
+            aria-label="Refresh units"
+            title="Refresh"
+            [disabled]="state().pending"
+            (click)="load()">
+      <mat-icon>refresh</mat-icon>
+    </button>
+  </section>
+  <div pageBody>
+    <ui-state-container class="mt-4"
+                        [state]="state()"
+                        [actionError]="actionError()"
+                        [resolved]="data"
+                        [empty]="data"
+                        [rejected]="loadError"
+                        (actionErrorDismissed)="dismissActionError()"
+                        (retry)="load()" />
+    <ng-template #loadError
+                 let-message
+                 let-pending="pending">
+      <div class="mb-4 flex flex-col gap-3 rounded-xl border border-error bg-error-container px-4 py-3 text-sm text-on-error-container sm:flex-row sm:items-center"
+           role="alert">
+        <mat-icon class="shrink-0"
+                  aria-hidden="true">error_outline</mat-icon>
+        <p class="m-0 min-w-0 flex-1">{{ message }}
+        </p>
+        <button mat-stroked-button
+                type="button"
+                class="shrink-0 self-start sm:self-auto"
+                [disabled]="pending"
+                (click)="load()">Retry</button>
+      </div>
+    </ng-template>
+    <ng-template #data>
+      <mat-card appearance="outlined"
+                class="overflow-hidden">
+        <div class="overflow-x-auto">
+          <table mat-table
+                 class="w-full"
+                 [dataSource]="records()">
+            <ng-container matColumnDef="code">
+              <th *matHeaderCellDef
+                  mat-header-cell>Code</th>
+              <td *matCellDef="let record"
+                  mat-cell>{{ record.code }}@if (record.classifier_code) {
+                  <div class="text-xs text-muted">Classifier: {{ record.classifier_code }}
+                  </div>
+                }
+              </td>
+            </ng-container>
+            <ng-container matColumnDef="name">
+              <th *matHeaderCellDef
+                  mat-header-cell>Name</th>
+              <td *matCellDef="let record"
+                  mat-cell>
+                @if (canEdit()) {
+                  <a class="font-medium text-primary no-underline hover:underline"
+                     queryParamsHandling="preserve"
+                     [routerLink]="[record.id, 'edit']">{{ record.name }}
+                  </a>
+                }
+                @else {
+                  <span class="font-medium">{{ record.name }}
+                  </span>
+                }
+              </td>
+            </ng-container>
+            <ng-container matColumnDef="symbol">
+              <th *matHeaderCellDef
+                  mat-header-cell>Symbol</th>
+              <td *matCellDef="let record"
+                  mat-cell>{{ record.symbol }}
+              </td>
+            </ng-container>
+            <ng-container matColumnDef="dimension">
+              <th *matHeaderCellDef
+                  mat-header-cell>Dimension</th>
+              <td *matCellDef="let record"
+                  mat-cell>{{ dimensionLabel(record.dimension) }}
+              </td>
+            </ng-container>
+            <ng-container matColumnDef="conversion">
+              <th *matHeaderCellDef
+                  mat-header-cell>Conversion</th>
+              <td *matCellDef="let record"
+                  mat-cell>
+                @if (record.base_unit_id && record.factor_to_base) {
+                  <span>1 {{ record.symbol }} = {{ factorLabel(record.factor_to_base) }}
+                    {{ record.base_unit?.symbol || 'base unit' }}
+                  </span>
+                  @if (record.base_unit && !record.base_unit.active) {
+                    <div class="text-xs text-muted">Base unit archived</div>
+                  }
+                } @else {
+                  <span class="text-muted">—</span>
+                }
+              </td>
+            </ng-container>
+            <ng-container matColumnDef="precision">
+              <th *matHeaderCellDef
+                  mat-header-cell>Decimal places</th>
+              <td *matCellDef="let record"
+                  mat-cell>
+                <div>
+                  <span class="text-muted">Display: </span>{{ record.display_decimal_places }}
+                </div>
+                <div>
+                  <span class="text-muted">Storage: </span>{{ record.precision }}
+                </div>
+              </td>
+            </ng-container>
+            <ng-container matColumnDef="status">
+              <th *matHeaderCellDef
+                  mat-header-cell>Status</th>
+              <td *matCellDef="let record"
+                  mat-cell>
+                <span class="inline-flex rounded-full px-2.5 py-1 text-xs font-semibold"
+                      [class.bg-primary-container]="record.active"
+                      [class.text-on-primary-container]="record.active"
+                      [class.bg-secondary-container]="!record.active"
+                      [class.text-on-secondary-container]="!record.active">{{ record.active ? 'Active' : 'Archived' }}
+                </span>
+              </td>
+            </ng-container>
+            <ng-container matColumnDef="actions">
+              <th *matHeaderCellDef
+                  mat-header-cell>Actions</th>
+              <td *matCellDef="let record"
+                  mat-cell>
+                <div class="flex items-center gap-1">
+                  @if (canEdit()) {
+                    <a mat-icon-button
+                       matTooltip="Edit"
+                       queryParamsHandling="preserve"
+                       [routerLink]="[record.id, 'edit']"
+                       [disabled]="state().pending"
+                       [attr.aria-label]="'Edit ' + record.name">
+                      <mat-icon aria-hidden="true">edit</mat-icon>
+                    </a>
+                    @if (record.active) {
+                      <button mat-icon-button
+                              matTooltip="Archive"
+                              type="button"
+                              [disabled]="state().pending"
+                              [attr.aria-label]="'Archive ' + record.name"
+                              (click)="deleteRecord(record)">
+                        <mat-icon aria-hidden="true">archive</mat-icon>
+                      </button>
+                    } @else {
+                      <button mat-icon-button
+                              type="button"
+                              matTooltip="Restore"
+                              [attr.aria-label]="'Restore ' + record.name"
+                              [disabled]="state().pending || record.active"
+                              (click)="restoreRecord(record)"><mat-icon>restore</mat-icon></button>
+                    }
+                  }
+                </div>
+              </td>
+            </ng-container>
+            <tr *matHeaderRowDef="displayedColumns"
+                class="bg-surface-container!"
+                mat-header-row>
+            </tr>
+            <tr *matRowDef="let row; columns: displayedColumns"
+                class="hover:bg-primary-container"
+                mat-row>
+            </tr>
+            <tr *matNoDataRow
+                class="mat-row">
+              <td class="mat-cell px-6 py-14 text-center text-sm text-muted"
+                  [attr.colspan]="displayedColumns.length">No units found</td>
+            </tr>
+          </table>
+        </div>
+        <mat-paginator class="border-t border-outline bg-surface-container!"
+                       aria-label="Units of measurement pagination"
+                       showFirstLastButtons
+                       [length]="total()"
+                       [pageIndex]="pageIndex()"
+                       [pageSize]="pageSize()"
+                       [pageSizeOptions]="pageSizeOptions"
+                       [disabled]="state().pending"
+                       (page)="page($event)" />
+      </mat-card>
+    </ng-template>
+  </div>
+</ui-page-layout>

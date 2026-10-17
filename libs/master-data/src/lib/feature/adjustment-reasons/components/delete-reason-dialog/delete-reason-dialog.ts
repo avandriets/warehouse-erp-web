@@ -1,26 +1,27 @@
-import { ChangeDetectionStrategy, Component, computed, DestroyRef, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
-import { MatSnackBar } from '@angular/material/snack-bar';
 import { UIStateContainerComponent } from '@warehouse/shared';
 import { finalize } from 'rxjs';
 
-import { AdjustmentReasonsAdapterService, AdjustmentReasonsApiService } from '../../../../data-access/services';
-import { AdjustmentReasonsStore } from '../../../../data-access/stores';
+import { AdjustmentReasonsApiService } from '../../../../data-access/services';
+import { ADJUSTMENT_REASON_UPDATE_MESSAGE, AdjustmentReasonsStore } from '../../../../data-access/stores';
 import type { AdjustmentReason } from '../../../../types';
 
 @Component({
   selector: 'md-delete-reason-dialog',
-  providers: [AdjustmentReasonsApiService, AdjustmentReasonsAdapterService, AdjustmentReasonsStore],
+  providers: [
+    { provide: ADJUSTMENT_REASON_UPDATE_MESSAGE, useValue: 'Adjustment reason archived.' },
+    AdjustmentReasonsApiService,
+    AdjustmentReasonsStore,
+  ],
   imports: [MatButtonModule, MatDialogModule, UIStateContainerComponent],
   templateUrl: './delete-reason-dialog.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class DeleteReasonDialog {
   private readonly store = inject(AdjustmentReasonsStore);
-  private readonly dialogRef = inject<MatDialogRef<DeleteReasonDialog, boolean>>(MatDialogRef);
-  private readonly snackBar = inject(MatSnackBar);
-  private readonly destroyRef = inject(DestroyRef);
+  private readonly dialogRef = inject<MatDialogRef<DeleteReasonDialog, AdjustmentReason>>(MatDialogRef);
 
   readonly record = inject<AdjustmentReason>(MAT_DIALOG_DATA);
   readonly actionError = this.store.actionError;
@@ -41,14 +42,10 @@ export class DeleteReasonDialog {
       .pipe(
         finalize(() => {
           this.dialogRef.disableClose = false;
-          if (!this.destroyRef.destroyed && this.store.actionError()) {
-            this.snackBar.open(this.store.actionError()!, 'Dismiss', { duration: 6000 });
-          }
         }),
       )
-      .subscribe(() => {
-        this.snackBar.open('Adjustment reason archived.', 'Dismiss', { duration: 4000 });
-        this.dialogRef.close(true);
+      .subscribe(saved => {
+        this.dialogRef.close(saved);
       });
   }
 }

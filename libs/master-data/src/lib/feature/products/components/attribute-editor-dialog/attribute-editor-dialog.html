@@ -1,0 +1,61 @@
+<h2 mat-dialog-title>{{ data.record ? 'Edit attribute' : 'Add attribute' }}
+</h2>
+<mat-dialog-content>
+  <ui-state-container [state]="state()"
+                      [actionError]="actionError()"
+                      (actionErrorDismissed)="dismissActionError()" />
+  <form id="attribute-editor-form"
+        class="flex flex-col gap-3 pt-2"
+        [formGroup]="form"
+        (ngSubmit)="save()">
+    <mat-form-field appearance="outline">
+      <mat-label>Attribute</mat-label>
+      <input matInput
+             formControlName="key"
+             cdkFocusInitial />
+      <mat-error>
+        @if (form.controls.key.hasError('uniqueAttributeName')) {
+          Attribute names must be unique.
+        } @else {
+          Enter an attribute name.
+        }
+      </mat-error>
+    </mat-form-field>
+    <mat-form-field appearance="outline">
+      <mat-label>Type</mat-label>
+      <mat-select formControlName="type">
+        <mat-option value="text">Text</mat-option>
+        <mat-option value="number">Number</mat-option>
+        <mat-option value="boolean">Boolean</mat-option>
+        <mat-option value="json">Structured</mat-option>
+      </mat-select>
+      <mat-error>Choose an attribute type.</mat-error>
+    </mat-form-field>
+    <mat-form-field appearance="outline">
+      <mat-label>Value</mat-label>
+      <textarea matInput
+                formControlName="value"
+                rows="3"
+                [errorStateMatcher]="valueErrorMatcher">
+</textarea>
+      @if (form.controls.type.value === 'boolean') {
+        <mat-hint>true or false</mat-hint>
+      }
+      @if (form.controls.type.value === 'json') {
+        <mat-hint>JSON object or array</mat-hint>
+      }
+      <mat-error>Check the attribute value and its type.</mat-error>
+    </mat-form-field>
+  </form>
+</mat-dialog-content>
+<mat-dialog-actions align="end">
+  <button mat-button
+          type="button"
+          [disabled]="state().pending"
+          [mat-dialog-close]="undefined">Cancel</button>
+  <button mat-flat-button
+          type="submit"
+          form="attribute-editor-form"
+          [disabled]="state().pending">{{ data.record ? 'Save' : 'Add' }}
+  </button>
+</mat-dialog-actions>

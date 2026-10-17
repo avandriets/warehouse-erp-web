@@ -1,0 +1,142 @@
+<ui-page-layout>
+  <nav pageBreadcrumb
+       class="flex items-center gap-2"
+       aria-label="Breadcrumb">
+    <span>Master data</span>
+    <span aria-hidden="true">/</span>
+    <a class="font-medium text-primary hover:underline"
+       queryParamsHandling="preserve"
+       [routerLink]="editing ? '../..' : '..'">Counterparties</a>
+    <span aria-hidden="true">/</span>
+    <span aria-current="page">{{ editing ? 'Edit' : 'Create' }}
+    </span>
+  </nav>
+  <div pageTitle>
+    <h1 class="m-0 text-2xl font-semibold text-on-surface">{{ editing ? 'Edit counterparty' : 'Create counterparty' }}
+    </h1>
+  </div>
+  <div pageActions
+       class="flex flex-wrap items-center gap-3">
+    <button mat-flat-button
+            type="submit"
+            form="counterparty-editor-form"
+            [disabled]="state().pending || !state().resolved">Save
+    </button>
+    <button mat-button
+            type="button"
+            [disabled]="state().pending"
+            (click)="back()">Cancel
+    </button>
+    @if (editing && canManage()) {
+      @if (record(); as record) {
+        <button mat-stroked-button
+                type="button"
+                [disabled]="state().pending"
+                (click)="record.active ? statusActions.archive(record) : statusActions.restore(record)">{{ record.active ? 'Archive' : 'Restore' }}</button>
+      }
+    }
+  </div>
+  <div pageBody
+       class="mt-6">
+    <ui-state-container [state]="state()"
+                        [resolved]="editor"
+                        [actionError]="actionError()"
+                        [actionErrorActions]="editing ? reloadAction : undefined"
+                        (actionErrorDismissed)="dismissActionError()"
+                        (retry)="load()" />
+    <ng-template #reloadAction>
+      <p class="mt-2 mb-0">Reloading discards unsaved changes.</p>
+      <button mat-stroked-button
+              type="button"
+              [disabled]="state().pending"
+              (click)="load()">Reload record</button>
+    </ng-template>
+    <ng-template #editor>
+      <form id="counterparty-editor-form"
+            class="flex max-w-xl flex-col gap-3"
+            [formGroup]="form"
+            (ngSubmit)="save()">
+        <mat-form-field appearance="outline">
+          <mat-label>Code</mat-label>
+          <input matInput
+                 formControlName="code"
+                 name="code"
+                 maxlength="64" />
+          @if (editing) {
+            <mat-hint>Codes cannot be changed.</mat-hint>
+          }
+          @if (form.controls.code.invalid) {
+            <mat-error>Enter a code (up to 64 characters).</mat-error>
+          }
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Name</mat-label>
+          <input matInput
+                 formControlName="name"
+                 name="name"
+                 maxlength="255" />
+          @if (form.controls.name.invalid) {
+            <mat-error>Enter a name (up to 255 characters).</mat-error>
+          }
+        </mat-form-field>
+        <fieldset class="m-0 border-0 p-0">
+          <legend class="mb-2 text-sm font-medium">Roles</legend>
+          <div class="flex flex-wrap gap-x-4">
+            <mat-checkbox formControlName="is_supplier">Supplier</mat-checkbox>
+            <mat-checkbox formControlName="is_customer">Customer</mat-checkbox>
+            <mat-checkbox formControlName="is_other_recipient">Other recipient</mat-checkbox>
+          </div>
+          @if (form.hasError('roleRequired') && form.touched) {
+            <p class="m-0 text-sm text-error"
+               role="alert">Select at least one role.</p>
+          }
+        </fieldset>
+        <div class="grid gap-3 sm:grid-cols-2">
+          <mat-form-field appearance="outline">
+            <mat-label>Tax identifier</mat-label>
+            <input matInput
+                   formControlName="tax_identifier"
+                   maxlength="128" />
+            <mat-error>Use up to 128 characters.</mat-error>
+          </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>Registration identifier</mat-label>
+            <input matInput
+                   formControlName="registration_identifier"
+                   maxlength="128" />
+            <mat-error>Use up to 128 characters.</mat-error>
+          </mat-form-field>
+        </div>
+        <mat-form-field appearance="outline">
+          <mat-label>Legal address</mat-label>
+          <textarea matInput
+                    formControlName="legal_address"
+                    rows="2">
+</textarea>
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Postal address</mat-label>
+          <textarea matInput
+                    formControlName="postal_address"
+                    rows="2">
+</textarea>
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Contact details</mat-label>
+          <textarea matInput
+                    formControlName="contact_details"
+                    rows="2">
+</textarea>
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Payment details</mat-label>
+          <textarea matInput
+                    formControlName="payment_details"
+                    rows="2">
+</textarea>
+        </mat-form-field>
+
+      </form>
+    </ng-template>
+  </div>
+</ui-page-layout>

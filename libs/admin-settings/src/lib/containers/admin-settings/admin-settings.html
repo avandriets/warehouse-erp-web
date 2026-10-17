@@ -3,18 +3,21 @@
      routerLink="/administration">Administration</a>
   <h1 pageTitle
       class="m-0 text-2xl font-semibold">Settings</h1>
-  <button pageActions
-          mat-stroked-button
-          type="button"
-          [disabled]="state().pending"
-          (click)="load()">Reload settings</button>
   <div pageBody
        class="mt-6">
     <ui-state-container [state]="state()"
                         [resolved]="settingsContent"
                         [actionError]="actionError()"
+                        [actionErrorActions]="reloadAction"
                         (actionErrorDismissed)="dismissActionError()"
                         (retry)="load()" />
+    <ng-template #reloadAction>
+      <p class="mt-2 mb-0">Reloading discards unsaved changes.</p>
+      <button mat-stroked-button
+              type="button"
+              [disabled]="state().pending"
+              (click)="load()">Reload settings</button>
+    </ng-template>
     <ng-template #settingsContent>
       <mat-tab-group>
         <mat-tab label="Enterprise">
@@ -27,13 +30,18 @@
                 <mat-form-field appearance="outline"
                                 [class.md:col-span-2]="field.multiline">
                   <mat-label>{{ field.label }}</mat-label>
-                  @if (field.multiline) { <textarea matInput
+                  @if (field.multiline) {
+                    <textarea matInput
                               rows="3"
-                              [formControlName]="field.key"></textarea> }
-                  @else { <input matInput
-                           [formControlName]="field.key" /> }
+                              [formControlName]="field.key"></textarea>
+                  }
+                  @else {
+                    <input matInput
+                           [formControlName]="field.key" />
+                  }
                   @if (enterpriseForm.controls[field.key].invalid) {
-                    <mat-error>{{ field.key === 'logo_url' ? 'Enter a valid HTTPS URL.' : 'Use at most 255 characters.' }}</mat-error> }
+                    <mat-error>{{ field.key === 'logo_url' ? 'Enter a valid HTTPS URL.' : 'Use at most 255 characters.' }}</mat-error>
+                  }
                 </mat-form-field>
               }
             </fieldset>
@@ -53,7 +61,9 @@
                 restrictions apply.</p>
               <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
                 <admin-currency-select formControlName="currency_id"
-                                       class="block md:col-span-2" />
+                                       class="block md:col-span-2"
+                                       [items]="currencies()"
+                                       [allowArchived]="true" />
                 <mat-form-field appearance="outline">
                   <mat-label>Valuation method</mat-label>
                   <mat-select formControlName="cost_valuation_method">
@@ -101,9 +111,11 @@
               <p class="text-sm text-muted">Global default for inventory policies. More specific overrides may apply.</p>
               @if (negativeUnavailable()) {
                 <p role="status"
-                   class="text-sm text-muted">Negative stock is unavailable with cost accounting enabled. Save accounting changes before editing this policy.</p> }
+                   class="text-sm text-muted">Negative stock is unavailable with cost accounting enabled. Save accounting changes before editing this policy.</p>
+              }
               @if (scopedNegative()) {
-                <p class="text-sm text-error">Enabled scoped negative-stock overrides exist. They must also be cleared before enabling cost accounting.</p> }
+                <p class="text-sm text-error">Enabled scoped negative-stock overrides exist. They must also be cleared before enabling cost accounting.</p>
+              }
               <button mat-flat-button
                       type="submit"
                       [disabled]="negativeForm.disabled || state().pending || !negativeForm.dirty">{{ state().savingSection === 'negative' ? 'Saving…' : 'Save negative-stock policy' }}</button>

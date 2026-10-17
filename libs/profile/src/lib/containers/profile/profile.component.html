@@ -1,19 +1,21 @@
 <ui-page-layout>
   <h1 pageTitle
       class="m-0 text-2xl font-semibold">My profile</h1>
-  <button pageActions
-          mat-stroked-button
-          type="button"
-          [disabled]="state().pending"
-          (click)="load()">Reload profile
-  </button>
   <div pageBody
        class="mt-6 max-w-2xl">
     <ui-state-container [state]="state()"
                         [resolved]="profileContent"
                         [actionError]="actionError()"
+                        [actionErrorActions]="reloadAction"
                         (actionErrorDismissed)="dismissActionError()"
                         (retry)="load()" />
+    <ng-template #reloadAction>
+      <p class="mt-2 mb-0">Reloading discards unsaved changes.</p>
+      <button mat-stroked-button
+              type="button"
+              [disabled]="state().pending"
+              (click)="load()">Reload profile</button>
+    </ng-template>
     <ng-template #profileContent>
       <p class="mb-6 text-sm text-muted">Update your ERP profile and contact email. These details are shared across
         applications.</p>

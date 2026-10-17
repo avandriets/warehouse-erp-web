@@ -1,3 +1,5 @@
+import type { ReferenceOption } from '@warehouse/shared';
+
 export interface EnterpriseFields {
   legal_name: string;
   display_name: string;
@@ -54,6 +56,7 @@ export interface NegativeStockValue extends VersionedRecord {
 export type SettingsPatch<T> = Partial<T> & { expected_version: number };
 
 export interface SettingsSnapshot {
+  currencies: ReferenceOption[];
   enterprise: EnterpriseSettings;
   accounting: AccountingSettings;
   numbering: DocumentNumbering[];

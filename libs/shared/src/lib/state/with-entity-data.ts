@@ -20,7 +20,7 @@ import {
 import type { EventCreator } from '@ngrx/signals/events';
 import { Dispatcher } from '@ngrx/signals/events';
 import type { Observable, OperatorFunction } from 'rxjs';
-import { defer, EMPTY, filter, map, throwError } from 'rxjs';
+import { defer, EMPTY, filter, map, Subject, takeUntil, throwError } from 'rxjs';
 
 import type {
   EntityDataConcurrency,
@@ -38,6 +38,7 @@ import type {
   EntityDataUpdate,
 } from '../types';
 import type { EntityDataFeatureResult, UIStateStatus } from '../types';
+import { loadAllPages } from './load-all-pages';
 
 const initialState: EntityDataState = {
   loaded: false,
@@ -120,6 +121,7 @@ export const withEntityData = <TEntity extends { id: EntityId }, TCreate, TLoadP
     })),
     withMethods(store => {
       const adapter = config.adapter();
+      const cancelLoads = new Subject<void>();
       const destroyRef = inject(DestroyRef);
       const dispatcher = inject(Dispatcher);
       const messageFor = (error: unknown, fallback: string): string => config.errorMessage?.(error) ?? fallback;
@@ -214,77 +216,117 @@ export const withEntityData = <TEntity extends { id: EntityId }, TCreate, TLoadP
         }
       };
 
-      return {
-        load(params: TLoadParams, options: EntityDataLoadOptions = {}): Observable<EntityDataPage<TEntity>> {
+      const load = (
+        params: TLoadParams,
+        options: EntityDataLoadOptions = {},
+        all = false,
+      ): Observable<EntityDataPage<TEntity>> => {
+        return defer(() => {
+          const correlationId = options.correlationId ?? createCorrelationId('load');
+          const concurrency: EntityDataConcurrency = options.concurrency ?? config.load?.concurrency ?? 'latest';
+          const merge = options.merge ?? config.load?.merge ?? 'replace';
+          if (concurrency === 'latest') {
+            cancelLoads.next();
+          }
+
           return defer(() => {
-            const correlationId = options.correlationId ?? createCorrelationId('load');
-            const concurrency: EntityDataConcurrency = options.concurrency ?? config.load?.concurrency ?? 'latest';
-            const merge = options.merge ?? config.load?.merge ?? 'replace';
+            if (concurrency === 'exhaust' && pendingOperations(store.loadOperations()).length) {
+              return EMPTY;
+            }
 
-            return defer(() => {
-              if (concurrency === 'exhaust' && pendingOperations(store.loadOperations()).length) {
-                return EMPTY;
-              }
+            const processedParams = processValue(config.processors?.beforeLoad, params);
+            patchState(store, state => ({
+              error: null,
+              loadOperations:
+                concurrency === 'latest'
+                  ? { [correlationId]: createOperation('load', correlationId) }
+                  : {
+                      ...Object.fromEntries(
+                        Object.entries(state.loadOperations).filter(([, operation]) => operation.status === 'pending'),
+                      ),
+                      [correlationId]: createOperation('load', correlationId),
+                    },
+            }));
 
-              const processedParams = processValue(config.processors?.beforeLoad, params);
-              patchState(store, state => ({
-                error: null,
-                loadOperations:
-                  concurrency === 'latest'
-                    ? { [correlationId]: createOperation('load', correlationId) }
-                    : {
-                        ...Object.fromEntries(
-                          Object.entries(state.loadOperations).filter(
-                            ([, operation]) => operation.status === 'pending',
-                          ),
-                        ),
-                        [correlationId]: createOperation('load', correlationId),
-                      },
-              }));
-
+            if (!all) {
               return adapter.load(processedParams);
-            }).pipe(
-              filter(() => isActiveLoad(correlationId)),
-              map(page => ({ ...page, entities: processValue(config.processors?.afterLoad, page.entities) })),
-              tapResponse({
-                next: page => {
-                  if (!isActiveLoad(correlationId)) {
-                    return;
+            }
+
+            const pageParams = config.load?.pageParams;
+            if (!pageParams) {
+              return throwError(() => new Error('loadAll requires a pageParams function in the store configuration.'));
+            }
+
+            let firstPage: EntityDataPage<TEntity> | undefined;
+
+            return loadAllPages((offset, limit) =>
+              adapter.load(pageParams(processedParams, offset, limit)).pipe(
+                map(page => {
+                  firstPage ??= page;
+                  const total = page.pagination?.total;
+                  if (total === undefined) {
+                    throw new Error('loadAll requires a total in each page response.');
                   }
 
-                  mergePage(page, merge);
-                  finishLoad(correlationId, null);
-                  dispatchEntityEvent(dispatcher, config.events?.loaded, createSuccess(page, correlationId));
-                },
-                error: error => {
-                  if (!isActiveLoad(correlationId)) {
-                    return;
-                  }
+                  return { items: page.entities, total };
+                }),
+              ),
+            ).pipe(map(entities => ({ ...firstPage, entities, pagination: { total: entities.length } })));
+          }).pipe(
+            takeUntil(cancelLoads),
+            filter(() => isActiveLoad(correlationId)),
+            map(page => ({ ...page, entities: processValue(config.processors?.afterLoad, page.entities) })),
+            tapResponse({
+              next: page => {
+                if (!isActiveLoad(correlationId)) {
+                  return;
+                }
 
-                  patchState(store, { error: messageFor(error, config.errors.load) });
-                  finishLoad(correlationId, messageFor(error, config.errors.load));
-                  dispatchEntityEvent(
-                    dispatcher,
-                    config.events?.loadFailed,
-                    createFailure(error, messageFor(error, config.errors.load), correlationId),
-                  );
-                },
-                finalize: () => {
-                  if (!isActiveLoad(correlationId)) {
-                    return;
-                  }
+                mergePage(page, merge);
+                finishLoad(correlationId, null);
+                dispatchEntityEvent(dispatcher, config.events?.loaded, createSuccess(page, correlationId));
+              },
+              error: error => {
+                if (!isActiveLoad(correlationId)) {
+                  return;
+                }
 
-                  patchState(store, state => {
-                    const loadOperations = { ...state.loadOperations };
-                    delete loadOperations[correlationId];
+                patchState(store, { error: messageFor(error, config.errors.load) });
+                finishLoad(correlationId, messageFor(error, config.errors.load));
+                dispatchEntityEvent(
+                  dispatcher,
+                  config.events?.loadFailed,
+                  createFailure(error, messageFor(error, config.errors.load), correlationId),
+                );
+              },
+              finalize: () => {
+                if (!isActiveLoad(correlationId)) {
+                  return;
+                }
 
-                    return { loadOperations };
-                  });
-                },
-              }),
-            );
-          }).pipe(takeUntilDestroyed(destroyRef));
+                patchState(store, state => {
+                  const loadOperations = { ...state.loadOperations };
+                  delete loadOperations[correlationId];
+
+                  return { loadOperations };
+                });
+              },
+            }),
+          );
+        }).pipe(takeUntilDestroyed(destroyRef));
+      };
+
+      return {
+        ownsRequest(correlationId: string): boolean {
+          return (
+            !!store.loadOperations()[correlationId] ||
+            !!store.createOperations()[correlationId] ||
+            Object.values(store.entityOperations()).some(operation => operation.correlationId === correlationId)
+          );
         },
+        load,
+        loadAll: (params: TLoadParams, options: EntityDataLoadOptions = {}): Observable<EntityDataPage<TEntity>> =>
+          load(params, options, true),
 
         getById(id: EntityId, options: EntityDataGetByIdOptions = {}): Observable<TEntity> {
           return defer(() => {
@@ -514,6 +556,7 @@ export const withEntityData = <TEntity extends { id: EntityId }, TCreate, TLoadP
         },
 
         reset(): void {
+          cancelLoads.next();
           patchState(store, removeAllEntities(), initialState);
         },
 

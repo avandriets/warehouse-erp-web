@@ -135,6 +135,35 @@ describe('Adjustment reasons routes and backend workflow', () => {
     expect(TestBed.inject(Router).url).toContain('q=damage');
   });
 
+  it('connects header Save to the form and disables it until the record is loaded', async () => {
+    const page = await harness.navigateByUrl('/custom/reasons/reason-1/edit', AdjustmentReasonEditor);
+    harness.detectChanges();
+    const save = harness.routeNativeElement!.querySelector<HTMLButtonElement>('[pageActions] button[type="submit"]')!;
+    expect(harness.routeNativeElement!.querySelector('[pageActions]')?.textContent).not.toContain('Reload');
+    expect(save.disabled).toBe(true);
+    http.expectOne(`${base}/reason-1`).flush(reason);
+    harness.detectChanges();
+    expect(save.disabled).toBe(false);
+    expect(save.form).toBe(harness.routeNativeElement!.querySelector('form'));
+    page.form.controls.name.setValue('Updated reason');
+    save.click();
+    const request = http.expectOne(`${base}/reason-1`);
+    expect(request.request.method).toBe('PATCH');
+    expect(request.request.body.name).toBe('Updated reason');
+    request.flush({ detail: 'Unavailable' }, { status: 503, statusText: 'Unavailable' });
+    harness.detectChanges();
+    expect(save.disabled).toBe(false);
+    expect(page.form.controls.code.disabled).toBe(true);
+    const alert = harness.routeNativeElement!.querySelector('[role="alert"]')!;
+    expect(alert.textContent).toContain('Reloading discards unsaved changes.');
+    const reload = alert.querySelector<HTMLButtonElement>('button[mat-stroked-button]')!;
+    reload.click();
+    harness.detectChanges();
+    http.expectOne(`${base}/reason-1`).flush(reason);
+    expect(page.form.controls.name.value).toBe(reason.name);
+    expect(snackBar.open).toHaveBeenCalledTimes(1);
+  });
+
   it('creates with the backend enum and navigates relatively, rejects blank input, and blocks repeated saves', async () => {
     const page = await harness.navigateByUrl('/custom/reasons/create', AdjustmentReasonEditor);
     page.form.patchValue({ code: '  ', name: '  ' });
@@ -171,7 +200,6 @@ describe('Adjustment reasons routes and backend workflow', () => {
     expect(update.request.body).toEqual({
       name: 'Changed reason',
       operation: 'SPOILAGE',
-      active: true,
       expected_version: 3,
     });
     expect(update.request.body.code).toBeUndefined();
@@ -291,7 +319,7 @@ describe('Adjustment reason archive dialog', () => {
     expect(snackBar.open).toHaveBeenCalled();
     page.confirm();
     http.expectOne(`${base}/reason-1`).flush({ ...reason, active: false, version: 4 });
-    expect(dialogRef.close).toHaveBeenCalledWith(true);
+    expect(dialogRef.close).toHaveBeenCalledWith({ ...reason, active: false, version: 4 });
     expect(snackBar.open).toHaveBeenCalledWith('Adjustment reason archived.', 'Dismiss', { duration: 4000 });
   });
 });

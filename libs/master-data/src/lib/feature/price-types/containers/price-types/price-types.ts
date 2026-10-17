@@ -1,31 +1,30 @@
-import { ChangeDetectionStrategy, Component, computed, DestroyRef, inject, Injector } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, DestroyRef, inject } from '@angular/core';
 import { takeUntilDestroyed, toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
-import { MatDialog } from '@angular/material/dialog';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import type { PageEvent } from '@angular/material/paginator';
 import { MatPaginatorModule } from '@angular/material/paginator';
 import { MatSelectModule } from '@angular/material/select';
-import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatTableModule } from '@angular/material/table';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { PageLayout, QueryParamSearch, UIStateContainerComponent } from '@warehouse/shared';
 import type { Observable } from 'rxjs';
-import { distinctUntilChanged, finalize, switchMap } from 'rxjs';
+import { distinctUntilChanged, switchMap } from 'rxjs';
 
 import { MASTER_DATA_CONFIG } from '../../../../config';
-import { PriceTypesAdapterService, PriceTypesApiService } from '../../../../data-access/services';
+import { PriceTypesApiService } from '../../../../data-access/services';
 import { PriceTypesStore } from '../../../../data-access/stores';
 import type { PriceEntryMode, PriceType, PriceTypesQuery } from '../../../../types';
 import { PRICE_ENTRY_MODE_LABELS } from '../../../../types';
+import { createDirectoryStatusActions } from '../../../../util';
 import { DeletePriceTypeDialog } from '../../components';
 
 @Component({
   selector: 'md-price-types',
-  providers: [PriceTypesApiService, PriceTypesAdapterService, PriceTypesStore],
+  providers: [PriceTypesApiService, PriceTypesStore],
   imports: [
     PageLayout,
     UIStateContainerComponent,
@@ -46,9 +45,6 @@ import { DeletePriceTypeDialog } from '../../components';
 export class PriceTypes {
   private readonly store = inject(PriceTypesStore);
   private readonly config = inject(MASTER_DATA_CONFIG);
-  private readonly dialog = inject(MatDialog);
-  private readonly injector = inject(Injector);
-  private readonly snackBar = inject(MatSnackBar);
   private readonly destroyRef = inject(DestroyRef);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
@@ -68,7 +64,25 @@ export class PriceTypes {
     };
   });
 
-  readonly state = this.store.entityState;
+  readonly statusActions = createDirectoryStatusActions<PriceType>({
+    pending: () => !!this.store.entityState().pending || this.store.saving(),
+    canEdit: () => this.canEdit(),
+    archiveDialog: DeletePriceTypeDialog,
+    restore: record =>
+      this.store.update({ id: record.id, payload: { active: true, expected_version: record.version } }),
+    accept: () => {
+      if (this.requestParams().active !== undefined && this.records().length === 1 && this.offset() > 0) {
+        void this.page({ pageIndex: this.pageIndex() - 1, pageSize: this.pageSize(), length: this.total() });
+      } else {
+        this.loadQuery(this.requestParams()).subscribe();
+      }
+    },
+  });
+  readonly actionError = this.store.actionError;
+  readonly state = computed(() => ({
+    ...this.store.entityState(),
+    pending: this.store.entityState().pending || this.store.saving() || this.statusActions.busy(),
+  }));
   readonly records = this.store.entities;
   readonly labels = PRICE_ENTRY_MODE_LABELS;
   readonly displayedColumns = ['code', 'name', 'price_entry_mode', 'status', 'actions'];
@@ -128,38 +142,18 @@ export class PriceTypes {
   }
 
   deleteRecord(record: PriceType): void {
-    if (!this.canEdit() || !record.active || this.state().pending) {
-      return;
-    }
+    this.statusActions.archive(record);
+  }
 
-    this.dialog
-      .open<DeletePriceTypeDialog, PriceType, boolean>(DeletePriceTypeDialog, {
-        data: record,
-        width: '480px',
-        maxWidth: '95vw',
-        injector: this.injector,
-      })
-      .afterClosed()
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe(archived => {
-        if (archived) {
-          if (this.requestParams().active === true && this.records().length === 1 && this.offset() > 0) {
-            void this.page({ pageIndex: this.pageIndex() - 1, pageSize: this.pageSize(), length: this.total() });
-          } else {
-            this.load();
-          }
-        }
-      });
+  restoreRecord(record: PriceType): void {
+    this.statusActions.restore(record);
+  }
+
+  dismissActionError(): void {
+    this.store.dismissActionError();
   }
 
   private loadQuery(query: PriceTypesQuery): Observable<unknown> {
-    return this.store.load(query).pipe(
-      takeUntilDestroyed(this.destroyRef),
-      finalize(() => {
-        if (!this.destroyRef.destroyed && this.store.error()) {
-          this.snackBar.open(this.store.error()!, 'Dismiss', { duration: 6000 });
-        }
-      }),
-    );
+    return this.store.load(query).pipe(takeUntilDestroyed(this.destroyRef));
   }
 }

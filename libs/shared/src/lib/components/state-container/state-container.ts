@@ -22,6 +22,7 @@ export class UIStateContainerComponent {
   readonly rejected = input<TemplateRef<unknown>>();
   readonly updating = input<TemplateRef<unknown>>();
   readonly actionError = input<string | Error | null>();
+  readonly actionErrorActions = input<TemplateRef<unknown>>();
   readonly actionErrorDismissed = output<void>();
   readonly retry = output<void>();
 

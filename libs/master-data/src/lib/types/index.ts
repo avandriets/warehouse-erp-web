@@ -1,8 +1,12 @@
 export * from './adjustment-reason';
+export * from './category';
+export * from './counterparty';
 export * from './currency';
 export type { DirectoryMode, DirectoryTableRow } from './directory';
+export * from './directory-status';
 export * from './master-data-config';
 export * from './price-type';
-export type { Product, ProductDraft } from './product';
+export * from './product';
+export * from './unit';
 export * from './vat-rate';
-export type { Warehouse, WarehouseDraft } from './warehouse';
+export * from './warehouse';

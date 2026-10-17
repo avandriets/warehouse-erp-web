@@ -103,7 +103,26 @@ export interface EntityDataConfig<TEntity, TCreate, TLoadParams = void, TUpdate 
   load?: {
     concurrency?: EntityDataConcurrency;
     merge?: EntityDataMergeStrategy;
+    /** Offset/limit mapping used by loadAll; the adapter must return pagination.total. */
+    pageParams?: (params: TLoadParams, offset: number, limit: number) => TLoadParams;
   };
+}
+
+export interface EntityNotificationMessages {
+  created?: string | null;
+  updated?: string | null;
+  removed?: string | null;
+}
+
+export interface EntityRequestOwner {
+  ownsRequest(correlationId: string): boolean;
+}
+
+export interface EntityEditorStateOptions {
+  editing: boolean;
+  exists: boolean;
+  operation: EntityDataOperationState | null;
+  saving?: boolean;
 }
 
 export interface EntityDataState {
@@ -129,7 +148,9 @@ export interface EntityDataFeatureResult<TEntity, TCreate, TUpdate, TLoadParams>
     saving: Signal<boolean>;
   };
   methods: {
+    ownsRequest(correlationId: string): boolean;
     load(params: TLoadParams, options?: EntityDataLoadOptions): Observable<EntityDataPage<TEntity>>;
+    loadAll(params: TLoadParams, options?: EntityDataLoadOptions): Observable<EntityDataPage<TEntity>>;
     getById(id: EntityId, options?: EntityDataGetByIdOptions): Observable<TEntity>;
     create(payload: TCreate, options?: EntityDataRequestOptions): Observable<TEntity>;
     update(update: EntityDataUpdate<TUpdate>, options?: EntityDataRequestOptions): Observable<TEntity>;

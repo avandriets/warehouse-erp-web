@@ -2,6 +2,9 @@
   <div class="my-4 rounded-xl border border-error bg-error-container px-4 py-3 text-sm text-on-error-container"
        role="alert">
     <p>{{ message }}</p>
+    @if (actionErrorActions(); as actions) {
+      <ng-container [ngTemplateOutlet]="actions" />
+    }
     <button mat-button
             type="button"
             (click)="actionErrorDismissed.emit()">Dismiss</button>
@@ -23,19 +26,30 @@
   }
 }
 @if (showUpdating()) {
-  @if (updating(); as template) { <ng-container [ngTemplateOutlet]="template" /> }
-  @else { <mat-progress-bar mode="indeterminate"
-                      aria-label="Updating data" /> }
+  @if (updating(); as template) {
+    <ng-container [ngTemplateOutlet]="template" />
+  }
+  @else {
+    <mat-progress-bar mode="indeterminate"
+                      aria-label="Updating data" />
+  }
 }
-@if (showResolved()) { <ng-container [ngTemplateOutlet]="resolved() ?? null" /> }
+@if (showResolved()) {
+  <ng-container [ngTemplateOutlet]="resolved() ?? null" />
+}
 @if (showEmpty()) {
-  @if (empty(); as template) { <ng-container [ngTemplateOutlet]="template" /> }
+  @if (empty(); as template) {
+    <ng-container [ngTemplateOutlet]="template" />
+  }
   @else {
     <p class="px-6 py-14 text-center text-sm text-muted"
-       role="status">No data found.</p> }
+       role="status">No data found.</p>
+  }
 }
 @if (showPending()) {
-  @if (pending(); as template) { <ng-container [ngTemplateOutlet]="template" /> }
+  @if (pending(); as template) {
+    <ng-container [ngTemplateOutlet]="template" />
+  }
   @else {
     <div class="grid min-h-52 place-items-center"
          role="status"

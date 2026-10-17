@@ -17,7 +17,7 @@ import type { VatRate } from '../../../../types';
 })
 export class DeleteVatRateDialog {
   private readonly store = inject(VatRatesStore);
-  private readonly dialogRef = inject<MatDialogRef<DeleteVatRateDialog, boolean>>(MatDialogRef);
+  private readonly dialogRef = inject<MatDialogRef<DeleteVatRateDialog, VatRate>>(MatDialogRef);
 
   readonly record = inject<VatRate>(MAT_DIALOG_DATA);
   readonly actionError = this.store.actionError;
@@ -40,8 +40,8 @@ export class DeleteVatRateDialog {
           this.dialogRef.disableClose = false;
         }),
       )
-      .subscribe(() => {
-        this.dialogRef.close(true);
+      .subscribe(saved => {
+        this.dialogRef.close(saved);
       });
   }
 }

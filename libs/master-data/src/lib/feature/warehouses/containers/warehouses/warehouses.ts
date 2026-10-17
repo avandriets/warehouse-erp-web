@@ -1,90 +1,166 @@
-import { ChangeDetectionStrategy, Component, computed, effect, inject, signal } from '@angular/core';
-import { toSignal } from '@angular/core/rxjs-interop';
-import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { ChangeDetectionStrategy, Component, computed, DestroyRef, inject } from '@angular/core';
+import { takeUntilDestroyed, toObservable, toSignal } from '@angular/core/rxjs-interop';
+import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
+import { MatCardModule } from '@angular/material/card';
 import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatInputModule } from '@angular/material/input';
+import { MatIconModule } from '@angular/material/icon';
+import type { PageEvent } from '@angular/material/paginator';
+import { MatPaginatorModule } from '@angular/material/paginator';
+import { MatSelectModule } from '@angular/material/select';
+import { MatTableModule } from '@angular/material/table';
+import { MatTooltipModule } from '@angular/material/tooltip';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
-import { PageLayout } from '@warehouse/shared';
+import { PageLayout, QueryParamSearch, UIStateContainerComponent } from '@warehouse/shared';
+import type { Observable } from 'rxjs';
+import { distinctUntilChanged, switchMap } from 'rxjs';
 
-import { WarehouseStoreService } from '../../../../data-access/services';
-import type { DirectoryMode } from '../../../../types';
-import { DirectoryFields, DirectoryTable } from '../../../../ui/components';
+import { MASTER_DATA_CONFIG } from '../../../../config';
+import { WarehousesApiService } from '../../../../data-access/services';
+import { WarehousesStore } from '../../../../data-access/stores';
+import type { Warehouse, WarehouseIssueStrategy, WarehousesQuery, WarehouseTrackingMode } from '../../../../types';
+import { WAREHOUSE_ISSUE_LABELS, WAREHOUSE_TRACKING_LABELS } from '../../../../types';
+import { createDirectoryStatusActions } from '../../../../util';
+import { DeleteWarehouseDialog } from '../../components';
 
 @Component({
   selector: 'md-warehouses',
+  providers: [WarehousesApiService, WarehousesStore],
   imports: [
     PageLayout,
+    UIStateContainerComponent,
+    QueryParamSearch,
     RouterLink,
     ReactiveFormsModule,
     MatButtonModule,
+    MatCardModule,
     MatFormFieldModule,
-    MatInputModule,
-    DirectoryFields,
-    DirectoryTable,
+    MatIconModule,
+    MatSelectModule,
+    MatPaginatorModule,
+    MatTableModule,
+    MatTooltipModule,
   ],
   templateUrl: './warehouses.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class WarehousesPage {
-  private readonly store = inject(WarehouseStoreService);
+export class Warehouses {
+  private readonly store = inject(WarehousesStore);
+  private readonly config = inject(MASTER_DATA_CONFIG);
+  private readonly destroyRef = inject(DestroyRef);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
-  private readonly data = toSignal(this.route.data, { initialValue: this.route.snapshot.data });
-  private readonly params = toSignal(this.route.paramMap, { initialValue: this.route.snapshot.paramMap });
 
-  readonly mode = computed(() => this.data()['mode'] as DirectoryMode);
-  readonly id = computed(() => this.params().get('id'));
-  readonly records = computed(() => this.store.list());
-  readonly record = computed(() => this.store.find(this.id() ?? ''));
-  readonly missing = computed(() => ['edit', 'delete'].includes(this.mode()) && !this.record());
-  readonly label = 'Warehouses';
-  readonly singular = 'warehouse';
-  readonly heading = computed(() =>
-    this.mode() === 'list' ? this.label : `${this.mode()[0].toUpperCase()}${this.mode().slice(1)} ${this.singular}`,
-  );
-  readonly rows = computed(() =>
-    this.records().map(record => ({ id: record.id, code: record.code, name: record.name, detail: record.address })),
-  );
-  readonly error = signal('');
-  readonly form = new FormGroup({
-    code: new FormControl('', { nonNullable: true, validators: [Validators.required, Validators.maxLength(40)] }),
-    name: new FormControl('', { nonNullable: true, validators: [Validators.required, Validators.maxLength(120)] }),
-    address: new FormControl('', { nonNullable: true, validators: [Validators.maxLength(300)] }),
+  private readonly params = toSignal(this.route.queryParamMap, { initialValue: this.route.snapshot.queryParamMap });
+  private readonly requestParams = computed<WarehousesQuery>(() => {
+    const params = this.params();
+    const limit = Number(params.get('limit') ?? 25);
+    const offset = Number(params.get('offset') ?? 0);
+    const active = params.get('active');
+
+    return {
+      q: params.get('q')?.trim() || undefined,
+      active: active === 'all' ? undefined : active !== 'false',
+      limit: [10, 25, 50, 100].includes(limit) ? limit : 25,
+      offset: Number.isSafeInteger(offset) && offset >= 0 ? offset : 0,
+    };
   });
 
+  readonly statusActions = createDirectoryStatusActions<Warehouse>({
+    pending: () => !!this.store.entityState().pending || this.store.saving(),
+    canEdit: record => this.canEdit(record),
+    archiveDialog: DeleteWarehouseDialog,
+    restore: record => this.store.update({ id: record.id, payload: { active: true } }),
+    accept: () => {
+      if (this.requestParams().active !== undefined && this.records().length === 1 && this.offset() > 0) {
+        void this.page({ pageIndex: this.pageIndex() - 1, pageSize: this.pageSize(), length: this.total() });
+      } else {
+        this.loadQuery(this.requestParams()).subscribe();
+      }
+    },
+  });
+  readonly actionError = this.store.actionError;
+  readonly state = computed(() => ({
+    ...this.store.entityState(),
+    pending: this.store.entityState().pending || this.store.saving() || this.statusActions.busy(),
+  }));
+  readonly records = this.store.entities;
+  readonly displayedColumns = ['code', 'name', 'storage', 'tracking', 'issue', 'status', 'actions'];
+  readonly pageSizeOptions = [10, 25, 50, 100];
+  readonly offset = computed(() => this.requestParams().offset);
+  readonly pageSize = computed(() => this.requestParams().limit);
+  readonly pageIndex = computed(() => Math.floor(this.offset() / this.pageSize()));
+  readonly total = computed(() => this.store.pagination().total ?? 0);
+  readonly canCreate = computed(() => this.config.hasPermission('warehouse.manage') && this.store.canCreate());
+  readonly status = new FormControl('true', { nonNullable: true });
+
   constructor() {
-    effect(() => {
-      const record = this.record();
-      this.form.reset({ code: record?.code ?? '', name: record?.name ?? '', address: record?.address ?? '' });
-      this.error.set('');
+    this.route.queryParamMap.pipe(takeUntilDestroyed()).subscribe(params => {
+      const active = params.get('active');
+      this.status.setValue(active === 'false' || active === 'all' ? active : 'true', { emitEvent: false });
+    });
+    this.status.valueChanges.pipe(takeUntilDestroyed()).subscribe(active => {
+      void this.router.navigate([], {
+        relativeTo: this.route,
+        queryParams: { active: active === 'true' ? null : active, offset: null },
+        queryParamsHandling: 'merge',
+      });
+    });
+    toObservable(this.requestParams)
+      .pipe(
+        distinctUntilChanged(
+          (a, b) => a.q === b.q && a.active === b.active && a.limit === b.limit && a.offset === b.offset,
+        ),
+        switchMap(query => {
+          this.store.reset();
+
+          return this.loadQuery(query);
+        }),
+        takeUntilDestroyed(),
+      )
+      .subscribe();
+  }
+
+  canEdit(record: Warehouse): boolean {
+    return this.config.hasPermission('warehouse.manage') && record.can_manage !== false;
+  }
+
+  trackingLabel(mode: WarehouseTrackingMode): string {
+    return WAREHOUSE_TRACKING_LABELS[mode];
+  }
+
+  issueLabel(strategy: WarehouseIssueStrategy): string {
+    return WAREHOUSE_ISSUE_LABELS[strategy];
+  }
+
+  load(): void {
+    this.loadQuery(this.requestParams()).subscribe();
+  }
+
+  page(event: PageEvent): Promise<boolean> {
+    return this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: {
+        limit: event.pageSize === 25 ? null : event.pageSize,
+        offset: event.pageIndex * event.pageSize || null,
+      },
+      queryParamsHandling: 'merge',
     });
   }
 
-  save(): void {
-    if (this.form.invalid) {
-      this.form.markAllAsTouched();
-
-      return;
-    }
-
-    try {
-      this.store.save(this.form.getRawValue(), this.id() ?? undefined);
-      this.back();
-    } catch (error) {
-      this.error.set(error instanceof Error ? error.message : 'Unable to save the record.');
-    }
+  deleteRecord(record: Warehouse): void {
+    this.statusActions.archive(record);
   }
 
-  deleteRecord(): void {
-    const id = this.id();
-    if (id && this.record()) {
-      this.store.remove(id);
-      this.back();
-    }
+  restoreRecord(record: Warehouse): void {
+    this.statusActions.restore(record);
   }
 
-  back(): void {
-    void this.router.navigate(['.'], { relativeTo: this.route.parent });
+  dismissActionError(): void {
+    this.store.dismissActionError();
+  }
+
+  private loadQuery(query: WarehousesQuery): Observable<unknown> {
+    return this.store.load(query).pipe(takeUntilDestroyed(this.destroyRef));
   }
 }

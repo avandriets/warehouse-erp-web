@@ -1,0 +1,29 @@
+  <nav class="flex flex-wrap items-center gap-2"
+       aria-label="Breadcrumb">
+    <span>Master data</span>
+    @if (parentId()) {
+      <span aria-hidden="true">/</span>
+      <a class="font-medium text-primary hover:underline"
+         routerLink="."
+         queryParamsHandling="merge"
+         [queryParams]="{ parent_id: null, root_only: null, q: null, offset: null }">Categories</a>
+      @for (ancestor of ancestors(); track ancestor.id; let last = $last) {
+        <span aria-hidden="true">/</span>
+        @if (last) {
+          <span aria-current="page">{{ ancestor.name }}
+          </span>
+        }
+        @else {
+          <a class="font-medium text-primary hover:underline"
+             routerLink="."
+             queryParamsHandling="merge"
+             [queryParams]="{ parent_id: ancestor.id, root_only: null, q: null, offset: null }">{{ ancestor.name }}
+          </a>
+        }
+      }
+      @if (!ancestors().length) {
+        <span aria-hidden="true">/</span>
+        <span aria-current="page">Subcategories</span>
+      }
+    }
+  </nav>

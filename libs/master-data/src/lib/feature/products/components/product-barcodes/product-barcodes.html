@@ -1,0 +1,108 @@
+<section class="mt-8 flex flex-col gap-4"
+         aria-labelledby="barcodes-heading">
+  <div class="flex flex-wrap items-center justify-between gap-3">
+    <h2 id="barcodes-heading"
+        class="m-0 text-lg font-semibold">Barcodes</h2>
+    @if (canCreate()) {
+      <button mat-stroked-button
+              type="button"
+              [disabled]="disabled() || barcodeState().pending"
+              (click)="editBarcode()">
+        <mat-icon>add</mat-icon>Add barcode</button>
+    }
+  </div>
+  <ui-state-container [state]="barcodeState()"
+                      [resolved]="barcodeList"
+                      [empty]="barcodeList"
+                      [actionError]="barcodeError()"
+                      (actionErrorDismissed)="dismissBarcodeError()"
+                      (retry)="loadBarcodes()" />
+  <ng-template #barcodeList>
+    <mat-card appearance="outlined"
+              class="overflow-hidden">
+      <div class="overflow-x-auto">
+        <table mat-table
+               class="w-full"
+               [dataSource]="barcodes()">
+          <ng-container matColumnDef="value">
+            <th *matHeaderCellDef
+                mat-header-cell>Barcode</th>
+            <td *matCellDef="let barcode"
+                mat-cell>{{ barcode.value }}
+            </td>
+          </ng-container>
+          <ng-container matColumnDef="package">
+            <th *matHeaderCellDef
+                mat-header-cell>Package</th>
+            <td *matCellDef="let barcode"
+                mat-cell>{{ packageName(barcode.package_id) }}
+            </td>
+          </ng-container>
+          <ng-container matColumnDef="status">
+            <th *matHeaderCellDef
+                mat-header-cell>Status</th>
+            <td *matCellDef="let barcode"
+                mat-cell>
+              <span class="inline-flex rounded-full px-2.5 py-1 text-xs font-semibold"
+                    [class.bg-primary-container]="barcode.active"
+                    [class.text-on-primary-container]="barcode.active"
+                    [class.bg-secondary-container]="!barcode.active"
+                    [class.text-on-secondary-container]="!barcode.active">{{ barcode.active ? 'Active' : 'Archived' }}
+              </span>
+            </td>
+          </ng-container>
+          <ng-container matColumnDef="actions">
+            <th *matHeaderCellDef
+                mat-header-cell>Actions</th>
+            <td *matCellDef="let barcode"
+                mat-cell>
+              <div class="flex items-center gap-1">
+                @if (canEdit()) {
+                  <button mat-icon-button
+                          type="button"
+                          matTooltip="Edit"
+                          [attr.aria-label]="'Edit barcode ' + barcode.value"
+                          [disabled]="disabled() || barcodeState().pending || !product().active"
+                          (click)="editBarcode(barcode)">
+                    <mat-icon>edit</mat-icon>
+                  </button>
+                  @if (barcode.active) {
+                    <button mat-icon-button
+                            type="button"
+                            matTooltip="Archive"
+                            [attr.aria-label]="'Archive barcode ' + barcode.value"
+                            [disabled]="disabled() || barcodeState().pending"
+                            (click)="archive(barcode)">
+                      <mat-icon>archive</mat-icon>
+                    </button>
+                  } @else {
+                    <button mat-icon-button
+                            type="button"
+                            matTooltip="Restore"
+                            [attr.aria-label]="'Restore barcode'"
+                            [disabled]="disabled() || barcodeState().pending || !product().active"
+                            (click)="restore(barcode)">
+                      <mat-icon>restore</mat-icon>
+                    </button>
+                  }
+                }
+              </div>
+            </td>
+          </ng-container>
+          <tr *matHeaderRowDef="barcodeColumns"
+              mat-header-row
+              class="bg-surface-container!">
+          </tr>
+          <tr *matRowDef="let row; columns: barcodeColumns"
+              mat-row
+              class="hover:bg-primary-container">
+          </tr>
+          <tr *matNoDataRow>
+            <td colspan="4"
+                class="px-6 py-8 text-center text-sm text-muted">No barcodes</td>
+          </tr>
+        </table>
+      </div>
+    </mat-card>
+  </ng-template>
+</section>

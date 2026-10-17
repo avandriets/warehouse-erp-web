@@ -1,10 +1,9 @@
 import { DecimalPipe } from '@angular/common';
-import { ChangeDetectionStrategy, Component, computed, DestroyRef, inject, Injector } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, DestroyRef, inject } from '@angular/core';
 import { takeUntilDestroyed, toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
-import { MatDialog } from '@angular/material/dialog';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import type { PageEvent } from '@angular/material/paginator';
@@ -22,6 +21,7 @@ import { VatRatesApiService } from '../../../../data-access/services';
 import { VatRatesStore } from '../../../../data-access/stores';
 import type { TaxTreatment, VatRate, VatRatesQuery } from '../../../../types';
 import { TAX_TREATMENT_LABELS } from '../../../../types';
+import { createDirectoryStatusActions } from '../../../../util';
 import { DeleteVatRateDialog } from '../../components';
 
 @Component({
@@ -49,8 +49,6 @@ import { DeleteVatRateDialog } from '../../components';
 export class VatRates {
   private readonly store = inject(VatRatesStore);
   private readonly config = inject(MASTER_DATA_CONFIG);
-  private readonly dialog = inject(MatDialog);
-  private readonly injector = inject(Injector);
   private readonly destroyRef = inject(DestroyRef);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
@@ -70,7 +68,25 @@ export class VatRates {
     };
   });
 
-  readonly state = this.store.entityState;
+  readonly statusActions = createDirectoryStatusActions<VatRate>({
+    pending: () => !!this.store.entityState().pending || this.store.saving(),
+    canEdit: () => this.canEdit(),
+    archiveDialog: DeleteVatRateDialog,
+    restore: record =>
+      this.store.update({ id: record.id, payload: { active: true, expected_version: record.version } }),
+    accept: () => {
+      if (this.requestParams().active !== undefined && this.records().length === 1 && this.offset() > 0) {
+        void this.page({ pageIndex: this.pageIndex() - 1, pageSize: this.pageSize(), length: this.total() });
+      } else {
+        this.loadQuery(this.requestParams()).subscribe();
+      }
+    },
+  });
+  readonly actionError = this.store.actionError;
+  readonly state = computed(() => ({
+    ...this.store.entityState(),
+    pending: this.store.entityState().pending || this.store.saving() || this.statusActions.busy(),
+  }));
   readonly records = this.store.entities;
   readonly labels = TAX_TREATMENT_LABELS;
   readonly displayedColumns = ['code', 'name', 'treatment', 'rate', 'status', 'actions'];
@@ -130,28 +146,15 @@ export class VatRates {
   }
 
   deleteRecord(record: VatRate): void {
-    if (!this.canEdit() || !record.active || this.state().pending) {
-      return;
-    }
+    this.statusActions.archive(record);
+  }
 
-    this.dialog
-      .open<DeleteVatRateDialog, VatRate, boolean>(DeleteVatRateDialog, {
-        data: record,
-        width: '480px',
-        maxWidth: '95vw',
-        injector: this.injector,
-      })
-      .afterClosed()
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe(archived => {
-        if (archived) {
-          if (this.requestParams().active === true && this.records().length === 1 && this.offset() > 0) {
-            void this.page({ pageIndex: this.pageIndex() - 1, pageSize: this.pageSize(), length: this.total() });
-          } else {
-            this.load();
-          }
-        }
-      });
+  restoreRecord(record: VatRate): void {
+    this.statusActions.restore(record);
+  }
+
+  dismissActionError(): void {
+    this.store.dismissActionError();
   }
 
   private loadQuery(query: VatRatesQuery): Observable<unknown> {

@@ -33,7 +33,9 @@
               class="mr-3 shrink-0 text-xs text-muted">Status</span>
         <mat-select aria-label="Status"
                     [formControl]="status">
-          <mat-option value="true">Active</mat-option><mat-option value="false">Archived</mat-option><mat-option value="all">All VAT rates</mat-option>
+          <mat-option value="true">Active</mat-option>
+          <mat-option value="false">Archived</mat-option>
+          <mat-option value="all">All VAT rates</mat-option>
         </mat-select>
       </mat-form-field>
     </div>
@@ -42,14 +44,18 @@
             aria-label="Refresh VAT rates"
             title="Refresh"
             [disabled]="state().pending"
-            (click)="load()"><mat-icon>refresh</mat-icon></button>
+            (click)="load()">
+      <mat-icon>refresh</mat-icon>
+    </button>
   </section>
   <div pageBody>
     <ui-state-container class="mt-4"
                         [state]="state()"
+                        [actionError]="actionError()"
                         [resolved]="data"
                         [empty]="data"
                         [rejected]="loadError"
+                        (actionErrorDismissed)="dismissActionError()"
                         (retry)="load()" />
     <ng-template #loadError
                  let-message
@@ -58,7 +64,8 @@
            role="alert">
         <mat-icon class="shrink-0"
                   aria-hidden="true">error_outline</mat-icon>
-        <p class="m-0 min-w-0 flex-1">{{ message }}</p>
+        <p class="m-0 min-w-0 flex-1">{{ message }}
+        </p>
         <button mat-stroked-button
                 type="button"
                 class="shrink-0 self-start sm:self-auto"
@@ -77,32 +84,44 @@
               <th *matHeaderCellDef
                   mat-header-cell>Code</th>
               <td *matCellDef="let record"
-                  mat-cell>{{ record.code }}</td>
+                  mat-cell>{{ record.code }}
+              </td>
             </ng-container>
             <ng-container matColumnDef="name">
               <th *matHeaderCellDef
                   mat-header-cell>Name</th>
               <td *matCellDef="let record"
                   mat-cell>
-                @if (canEdit()) { <a class="font-medium text-primary no-underline hover:underline"
+                @if (canEdit()) {
+                  <a class="font-medium text-primary no-underline hover:underline"
                      queryParamsHandling="preserve"
-                     [routerLink]="[record.id, 'edit']">{{ record.name }}</a> }
-                @else { <span class="font-medium">{{ record.name }}</span> }
+                     [routerLink]="[record.id, 'edit']">{{ record.name }}
+                  </a>
+                }
+                @else {
+                  <span class="font-medium">{{ record.name }}
+                  </span>
+                }
               </td>
             </ng-container>
             <ng-container matColumnDef="treatment">
               <th *matHeaderCellDef
                   mat-header-cell>VAT treatment</th>
               <td *matCellDef="let record"
-                  mat-cell>{{ treatmentLabel(record.treatment) }}</td>
+                  mat-cell>{{ treatmentLabel(record.treatment) }}
+              </td>
             </ng-container>
             <ng-container matColumnDef="rate">
               <th *matHeaderCellDef
                   mat-header-cell>Rate</th>
               <td *matCellDef="let record"
                   mat-cell>
-                @if (record.treatment === 'NO_VAT') { <span aria-label="Not applicable">—</span> }
-                @else { {{ record.rate | number:'1.0-4' }}% }
+                @if (record.treatment === 'NO_VAT') {
+                  <span aria-label="Not applicable">—</span>
+                }
+                @else {
+                  {{ record.rate | number:'1.0-4' }}%
+                }
               </td>
             </ng-container>
             <ng-container matColumnDef="status">
@@ -114,7 +133,8 @@
                       [class.bg-primary-container]="record.active"
                       [class.text-on-primary-container]="record.active"
                       [class.bg-secondary-container]="!record.active"
-                      [class.text-on-secondary-container]="!record.active">{{ record.active ? 'Active' : 'Archived' }}</span>
+                      [class.text-on-secondary-container]="!record.active">{{ record.active ? 'Active' : 'Archived' }}
+                </span>
               </td>
             </ng-container>
             <ng-container matColumnDef="actions">
@@ -122,29 +142,45 @@
                   mat-header-cell>Actions</th>
               <td *matCellDef="let record"
                   mat-cell>
-                <div class="flex items-center gap-1">@if (canEdit()) {
+                <div class="flex items-center gap-1">
+                  @if (canEdit()) {
                     <a mat-icon-button
                        matTooltip="Edit"
                        queryParamsHandling="preserve"
                        [routerLink]="[record.id, 'edit']"
                        [disabled]="state().pending"
-                       [attr.aria-label]="'Edit ' + record.name"><mat-icon aria-hidden="true">edit</mat-icon></a>
-                    @if (record.active) { <button mat-icon-button
-                              matTooltip="Delete"
+                       [attr.aria-label]="'Edit ' + record.name">
+                      <mat-icon aria-hidden="true">edit</mat-icon>
+                    </a>
+                    @if (record.active) {
+                      <button mat-icon-button
+                              matTooltip="Archive"
                               type="button"
                               [disabled]="state().pending"
-                              [attr.aria-label]="'Delete ' + record.name"
-                              (click)="deleteRecord(record)"><mat-icon aria-hidden="true">delete_outline</mat-icon></button> }
+                              [attr.aria-label]="'Archive ' + record.name"
+                              (click)="deleteRecord(record)">
+                        <mat-icon aria-hidden="true">archive</mat-icon>
+                      </button>
+                    } @else {
+                      <button mat-icon-button
+                              type="button"
+                              matTooltip="Restore"
+                              [attr.aria-label]="'Restore ' + record.name"
+                              [disabled]="state().pending || record.active"
+                              (click)="restoreRecord(record)"><mat-icon>restore</mat-icon></button>
+                    }
                   }
                 </div>
               </td>
             </ng-container>
             <tr *matHeaderRowDef="displayedColumns"
                 class="bg-surface-container!"
-                mat-header-row></tr>
+                mat-header-row>
+            </tr>
             <tr *matRowDef="let row; columns: displayedColumns"
                 class="hover:bg-primary-container"
-                mat-row></tr>
+                mat-row>
+            </tr>
             <tr *matNoDataRow
                 class="mat-row">
               <td class="mat-cell px-6 py-14 text-center text-sm text-muted"

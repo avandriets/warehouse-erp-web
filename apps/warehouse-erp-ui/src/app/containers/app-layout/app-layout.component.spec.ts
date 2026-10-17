@@ -1,4 +1,6 @@
 import { Location } from '@angular/common';
+import { provideHttpClient } from '@angular/common/http';
+import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { provideLocationMocks } from '@angular/common/testing';
 import { TestBed } from '@angular/core/testing';
 import { NavigationEnd, provideRouter, Router } from '@angular/router';
@@ -20,6 +22,8 @@ describe('warehouse navigation', () => {
     TestBed.configureTestingModule({
       providers: [
         provideTestAuth(),
+        provideHttpClient(),
+        provideHttpClientTesting(),
         provideRouter(createAppRoutes(MENU_CONFIG, LIBRARY_MOUNTS, PLACEHOLDER_PAGES)),
         provideLocationMocks(),
       ],
@@ -27,6 +31,20 @@ describe('warehouse navigation', () => {
     router = TestBed.inject(Router);
     router.setUpLocationChangeListener();
     harness = await RouterTestingHarness.create('/');
+  });
+
+  afterEach(() => {
+    const http = TestBed.inject(HttpTestingController);
+    for (const request of http.match(
+      req =>
+        req.url.endsWith('/catalog/products') ||
+        (req.url.endsWith('/catalog/categories') && req.params.get('limit') === '100'),
+    )) {
+      if (!request.cancelled) {
+        request.flush({ items: [], total: 0 });
+      }
+    }
+    http.verify();
   });
 
   it('starts with a welcome screen and no selected category or sidebar', () => {
@@ -221,23 +239,44 @@ describe('independent library mounts and menus', () => {
       ...library,
       path: 'custom/catalog',
     }));
-    TestBed.configureTestingModule({ providers: [provideTestAuth(), provideRouter(createAppRoutes(menu, libraries))] });
+    TestBed.configureTestingModule({
+      providers: [
+        provideTestAuth(),
+        provideHttpClient(),
+        provideHttpClientTesting(),
+        provideHttpClient(),
+        provideHttpClientTesting(),
+        provideRouter(createAppRoutes(menu, libraries)),
+      ],
+    });
     const harness = await RouterTestingHarness.create('/operations');
     const root = harness.fixture.nativeElement as HTMLElement;
     const router = TestBed.inject(Router);
     root.querySelector<HTMLAnchorElement>('main a[href="/custom/catalog/products"]')!.click();
     await harness.fixture.whenStable();
     expect(root.querySelector('main h1')?.textContent).toContain('Products');
-    await harness.navigateByUrl('/custom/catalog/products/123/edit?tab=details#form');
+    TestBed.inject(HttpTestingController)
+      .expectOne(req => req.url.endsWith('/catalog/products'))
+      .flush({ items: [], total: 0 });
+    for (const request of TestBed.inject(HttpTestingController).match(req => req.url.endsWith('/catalog/categories'))) {
+      request.flush({ items: [], total: 0 });
+    }
+    await harness.navigateByUrl('/custom/catalog/products/create?tab=details#form');
+    for (const request of TestBed.inject(HttpTestingController).match(
+      req => req.method === 'GET' && req.params.get('limit') === '100',
+    )) {
+      request.flush({ items: [], total: 0 });
+    }
     expect(root.querySelector('erp-submenu header')?.textContent).toContain('Operations');
     expect(root.querySelector('erp-submenu a.bg-selected')?.textContent?.trim()).toBe('Products');
     expect(root.querySelector('erp-primary-menu button[aria-label="Operations"]')?.getAttribute('aria-current')).toBe(
       'true',
     );
 
-    await harness.navigateByUrl('/custom/catalog/warehouses/123/delete');
+    await harness.navigateByUrl('/custom/catalog/warehouses/create');
     expect(root.querySelector('erp-submenu a.bg-selected')?.textContent?.trim()).toBe('Warehouses');
-    expect(root.querySelector('main')?.textContent).toContain('Main warehouse');
+    expect(root.querySelector('main h1')?.textContent).toContain('Create warehouse');
+    TestBed.inject(HttpTestingController).verify();
 
     await harness.navigateByUrl('/custom/catalog/products/123/unknown');
     expect(router.url).toBe('/custom/catalog/products/123/unknown');

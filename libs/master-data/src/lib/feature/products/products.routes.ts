@@ -1,29 +1,29 @@
+import { inject } from '@angular/core';
 import type { Routes } from '@angular/router';
+import type { CanActivateFn } from '@angular/router';
+
+import { MASTER_DATA_CONFIG } from '../../config';
+
+const permissionGuard: CanActivateFn = (route, state) => inject(MASTER_DATA_CONFIG).permissionGuard(route, state);
 
 export const PRODUCTS_ROUTES: Routes = [
   {
     path: '',
-    title: 'Products',
     pathMatch: 'full',
-    data: { mode: 'list' },
-    loadComponent: () => import('./containers').then(m => m.ProductsPage),
+    canActivate: [permissionGuard],
+    data: { permission: 'catalog.read' },
+    loadComponent: () => import('./containers').then(m => m.Products),
   },
   {
     path: 'create',
-    title: 'Create product',
-    data: { mode: 'create' },
-    loadComponent: () => import('./containers').then(m => m.ProductsPage),
+    canActivate: [permissionGuard],
+    data: { permission: 'catalog.create', mode: 'create' },
+    loadComponent: () => import('./containers').then(m => m.ProductEditor),
   },
   {
     path: ':id/edit',
-    title: 'Edit product',
-    data: { mode: 'edit' },
-    loadComponent: () => import('./containers').then(m => m.ProductsPage),
-  },
-  {
-    path: ':id/delete',
-    title: 'Delete product',
-    data: { mode: 'delete' },
-    loadComponent: () => import('./containers').then(m => m.ProductsPage),
+    canActivate: [permissionGuard],
+    data: { permission: 'catalog.edit', mode: 'edit' },
+    loadComponent: () => import('./containers').then(m => m.ProductEditor),
   },
 ];

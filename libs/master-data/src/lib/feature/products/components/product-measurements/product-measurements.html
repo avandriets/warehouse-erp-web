@@ -1,0 +1,117 @@
+<section class="mt-8 flex flex-col gap-4"
+         aria-labelledby="measurements-heading">
+  <div class="flex flex-wrap items-center justify-between gap-3">
+    <h2 id="measurements-heading"
+        class="m-0 text-lg font-semibold">Additional measurements</h2>
+    @if (canCreate()) {
+      <button mat-stroked-button
+              type="button"
+              [disabled]="disabled() || measurementState().pending"
+              (click)="editMeasurement()">
+        <mat-icon>add</mat-icon>Add measurement</button>
+    }
+  </div>
+  <p class="m-0 text-sm text-muted">Define how a quantity in the storage unit relates to an alternative physical unit.</p>
+  <ui-state-container [state]="measurementState()"
+                      [resolved]="measurementList"
+                      [empty]="measurementList"
+                      [actionError]="measurementError()"
+                      (actionErrorDismissed)="dismissMeasurementError()"
+                      (retry)="loadMeasurements()" />
+  <ng-template #measurementList>
+    <mat-card appearance="outlined"
+              class="overflow-hidden">
+      <div class="overflow-x-auto">
+        <table mat-table
+               class="w-full"
+               [dataSource]="measurements()">
+          <ng-container matColumnDef="conversion">
+            <th *matHeaderCellDef
+                mat-header-cell>Conversion</th>
+            <td *matCellDef="let measurement"
+                mat-cell>{{ measurement.storage_quantity }} storage units = {{ measurement.measured_quantity }}
+              {{ measurement.unit?.symbol || measurement.unit?.name || 'alternative units' }}
+            </td>
+          </ng-container>
+          <ng-container matColumnDef="use">
+            <th *matHeaderCellDef
+                mat-header-cell>Use</th>
+            <td *matCellDef="let measurement"
+                mat-cell>{{ measurement.use === 'DOCUMENT' ? 'Documents' : 'Reference only' }}
+            </td>
+          </ng-container>
+          <ng-container matColumnDef="report">
+            <th *matHeaderCellDef
+                mat-header-cell>Report unit</th>
+            <td *matCellDef="let measurement"
+                mat-cell>{{ measurement.is_report_unit ? 'Yes' : 'No' }}
+            </td>
+          </ng-container>
+          <ng-container matColumnDef="status">
+            <th *matHeaderCellDef
+                mat-header-cell>Status</th>
+            <td *matCellDef="let measurement"
+                mat-cell>
+              <span class="inline-flex rounded-full px-2.5 py-1 text-xs font-semibold"
+                    [class.bg-primary-container]="measurement.active"
+                    [class.text-on-primary-container]="measurement.active"
+                    [class.bg-secondary-container]="!measurement.active"
+                    [class.text-on-secondary-container]="!measurement.active">{{ measurement.active ? 'Active' : 'Archived' }}
+              </span>
+            </td>
+          </ng-container>
+          <ng-container matColumnDef="actions">
+            <th *matHeaderCellDef
+                mat-header-cell>Actions</th>
+            <td *matCellDef="let measurement"
+                mat-cell>
+              <div class="flex items-center gap-1">
+                @if (canEdit()) {
+                  <button mat-icon-button
+                          type="button"
+                          aria-label="Edit measurement"
+                          matTooltip="Edit"
+                          [disabled]="disabled() || measurementState().pending || !product().active"
+                          (click)="editMeasurement(measurement)">
+                    <mat-icon>edit</mat-icon>
+                  </button>
+                  @if (measurement.active) {
+                    <button mat-icon-button
+                            type="button"
+                            aria-label="Archive measurement"
+                            matTooltip="Archive"
+                            [disabled]="disabled() || measurementState().pending"
+                            (click)="archive(measurement)">
+                      <mat-icon>archive</mat-icon>
+                    </button>
+                  } @else {
+                    <button mat-icon-button
+                            type="button"
+                            matTooltip="Restore"
+                            [attr.aria-label]="'Restore measurement'"
+                            [disabled]="disabled() || measurementState().pending || !product().active"
+                            (click)="restore(measurement)">
+                      <mat-icon>restore</mat-icon>
+                    </button>
+                  }
+                }
+              </div>
+            </td>
+          </ng-container>
+          <tr *matHeaderRowDef="measurementColumns"
+              mat-header-row
+              class="bg-surface-container!">
+          </tr>
+          <tr *matRowDef="let row; columns: measurementColumns"
+              mat-row
+              class="hover:bg-primary-container">
+          </tr>
+          <tr *matNoDataRow>
+            <td colspan="5"
+                class="px-6 py-8 text-center text-sm text-muted">No additional measurements</td>
+          </tr>
+        </table>
+      </div>
+    </mat-card>
+  </ng-template>
+</section>

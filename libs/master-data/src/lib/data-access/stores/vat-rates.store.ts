@@ -1,11 +1,10 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import { inject, InjectionToken } from '@angular/core';
-import { MatSnackBar } from '@angular/material/snack-bar';
 import { signalStore, type } from '@ngrx/signals';
-import { eventGroup, Events, withEventHandlers } from '@ngrx/signals/events';
+import { eventGroup } from '@ngrx/signals/events';
 import type { EntityDataFailure, EntityDataSuccess } from '@warehouse/shared';
-import { apiError, withEntityData } from '@warehouse/shared';
-import { filter, map, tap } from 'rxjs';
+import { apiError, withEntityData, withEntityNotifications } from '@warehouse/shared';
+import { map } from 'rxjs';
 
 import type { VatRate, VatRateCreate, VatRatesQuery, VatRateUpdate } from '../../types';
 import { VatRatesApiService } from '../services';
@@ -44,6 +43,7 @@ export const VatRatesStore = signalStore(
           }),
       };
     },
+    load: { pageParams: (query, offset, limit) => ({ ...query, offset, limit }) },
     events: vatRatesEvents,
     errorMessage: error =>
       error instanceof HttpErrorResponse && error.status === 409 && /concurrent|version/i.test(apiError(error))
@@ -57,35 +57,8 @@ export const VatRatesStore = signalStore(
       remove: 'Could not archive the VAT rate.',
     },
   }),
-  withEventHandlers(store => {
-    const events = inject(Events);
-    const snackBar = inject(MatSnackBar);
-    const updateMessage = inject(VAT_RATE_UPDATE_MESSAGE);
-    const ownsRequest = (correlationId: string): boolean =>
-      !!store.loadOperations()[correlationId] ||
-      !!store.createOperations()[correlationId] ||
-      Object.values(store.entityOperations()).some(operation => operation.correlationId === correlationId);
-
-    return {
-      errors: events
-        .on(
-          vatRatesEvents.loadFailed,
-          vatRatesEvents.retrieveFailed,
-          vatRatesEvents.createFailed,
-          vatRatesEvents.updateFailed,
-        )
-        .pipe(
-          filter(({ payload }) => ownsRequest(payload.correlationId)),
-          tap(({ payload }) => snackBar.open(payload.message, 'Dismiss', { duration: 6000 })),
-        ),
-      created: events.on(vatRatesEvents.created).pipe(
-        filter(({ payload }) => ownsRequest(payload.correlationId)),
-        tap(() => snackBar.open('VAT rate created.', 'Dismiss', { duration: 4000 })),
-      ),
-      updated: events.on(vatRatesEvents.updated).pipe(
-        filter(({ payload }) => ownsRequest(payload.correlationId)),
-        tap(() => snackBar.open(updateMessage, 'Dismiss', { duration: 4000 })),
-      ),
-    };
-  }),
+  withEntityNotifications(vatRatesEvents, () => ({
+    created: 'VAT rate created.',
+    updated: inject(VAT_RATE_UPDATE_MESSAGE),
+  })),
 );

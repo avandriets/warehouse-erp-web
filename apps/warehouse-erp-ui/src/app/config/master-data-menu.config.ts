@@ -40,7 +40,8 @@ export const MASTER_DATA_LINKS: readonly SubmenuItem[] = [
     title: 'Categories',
     icon: 'category',
     target: {
-      route: '/master-data/categories',
+      libraryId: 'master-data-library',
+      path: 'categories',
     },
   },
   {
@@ -49,13 +50,14 @@ export const MASTER_DATA_LINKS: readonly SubmenuItem[] = [
     title: 'Units of measurement',
     icon: 'straighten',
     target: {
-      route: '/master-data/units',
+      libraryId: 'master-data-library',
+      path: 'units',
     },
   },
   {
     id: 'warehouses',
     submenuGroupId: 'master-data-warehouses',
-    title: 'Warehouses and locations',
+    title: 'Warehouses',
     icon: 'warehouse',
     target: {
       libraryId: 'master-data-library',
@@ -78,7 +80,8 @@ export const MASTER_DATA_LINKS: readonly SubmenuItem[] = [
     title: 'Counterparties',
     icon: 'handshake',
     target: {
-      route: '/master-data/counterparties',
+      libraryId: 'master-data-library',
+      path: 'counterparties',
     },
   },
   {

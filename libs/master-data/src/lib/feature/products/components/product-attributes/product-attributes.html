@@ -1,0 +1,90 @@
+<section class="mt-8 flex flex-col gap-3"
+         aria-labelledby="attributes-heading">
+  <div class="flex items-center justify-between gap-3">
+    <h2 id="attributes-heading"
+        class="m-0 text-lg font-semibold">Attributes</h2>
+    @if (canEdit()) {
+      <button mat-stroked-button
+              type="button"
+              [disabled]="disabled() || state().pending"
+              (click)="addAttribute()">
+        <mat-icon>add</mat-icon>Add attribute</button>
+    }
+  </div>
+  <ui-state-container [state]="state()"
+                      [resolved]="list"
+                      [actionError]="actionError()"
+                      (actionErrorDismissed)="dismissActionError()" />
+  <ng-template #list>
+    <mat-card appearance="outlined"
+              class="overflow-hidden">
+      <div class="overflow-x-auto">
+        <table mat-table
+               class="w-full"
+               [dataSource]="rows()">
+          <ng-container matColumnDef="key">
+            <th *matHeaderCellDef
+                mat-header-cell>Attribute</th>
+            <td *matCellDef="let row"
+                mat-cell>{{ row.key }}
+            </td>
+          </ng-container>
+          <ng-container matColumnDef="type">
+            <th *matHeaderCellDef
+                mat-header-cell>Type</th>
+            <td *matCellDef="let row"
+                mat-cell>{{ attributeTypes[row.type] }}
+            </td>
+          </ng-container>
+          <ng-container matColumnDef="value">
+            <th *matHeaderCellDef
+                mat-header-cell>Value</th>
+            <td *matCellDef="let row"
+                mat-cell
+                class="whitespace-pre-wrap break-words">{{ row.value }}
+            </td>
+          </ng-container>
+          <ng-container matColumnDef="actions">
+            <th *matHeaderCellDef
+                mat-header-cell>Actions</th>
+            <td *matCellDef="let row"
+                mat-cell>
+              <div class="flex items-center gap-1">
+                @if (canEdit()) {
+                  <button mat-icon-button
+                          type="button"
+                          matTooltip="Edit"
+                          [attr.aria-label]="'Edit attribute ' + row.key"
+                          [disabled]="disabled() || state().pending"
+                          (click)="editAttribute(row)">
+                    <mat-icon>edit</mat-icon>
+                  </button>
+                  <button mat-icon-button
+                          type="button"
+                          matTooltip="Remove"
+                          [attr.aria-label]="'Remove attribute ' + row.key"
+                          [disabled]="disabled() || state().pending"
+                          (click)="removeAttribute(row)">
+                    <mat-icon>delete_outline</mat-icon>
+                  </button>
+                }
+              </div>
+            </td>
+          </ng-container>
+          <tr *matHeaderRowDef="attributeColumns"
+              mat-header-row
+              class="bg-surface-container!">
+          </tr>
+          <tr *matRowDef="let row; columns: attributeColumns"
+              mat-row
+              class="hover:bg-primary-container">
+          </tr>
+          <tr *matNoDataRow>
+            <td colspan="4"
+                class="px-6 py-8 text-center text-sm text-muted">No attributes</td>
+          </tr>
+        </table>
+      </div>
+    </mat-card>
+  </ng-template>
+</section>

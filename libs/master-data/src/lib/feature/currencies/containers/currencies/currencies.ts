@@ -1,42 +1,31 @@
 import { DatePipe } from '@angular/common';
-import { ChangeDetectionStrategy, Component, computed, DestroyRef, inject, Injector } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, DestroyRef, inject } from '@angular/core';
 import { takeUntilDestroyed, toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
-import { MatDialog } from '@angular/material/dialog';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import type { PageEvent } from '@angular/material/paginator';
 import { MatPaginatorModule } from '@angular/material/paginator';
 import { MatSelectModule } from '@angular/material/select';
-import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatTableModule } from '@angular/material/table';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { PageLayout, QueryParamSearch, UIStateContainerComponent } from '@warehouse/shared';
 import type { Observable } from 'rxjs';
-import { distinctUntilChanged, finalize, switchMap } from 'rxjs';
+import { distinctUntilChanged, switchMap } from 'rxjs';
 
 import { MASTER_DATA_CONFIG } from '../../../../config';
-import {
-  CurrenciesAdapterService,
-  CurrenciesApiService,
-  CurrencyRatesAdapterService,
-} from '../../../../data-access/services';
+import { CurrenciesApiService } from '../../../../data-access/services';
 import { CurrenciesStore, CurrencyRatesStore } from '../../../../data-access/stores';
-import type { CurrenciesQuery, Currency, CurrencyRate, CurrencyRatesUpdate } from '../../../../types';
+import type { CurrenciesQuery, Currency, CurrencyRate } from '../../../../types';
+import { createDirectoryStatusActions } from '../../../../util';
 import { DeleteCurrencyDialog } from '../../components';
 
 @Component({
   selector: 'md-currencies',
-  providers: [
-    CurrenciesApiService,
-    CurrenciesAdapterService,
-    CurrenciesStore,
-    CurrencyRatesAdapterService,
-    CurrencyRatesStore,
-  ],
+  providers: [CurrenciesApiService, CurrenciesStore, CurrencyRatesStore],
   imports: [
     DatePipe,
     PageLayout,
@@ -60,9 +49,6 @@ export class Currencies {
   private readonly store = inject(CurrenciesStore);
   private readonly ratesStore = inject(CurrencyRatesStore);
   private readonly config = inject(MASTER_DATA_CONFIG);
-  private readonly dialog = inject(MatDialog);
-  private readonly injector = inject(Injector);
-  private readonly snackBar = inject(MatSnackBar);
   private readonly destroyRef = inject(DestroyRef);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
@@ -82,7 +68,26 @@ export class Currencies {
     };
   });
 
-  readonly state = this.store.entityState;
+  readonly statusActions = createDirectoryStatusActions<Currency>({
+    pending: () => !!this.store.entityState().pending || this.store.saving(),
+    canEdit: () => this.canEdit(),
+    canArchive: record => this.rates()?.base_currency?.id !== record.id,
+    archiveDialog: DeleteCurrencyDialog,
+    restore: record =>
+      this.store.update({ id: record.id, payload: { active: true, expected_version: record.version } }),
+    accept: () => {
+      if (this.requestParams().active !== undefined && this.records().length === 1 && this.offset() > 0) {
+        void this.page({ pageIndex: this.pageIndex() - 1, pageSize: this.pageSize(), length: this.total() });
+      } else {
+        this.loadQuery(this.requestParams()).subscribe();
+      }
+    },
+  });
+  readonly actionError = this.store.actionError;
+  readonly state = computed(() => ({
+    ...this.store.entityState(),
+    pending: this.store.entityState().pending || this.store.saving() || this.statusActions.busy(),
+  }));
   readonly records = this.store.entities;
   readonly ratesState = this.ratesStore.state;
   readonly ratesError = this.ratesStore.actionError;
@@ -131,17 +136,7 @@ export class Currencies {
     }
 
     this.ratesStore.dismissActionError();
-    this.ratesStore
-      .load()
-      .pipe(
-        takeUntilDestroyed(this.destroyRef),
-        finalize(() => {
-          if (!this.destroyRef.destroyed && this.ratesStore.error()) {
-            this.snackBar.open(this.ratesStore.error()!, 'Dismiss', { duration: 6000 });
-          }
-        }),
-      )
-      .subscribe();
+    this.ratesStore.load().pipe(takeUntilDestroyed(this.destroyRef)).subscribe();
   }
 
   dismissRatesError(): void {
@@ -154,10 +149,9 @@ export class Currencies {
       return;
     }
 
-    this.saveRates(
-      { type: 'rates', base_currency_id: overview.base_currency.id, expected_version: overview.settings_version },
-      'Exchange rates loaded.',
-    );
+    this.ratesStore
+      .save({ type: 'rates', base_currency_id: overview.base_currency.id, expected_version: overview.settings_version })
+      .subscribe();
   }
 
   rateFor(record: Currency): CurrencyRate | undefined {
@@ -185,54 +179,18 @@ export class Currencies {
   }
 
   deleteRecord(record: Currency): void {
-    if (!this.canEdit() || !record.active || this.state().pending || this.rates()?.base_currency?.id === record.id) {
-      return;
-    }
-
-    this.dialog
-      .open<DeleteCurrencyDialog, Currency, boolean>(DeleteCurrencyDialog, {
-        data: record,
-        width: '480px',
-        maxWidth: '95vw',
-        injector: this.injector,
-      })
-      .afterClosed()
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe(archived => {
-        if (archived) {
-          if (this.requestParams().active === true && this.records().length === 1 && this.offset() > 0) {
-            void this.page({ pageIndex: this.pageIndex() - 1, pageSize: this.pageSize(), length: this.total() });
-          } else {
-            this.load();
-          }
-        }
-      });
+    this.statusActions.archive(record);
   }
 
-  private saveRates(update: CurrencyRatesUpdate, message: string): void {
-    this.ratesStore
-      .save(update)
-      .pipe(
-        takeUntilDestroyed(this.destroyRef),
-        finalize(() => {
-          if (!this.destroyRef.destroyed && this.ratesError()) {
-            this.snackBar.open(this.ratesError()!, 'Dismiss', { duration: 6000 });
-          }
-        }),
-      )
-      .subscribe(() => {
-        this.snackBar.open(message, 'Dismiss', { duration: 4000 });
-      });
+  restoreRecord(record: Currency): void {
+    this.statusActions.restore(record);
+  }
+
+  dismissActionError(): void {
+    this.store.dismissActionError();
   }
 
   private loadQuery(query: CurrenciesQuery): Observable<unknown> {
-    return this.store.load(query).pipe(
-      takeUntilDestroyed(this.destroyRef),
-      finalize(() => {
-        if (!this.destroyRef.destroyed && this.store.error()) {
-          this.snackBar.open(this.store.error()!, 'Dismiss', { duration: 6000 });
-        }
-      }),
-    );
+    return this.store.load(query).pipe(takeUntilDestroyed(this.destroyRef));
   }
 }

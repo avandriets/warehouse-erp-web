@@ -46,6 +46,7 @@ export class AdminSettings {
   private readonly store = inject(SettingsStore);
 
   readonly state = this.store.state;
+  readonly currencies = computed(() => this.store.data()?.currencies ?? []);
   readonly validationError = signal('');
   readonly actionError = computed(() => this.store.actionError() || this.validationError());
   readonly costEnabled = signal(false);

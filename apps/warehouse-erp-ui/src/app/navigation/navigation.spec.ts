@@ -119,14 +119,35 @@ describe('navigation configuration contracts', () => {
         const target = item.target;
         const library = LIBRARY_MOUNTS.find(entry => entry.id === target.libraryId)!;
         await harness.navigateByUrl(`/${library.path}/${target.path}`);
+        for (const request of TestBed.inject(HttpTestingController).match(
+          req => req.method === 'GET' && req.url.endsWith('/catalog/categories') && req.params.get('limit') === '100',
+        )) {
+          request.flush({ items: [], total: 0 });
+        }
         const root = harness.fixture.nativeElement as HTMLElement;
         if (
           target.libraryId === 'master-data-library' &&
-          ['operation-reasons', 'price-types', 'currencies', 'vat-rates'].includes(target.path)
+          [
+            'operation-reasons',
+            'price-types',
+            'currencies',
+            'vat-rates',
+            'counterparties',
+            'categories',
+            'units',
+            'warehouses',
+            'products',
+          ].includes(target.path)
         ) {
           const reasons = target.path === 'operation-reasons';
           TestBed.inject(HttpTestingController)
-            .expectOne(req => req.url === `/api/reference-data/${reasons ? 'adjustment-reasons' : target.path}`)
+            .expectOne(
+              req =>
+                req.url ===
+                (target.path === 'warehouses'
+                  ? '/api/warehouses'
+                  : `/api/${['categories', 'units', 'products'].includes(target.path) ? 'catalog' : 'reference-data'}/${reasons ? 'adjustment-reasons' : target.path}`),
+            )
             .flush({ items: [], total: 0 });
           if (target.path === 'currencies') {
             TestBed.inject(HttpTestingController)
@@ -147,6 +168,7 @@ describe('navigation configuration contracts', () => {
             .expectOne('/api/settings/accounting')
             .flush({ version: 1, cost_accounting_enabled: false, accounting_timezone: 'UTC' });
           http.expectOne('/api/settings/document-numbering').flush([]);
+          http.expectOne(req => req.url.endsWith('/reference-data/currencies')).flush({ items: [], total: 0 });
           http.expectOne('/api/settings/definitions/inventory.negative_stock_allowed/values').flush([]);
           await harness.fixture.whenStable();
           expect(root.querySelector('ui-page-layout h1')?.textContent).toContain('Settings');

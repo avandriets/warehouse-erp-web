@@ -1,1 +1,2 @@
-export { ProductsPage } from './products/products';
+export * from './product-editor/product-editor';
+export * from './products/products';

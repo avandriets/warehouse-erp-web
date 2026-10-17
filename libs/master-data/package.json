@@ -9,7 +9,9 @@
     "@warehouse/shared": "^0.0.1",
     "@angular/common": "^21.2.0",
     "@ngrx/signals": "^21.1.1",
-    "rxjs": "^7.8.0"
+    "rxjs": "^7.8.0",
+    "@ngrx/operators": "21.1.1",
+    "@angular/cdk": "21.2.14"
   },
   "sideEffects": false
 }

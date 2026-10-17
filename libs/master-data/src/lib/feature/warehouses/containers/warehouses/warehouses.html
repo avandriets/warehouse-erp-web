@@ -1,63 +1,208 @@
 <ui-page-layout>
-  <span pageBreadcrumb>Master data</span>
-  <h1 pageTitle
-      class="text-2xl font-semibold">{{ missing() ? 'Record not found' : heading() }}</h1>
-  <div pageActions>
-    @if (mode() === 'list') {
+  <p pageBreadcrumb>Master data</p>
+  <div pageTitle>
+    <h1 class="m-0 text-2xl font-semibold text-on-surface">Warehouses</h1>
+    <p class="mt-1 text-sm leading-5 text-muted">Warehouse directory and inventory policy overview.</p>
+  </div>
+  <div pageActions
+       class="flex flex-wrap items-center gap-2">
+    @if (canCreate()) {
       <a mat-flat-button
-         routerLink="create">Create {{ singular }}</a>
-    } @else {
-      <button mat-button
-              type="button"
-              (click)="back()">Back to {{ label }}</button>
+         routerLink="create"
+         queryParamsHandling="preserve"
+         [attr.aria-disabled]="state().pending"
+         [disabled]="state().pending">Add warehouse</a>
     }
   </div>
-  <div pageBody
-       class="mt-6">
-    <p class="mb-6 text-sm text-muted">Demo data. Changes are stored in memory and reset when the page is reloaded.</p>
-    @if (missing()) {
-      <p role="status">This {{ singular }} does not exist or has been deleted.</p>
-    } @else if (mode() === 'list') {
-      @if (records().length) {
-        <md-directory-table detailHeading="Address"
-                            [rows]="rows()" />
-      } @else {
-        <p role="status">No {{ label.toLowerCase() }} yet. Create the first record.</p>
-      }
-    } @else if (mode() === 'delete') {
-      <p class="mb-5">Delete {{ record()?.name }} ({{ record()?.code }})?</p>
-      <div class="flex gap-3">
-        <button mat-flat-button
+  <section pageFilters
+           class="flex flex-col gap-3 sm:flex-row sm:items-center"
+           aria-label="Warehouse filters">
+    <div class="min-w-40">
+      <h2 class="m-0 text-sm font-semibold text-on-surface">Find warehouses</h2>
+    </div>
+    <ui-query-param-search class="block w-full sm:ml-auto sm:w-64 sm:shrink-0"
+                           label="Search warehouses"
+                           placeholder="Code or name"
+                           [maxLength]="255"
+                           [resetParams]="{ offset: null }" />
+    <div class="block w-full sm:w-44 sm:shrink-0">
+      <mat-form-field appearance="outline"
+                      subscriptSizing="dynamic"
+                      class="w-full">
+        <span matTextPrefix
+              class="mr-3 shrink-0 text-xs text-muted">Status</span>
+        <mat-select aria-label="Status"
+                    [formControl]="status">
+          <mat-option value="true">Active</mat-option>
+          <mat-option value="false">Archived</mat-option>
+          <mat-option value="all">All warehouses</mat-option>
+        </mat-select>
+      </mat-form-field>
+    </div>
+    <button mat-icon-button
+            type="button"
+            aria-label="Refresh warehouses"
+            title="Refresh"
+            [disabled]="state().pending"
+            (click)="load()">
+      <mat-icon>refresh</mat-icon>
+    </button>
+  </section>
+  <div pageBody>
+    <ui-state-container class="mt-4"
+                        [state]="state()"
+                        [actionError]="actionError()"
+                        [resolved]="data"
+                        [empty]="data"
+                        [rejected]="loadError"
+                        (actionErrorDismissed)="dismissActionError()"
+                        (retry)="load()" />
+    <ng-template #loadError
+                 let-message
+                 let-pending="pending">
+      <div class="mb-4 flex flex-col gap-3 rounded-xl border border-error bg-error-container px-4 py-3 text-sm text-on-error-container sm:flex-row sm:items-center"
+           role="alert">
+        <mat-icon class="shrink-0"
+                  aria-hidden="true">error_outline</mat-icon>
+        <p class="m-0 min-w-0 flex-1">{{ message }}
+        </p>
+        <button mat-stroked-button
                 type="button"
-                (click)="deleteRecord()">Confirm deletion</button>
-        <button mat-button
-                type="button"
-                (click)="back()">Cancel</button>
+                class="shrink-0 self-start sm:self-auto"
+                [disabled]="pending"
+                (click)="load()">Retry</button>
       </div>
-    } @else {
-      <form class="flex max-w-xl flex-col gap-3"
-            [formGroup]="form"
-            (ngSubmit)="save()">
-        <md-directory-fields [code]="form.controls.code"
-                             [name]="form.controls.name" />
-        <mat-form-field appearance="outline">
-          <mat-label>{{ 'Address' }}</mat-label>
-          <textarea matInput
-                    formControlName="address"
-                    name="address"
-                    maxlength="300"
-                    rows="3"></textarea>
-        </mat-form-field>
-        @if (error()) {
-          <p role="alert">{{ error() }}</p> }
-        <div class="flex gap-3">
-          <button mat-flat-button
-                  type="submit">Save</button>
-          <button mat-button
-                  type="button"
-                  (click)="back()">Cancel</button>
+    </ng-template>
+    <ng-template #data>
+      <mat-card appearance="outlined"
+                class="overflow-hidden">
+        <div class="overflow-x-auto">
+          <table mat-table
+                 class="w-full"
+                 [dataSource]="records()">
+            <ng-container matColumnDef="code">
+              <th *matHeaderCellDef
+                  mat-header-cell>Code</th>
+              <td *matCellDef="let record"
+                  mat-cell>{{ record.code }}
+              </td>
+            </ng-container>
+            <ng-container matColumnDef="name">
+              <th *matHeaderCellDef
+                  mat-header-cell>Name</th>
+              <td *matCellDef="let record"
+                  mat-cell>
+                @if (canEdit(record)) {
+                  <a class="font-medium text-primary no-underline hover:underline"
+                     queryParamsHandling="preserve"
+                     [routerLink]="[record.id, 'edit']">{{ record.name }}
+                  </a>
+                }
+                @else {
+                  <span class="font-medium">{{ record.name }}
+                  </span>
+                }
+                @if (record.description) {
+                  <div class="text-xs text-muted">{{ record.description }}
+                  </div>
+                }
+              </td>
+            </ng-container>
+            <ng-container matColumnDef="storage">
+              <th *matHeaderCellDef
+                  mat-header-cell>Addressed storage</th>
+              <td *matCellDef="let record"
+                  mat-cell>{{ record.address_storage_enabled ? 'Enabled' : 'Disabled' }}
+              </td>
+            </ng-container>
+            <ng-container matColumnDef="tracking">
+              <th *matHeaderCellDef
+                  mat-header-cell>Tracking</th>
+              <td *matCellDef="let record"
+                  mat-cell>{{ trackingLabel(record.tracking_mode) }}
+              </td>
+            </ng-container>
+            <ng-container matColumnDef="issue">
+              <th *matHeaderCellDef
+                  mat-header-cell>Issue strategy</th>
+              <td *matCellDef="let record"
+                  mat-cell>{{ record.tracking_mode === 'BATCH' ? issueLabel(record.issue_strategy) : '—' }}
+              </td>
+            </ng-container>
+            <ng-container matColumnDef="status">
+              <th *matHeaderCellDef
+                  mat-header-cell>Status</th>
+              <td *matCellDef="let record"
+                  mat-cell>
+                <span class="inline-flex rounded-full px-2.5 py-1 text-xs font-semibold"
+                      [class.bg-primary-container]="record.active"
+                      [class.text-on-primary-container]="record.active"
+                      [class.bg-secondary-container]="!record.active"
+                      [class.text-on-secondary-container]="!record.active">{{ record.active ? 'Active' : 'Archived' }}
+                </span>
+              </td>
+            </ng-container>
+            <ng-container matColumnDef="actions">
+              <th *matHeaderCellDef
+                  mat-header-cell>Actions</th>
+              <td *matCellDef="let record"
+                  mat-cell>
+                <div class="flex items-center gap-1">
+                  @if (canEdit(record)) {
+                    <a mat-icon-button
+                       matTooltip="Edit"
+                       queryParamsHandling="preserve"
+                       [routerLink]="[record.id, 'edit']"
+                       [disabled]="state().pending"
+                       [attr.aria-label]="'Edit ' + record.name">
+                      <mat-icon aria-hidden="true">edit</mat-icon>
+                    </a>
+                    @if (record.active) {
+                      <button mat-icon-button
+                              matTooltip="Archive"
+                              type="button"
+                              [disabled]="state().pending"
+                              [attr.aria-label]="'Archive ' + record.name"
+                              (click)="deleteRecord(record)">
+                        <mat-icon aria-hidden="true">archive</mat-icon>
+                      </button>
+                    } @else {
+                      <button mat-icon-button
+                              type="button"
+                              matTooltip="Restore"
+                              [attr.aria-label]="'Restore ' + record.name"
+                              [disabled]="state().pending || record.active"
+                              (click)="restoreRecord(record)"><mat-icon>restore</mat-icon></button>
+                    }
+                  }
+                </div>
+              </td>
+            </ng-container>
+            <tr *matHeaderRowDef="displayedColumns"
+                class="bg-surface-container!"
+                mat-header-row>
+            </tr>
+            <tr *matRowDef="let row; columns: displayedColumns"
+                class="hover:bg-primary-container"
+                mat-row>
+            </tr>
+            <tr *matNoDataRow
+                class="mat-row">
+              <td class="mat-cell px-6 py-14 text-center text-sm text-muted"
+                  [attr.colspan]="displayedColumns.length">No warehouses found</td>
+            </tr>
+          </table>
         </div>
-      </form>
-    }
+        <mat-paginator class="border-t border-outline bg-surface-container!"
+                       aria-label="Warehouses pagination"
+                       showFirstLastButtons
+                       [length]="total()"
+                       [pageIndex]="pageIndex()"
+                       [pageSize]="pageSize()"
+                       [pageSizeOptions]="pageSizeOptions"
+                       [disabled]="state().pending"
+                       (page)="page($event)" />
+      </mat-card>
+    </ng-template>
   </div>
 </ui-page-layout>

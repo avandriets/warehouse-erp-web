@@ -1,0 +1,57 @@
+<h2 mat-dialog-title>{{ data.record ? 'Edit measurement' : 'Add measurement' }}
+</h2>
+<mat-dialog-content>
+  <ui-state-container [state]="state()"
+                      [resolved]="editor"
+                      [actionError]="actionError()"
+                      (actionErrorDismissed)="dismissError()" />
+  <ng-template #editor>
+    <form id="measurement-editor-form"
+          class="flex flex-col gap-3 pt-2"
+          [formGroup]="form"
+          (ngSubmit)="save()">
+      <md-unit-select label="Measurement unit"
+                      formControlName="unit_id"
+                      [items]="data.units"
+                      [hint]="data.record ? 'The measurement unit cannot be changed.' : 'Alternative unit used to express this product quantity.'"
+                      [excludedId]="data.product.storage_unit_id"
+                      [physicalOnly]="true"
+                      [dimension]="null"
+                      [rootOnly]="false"
+                      [allowArchived]="!!data.record" />
+      <mat-form-field appearance="outline">
+        <mat-label>Storage quantity</mat-label>
+        <input matInput
+               formControlName="storage_quantity"
+               inputmode="decimal" />
+        <mat-error>Use a positive decimal with up to 9 decimal places.</mat-error>
+      </mat-form-field>
+      <mat-form-field appearance="outline">
+        <mat-label>Measured quantity</mat-label>
+        <input matInput
+               formControlName="measured_quantity"
+               inputmode="decimal" />
+        <mat-error>Use a positive decimal with up to 9 decimal places.</mat-error>
+      </mat-form-field>
+      <mat-form-field appearance="outline">
+        <mat-label>Use</mat-label>
+        <mat-select formControlName="use">
+          <mat-option value="REFERENCE_ONLY">Reference only</mat-option>
+          <mat-option value="DOCUMENT">Documents</mat-option>
+        </mat-select>
+      </mat-form-field>
+      <mat-checkbox formControlName="is_report_unit">Use as report unit</mat-checkbox>
+    </form>
+  </ng-template>
+</mat-dialog-content>
+<mat-dialog-actions align="end">
+  <button mat-button
+          type="button"
+          [mat-dialog-close]="false"
+          [disabled]="state().pending">Cancel</button>
+  <button mat-flat-button
+          type="submit"
+          form="measurement-editor-form"
+          [disabled]="state().pending">{{ data.record ? 'Save' : 'Add' }}
+  </button>
+</mat-dialog-actions>

@@ -227,7 +227,7 @@ describe('Currencies workflow', () => {
     http.expectNone(req => req.method === 'PATCH');
     page.deleteRecord(usd);
     closed.next(true);
-    flushList();
+    http.expectOne(req => req.url === base).flush({ items: [eur], total: 1 });
   });
 });
 

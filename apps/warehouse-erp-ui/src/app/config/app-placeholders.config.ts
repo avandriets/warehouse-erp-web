@@ -3,25 +3,11 @@ import type { PlaceholderPage } from '../types';
 // Temporary shell pages for features that have not been implemented yet.
 export const PLACEHOLDER_PAGES: readonly PlaceholderPage[] = [
   {
-    path: 'master-data/categories',
-    title: 'Categories',
-    primaryMenuRoute: '/master-data',
-  },
-  {
-    path: 'master-data/units',
-    title: 'Units of measurement',
-    primaryMenuRoute: '/master-data',
-  },
-  {
     path: 'master-data/storage-analytics',
     title: 'Storage analytics',
     primaryMenuRoute: '/master-data',
   },
-  {
-    path: 'master-data/counterparties',
-    title: 'Counterparties',
-    primaryMenuRoute: '/master-data',
-  },
+
   {
     path: 'documents/initial-receipts',
     title: 'Opening stock',

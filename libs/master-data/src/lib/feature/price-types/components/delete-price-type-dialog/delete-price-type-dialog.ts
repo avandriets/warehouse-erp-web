@@ -1,26 +1,27 @@
-import { ChangeDetectionStrategy, Component, computed, DestroyRef, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
-import { MatSnackBar } from '@angular/material/snack-bar';
 import { UIStateContainerComponent } from '@warehouse/shared';
 import { finalize } from 'rxjs';
 
-import { PriceTypesAdapterService, PriceTypesApiService } from '../../../../data-access/services';
-import { PriceTypesStore } from '../../../../data-access/stores';
+import { PriceTypesApiService } from '../../../../data-access/services';
+import { PRICE_TYPE_UPDATE_MESSAGE, PriceTypesStore } from '../../../../data-access/stores';
 import type { PriceType } from '../../../../types';
 
 @Component({
   selector: 'md-delete-price-type-dialog',
-  providers: [PriceTypesApiService, PriceTypesAdapterService, PriceTypesStore],
+  providers: [
+    { provide: PRICE_TYPE_UPDATE_MESSAGE, useValue: 'Price type archived.' },
+    PriceTypesApiService,
+    PriceTypesStore,
+  ],
   imports: [MatButtonModule, MatDialogModule, UIStateContainerComponent],
   templateUrl: './delete-price-type-dialog.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class DeletePriceTypeDialog {
   private readonly store = inject(PriceTypesStore);
-  private readonly dialogRef = inject<MatDialogRef<DeletePriceTypeDialog, boolean>>(MatDialogRef);
-  private readonly snackBar = inject(MatSnackBar);
-  private readonly destroyRef = inject(DestroyRef);
+  private readonly dialogRef = inject<MatDialogRef<DeletePriceTypeDialog, PriceType>>(MatDialogRef);
 
   readonly record = inject<PriceType>(MAT_DIALOG_DATA);
   readonly actionError = this.store.actionError;
@@ -41,14 +42,10 @@ export class DeletePriceTypeDialog {
       .pipe(
         finalize(() => {
           this.dialogRef.disableClose = false;
-          if (!this.destroyRef.destroyed && this.store.actionError()) {
-            this.snackBar.open(this.store.actionError()!, 'Dismiss', { duration: 6000 });
-          }
         }),
       )
-      .subscribe(() => {
-        this.snackBar.open('Price type archived.', 'Dismiss', { duration: 4000 });
-        this.dialogRef.close(true);
+      .subscribe(saved => {
+        this.dialogRef.close(saved);
       });
   }
 }

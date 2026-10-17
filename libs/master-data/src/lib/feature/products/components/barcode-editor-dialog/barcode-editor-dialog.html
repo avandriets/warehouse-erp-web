@@ -1,0 +1,49 @@
+<h2 mat-dialog-title>{{ data.record ? 'Edit barcode' : 'Add barcode' }}
+</h2>
+<mat-dialog-content>
+  <ui-state-container [state]="state()"
+                      [resolved]="editor"
+                      [actionError]="actionError()"
+                      (actionErrorDismissed)="dismissError()" />
+  <ng-template #editor>
+    <form id="barcode-editor-form"
+          class="flex flex-col gap-3 pt-2"
+          [formGroup]="form"
+          (ngSubmit)="save()">
+      <mat-form-field appearance="outline">
+        <mat-label>Barcode</mat-label>
+        <input matInput
+               formControlName="value"
+               maxlength="128"
+               cdkFocusInitial />
+        <mat-error>Enter a barcode (up to 128 characters).</mat-error>
+      </mat-form-field>
+      <mat-form-field appearance="outline">
+        <mat-label>Package</mat-label>
+        <mat-select formControlName="package_id">
+          <mat-option [value]="null">Storage
+            unit</mat-option>
+          @for (package of packages; track package.id) {
+            <mat-option [value]="package.id"
+                        [disabled]="!package.active">{{ package.code }} — {{ package.name }}
+            </mat-option>
+          }@if (currentPackageMissing) {
+            <mat-option disabled
+                        [value]="data.record!.package_id">Current package</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+    </form>
+  </ng-template>
+</mat-dialog-content>
+<mat-dialog-actions align="end">
+  <button mat-button
+          type="button"
+          [mat-dialog-close]="false"
+          [disabled]="state().pending">Cancel</button>
+  <button mat-flat-button
+          type="submit"
+          form="barcode-editor-form"
+          [disabled]="state().pending">{{ data.record ? 'Save' : 'Add' }}
+  </button>
+</mat-dialog-actions>

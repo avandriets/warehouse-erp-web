@@ -5,14 +5,17 @@ import { defer, EMPTY, forkJoin, map, throwError } from 'rxjs';
 
 import type { SettingsSaveRequest, SettingsSnapshot } from '../../types';
 import { changedFields } from '../../util';
+import { CurrencyLookupService } from './currency-lookup.service';
 import { SettingsApiService } from './settings-api.service';
 
 @Injectable({ providedIn: 'root' })
 export class SettingsAdapterService implements RequestDataAdapter<SettingsSnapshot, void, SettingsSaveRequest> {
+  private readonly currencies = inject(CurrencyLookupService);
   private readonly api = inject(SettingsApiService);
 
   load(): Observable<SettingsSnapshot> {
     return forkJoin({
+      currencies: this.currencies.loadAll(),
       enterprise: this.api.getEnterprise(),
       accounting: this.api.getAccounting(),
       numbering: this.api.getNumbering(),

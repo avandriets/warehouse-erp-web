@@ -1,0 +1,129 @@
+<ui-page-layout>
+  <nav pageBreadcrumb
+       class="flex items-center gap-2"
+       aria-label="Breadcrumb">
+    <span>Master data</span>
+    <span aria-hidden="true">/</span>
+    <a class="font-medium text-primary hover:underline"
+       queryParamsHandling="preserve"
+       [routerLink]="editing ? '../..' : '..'">Warehouses</a>
+    <span aria-hidden="true">/</span>
+    <span aria-current="page">{{ editing ? 'Edit' : 'Create' }}
+    </span>
+  </nav>
+  <div pageTitle>
+    <h1 class="m-0 text-2xl font-semibold text-on-surface">{{ editing ? 'Edit warehouse' : 'Create warehouse' }}
+    </h1>
+  </div>
+  <div pageActions
+       class="flex flex-wrap items-center gap-3">
+    <button mat-flat-button
+            type="submit"
+            form="warehouse-editor-form"
+            [disabled]="state().pending || !canSave() || !state().resolved">Save
+    </button>
+    <button mat-button
+            type="button"
+            [disabled]="state().pending"
+            (click)="back()">Cancel
+    </button>
+    @if (editing && canSave()) {
+      @if (record(); as record) {
+        <button mat-stroked-button
+                type="button"
+                [disabled]="state().pending"
+                (click)="record.active ? statusActions.archive(record) : statusActions.restore(record)">{{ record.active ? 'Archive' : 'Restore' }}</button>
+      }
+    }
+  </div>
+  <div pageBody
+       class="mt-6">
+    <ui-state-container [state]="state()"
+                        [resolved]="editor"
+                        [actionError]="actionError()"
+                        [actionErrorActions]="editing ? reloadAction : undefined"
+                        (actionErrorDismissed)="dismissActionError()"
+                        (retry)="load()" />
+    <ng-template #reloadAction>
+      <p class="mt-2 mb-0">Reloading discards unsaved changes.</p>
+      <button mat-stroked-button
+              type="button"
+              [disabled]="state().pending"
+              (click)="load()">Reload record</button>
+    </ng-template>
+    <ng-template #editor>
+      @if (editing && !canSave()) {
+        <p class="mb-4 text-sm text-muted">You do not have permission to edit this warehouse.</p>
+      }
+      @if (!canConfigure()) {
+        @if (record(); as warehouse) {
+          <dl class="mb-6 grid max-w-xl grid-cols-2 gap-x-4 gap-y-2 text-sm">
+            <dt class="text-muted">Addressed storage</dt>
+            <dd class="m-0">{{ warehouse.address_storage_enabled ? 'Enabled' : 'Disabled' }}
+            </dd>
+            <dt class="text-muted">Tracking</dt>
+            <dd class="m-0">{{ trackingLabels[warehouse.tracking_mode] }}
+            </dd>
+            <dt class="text-muted">Issue strategy</dt>
+            <dd class="m-0">{{ warehouse.tracking_mode === 'BATCH' ? issueLabels[warehouse.issue_strategy] : '—' }}
+            </dd>
+          </dl>
+        }
+      }
+      <form id="warehouse-editor-form"
+            class="flex max-w-xl flex-col gap-3"
+            [formGroup]="form"
+            (ngSubmit)="save()">
+        <mat-form-field appearance="outline">
+          <mat-label>Code</mat-label>
+          <input matInput
+                 formControlName="code"
+                 name="code"
+                 maxlength="64" />
+          @if (editing) {
+            <mat-hint>Codes cannot be changed.</mat-hint>
+          }
+          @if (form.controls.code.invalid) {
+            <mat-error>Enter a code (up to 64 characters).</mat-error>
+          }
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Name</mat-label>
+          <input matInput
+                 formControlName="name"
+                 name="name"
+                 maxlength="255" />
+          @if (form.controls.name.invalid) {
+            <mat-error>Enter a name (up to 255 characters).</mat-error>
+          }
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Description</mat-label>
+          <textarea matInput
+                    formControlName="description"
+                    rows="3">
+</textarea>
+        </mat-form-field>
+        @if (canConfigure()) {
+          <fieldset class="m-0 flex flex-col gap-3 rounded-xl border border-outline p-4">
+            <legend class="px-2 text-sm font-semibold">Inventory settings</legend>
+            <mat-checkbox formControlName="address_storage_enabled">Addressed storage</mat-checkbox>
+            <p class="m-0 text-sm text-muted">Track stock by storage locations within this warehouse.</p>
+            <mat-checkbox formControlName="batch_tracking">Batch tracking</mat-checkbox>
+            <p class="m-0 text-sm text-muted">Keep receipt batches identifiable through stock movements.</p>
+            <mat-form-field appearance="outline">
+              <mat-label>Issue strategy</mat-label>
+              <mat-select formControlName="issue_strategy">
+                <mat-option value="MANUAL">Manual</mat-option>
+                <mat-option value="FIFO">FIFO — first received</mat-option>
+                <mat-option value="FEFO">FEFO — earliest expiry</mat-option>
+              </mat-select>
+              <mat-hint>Applies when batch tracking is enabled.</mat-hint>
+            </mat-form-field>
+          </fieldset>
+        }
+
+      </form>
+    </ng-template>
+  </div>
+</ui-page-layout>

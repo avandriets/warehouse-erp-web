@@ -1,4 +1,4 @@
-<h2 mat-dialog-title>Delete VAT rate?</h2>
+<h2 mat-dialog-title>Archive VAT rate?</h2>
 <mat-dialog-content>
   <ui-state-container [state]="state()"
                       [resolved]="confirmation"
@@ -8,10 +8,13 @@
     <p>Archive {{ record.name }} ({{ record.code }})? Existing references and history will be preserved.</p>
   </ng-template>
 </mat-dialog-content>
-<mat-dialog-actions align="end"><button mat-button
+<mat-dialog-actions align="end">
+  <button mat-button
           type="button"
           [mat-dialog-close]="false"
-          [disabled]="state().pending">Cancel</button><button mat-flat-button
+          [disabled]="state().pending">Cancel</button>
+  <button mat-flat-button
           type="button"
           [disabled]="state().pending"
-          (click)="confirm()">Archive</button></mat-dialog-actions>
+          (click)="confirm()">Archive</button>
+</mat-dialog-actions>

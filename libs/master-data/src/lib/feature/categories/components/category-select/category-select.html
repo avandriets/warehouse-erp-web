@@ -1,0 +1,39 @@
+<mat-form-field appearance="outline"
+                class="w-full"
+                [subscriptSizing]="compact() ? 'dynamic' : 'fixed'">
+  <mat-label>{{ label() }}
+  </mat-label>
+  <input matInput
+         placeholder="Code or name"
+         maxlength="255"
+         [formControl]="value"
+         [errorStateMatcher]="field.matcher"
+         [required]="field.required()"
+         [matAutocomplete]="choices"
+         (focus)="search()"
+         (blur)="touched()" />
+  @if (value.value && !value.disabled) {
+    <button mat-icon-button
+            matSuffix
+            type="button"
+            [attr.aria-label]="'Clear ' + label()"
+            (click)="clear()">
+      <mat-icon>close</mat-icon>
+    </button>
+  }
+  <mat-autocomplete #choices="matAutocomplete"
+                    [displayWith]="displayValue">
+    @for (option of options(); track option.id) {
+      <mat-option [value]="option">{{ option.code }} — {{ option.name }}
+      </mat-option>
+    }
+    @if (!options().length) {
+      <mat-option disabled>No matches found</mat-option>
+    }
+  </mat-autocomplete>
+  @if (!compact()) {
+    <mat-hint>{{ hint() }}
+    </mat-hint>
+  }
+  <mat-error>Choose a category from the list.</mat-error>
+</mat-form-field>

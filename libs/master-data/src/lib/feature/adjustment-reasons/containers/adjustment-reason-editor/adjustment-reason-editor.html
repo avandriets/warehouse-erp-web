@@ -8,20 +8,52 @@
        queryParamsHandling="preserve"
        [routerLink]="editing ? '../..' : '..'">Adjustment reasons</a>
     <span aria-hidden="true">/</span>
-    <span aria-current="page">{{ editing ? 'Edit' : 'Create' }}</span>
+    <span aria-current="page">{{ editing ? 'Edit' : 'Create' }}
+    </span>
   </nav>
   <div pageTitle>
-    <h1 class="m-0 text-2xl font-semibold text-on-surface">{{ editing ? 'Edit adjustment reason' : 'Create adjustment reason' }}</h1>
+    <h1 class="m-0 text-2xl font-semibold text-on-surface">{{ editing ? 'Edit adjustment reason' : 'Create adjustment reason' }}
+    </h1>
+  </div>
+  <div pageActions
+       class="flex flex-wrap items-center gap-3">
+    <button mat-flat-button
+            type="submit"
+            form="adjustment-reason-editor-form"
+            [disabled]="state().pending || !state().resolved">Save
+    </button>
+    <button mat-button
+            type="button"
+            [disabled]="state().pending"
+            (click)="back()">Cancel
+    </button>
+    @if (editing && canManage()) {
+      @if (record(); as record) {
+        <button mat-stroked-button
+                type="button"
+                [disabled]="state().pending"
+                (click)="record.active ? statusActions.archive(record) : statusActions.restore(record)">{{ record.active ? 'Archive' : 'Restore' }}</button>
+      }
+    }
   </div>
   <div pageBody
        class="mt-6">
     <ui-state-container [state]="state()"
                         [resolved]="editor"
                         [actionError]="actionError()"
+                        [actionErrorActions]="editing ? reloadAction : undefined"
                         (actionErrorDismissed)="dismissActionError()"
                         (retry)="load()" />
+    <ng-template #reloadAction>
+      <p class="mt-2 mb-0">Reloading discards unsaved changes.</p>
+      <button mat-stroked-button
+              type="button"
+              [disabled]="state().pending"
+              (click)="load()">Reload record</button>
+    </ng-template>
     <ng-template #editor>
-      <form class="flex max-w-xl flex-col gap-3"
+      <form id="adjustment-reason-editor-form"
+            class="flex max-w-xl flex-col gap-3"
             [formGroup]="form"
             (ngSubmit)="save()">
         <mat-form-field appearance="outline">
@@ -51,31 +83,12 @@
           <mat-label>Operation</mat-label>
           <mat-select formControlName="operation">
             @for (operation of operations; track operation) {
-              <mat-option [value]="operation">{{ labels[operation] }}</mat-option>
+              <mat-option [value]="operation">{{ labels[operation] }}
+              </mat-option>
             }
           </mat-select>
         </mat-form-field>
-        @if (editing) {
-          <mat-checkbox formControlName="active">Active</mat-checkbox>
-        }
-        <div class="flex gap-3">
-          <button mat-flat-button
-                  type="submit"
-                  [disabled]="state().pending">Save
-          </button>
-          <button mat-button
-                  type="button"
-                  [disabled]="state().pending"
-                  (click)="back()">Cancel
-          </button>
-          @if (editing && actionError()) {
-            <button mat-stroked-button
-                    type="button"
-                    [disabled]="state().pending"
-                    (click)="load()">Reload record
-            </button>
-          }
-        </div>
+
       </form>
     </ng-template>
   </div>

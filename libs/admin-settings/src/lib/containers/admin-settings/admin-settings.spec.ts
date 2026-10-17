@@ -68,6 +68,7 @@ describe('enterprise settings', () => {
     http.expectOne('/api/settings/enterprise').flush(enterprise);
     http.expectOne('/api/settings/accounting').flush({ ...accounting, cost_accounting_enabled: cost });
     http.expectOne('/api/settings/document-numbering').flush([rule]);
+    http.expectOne(req => req.url === '/api/reference-data/currencies').flush({ items: [], total: 0 });
     http.expectOne(negativePath).flush(negatives);
 
     return page;
@@ -90,6 +91,7 @@ describe('enterprise settings', () => {
     http.expectOne('/api/settings/enterprise').flush({ ...enterprise, version: 4 });
     http.expectOne('/api/settings/accounting').flush(accounting);
     http.expectOne('/api/settings/document-numbering').flush([rule]);
+    http.expectOne(req => req.url === '/api/reference-data/currencies').flush({ items: [], total: 0 });
     http.expectOne(negativePath).flush([]);
     page.enterpriseForm.patchValue({ display_name: 'Retry' });
     page.saveEnterprise();
@@ -237,6 +239,7 @@ describe('enterprise settings', () => {
     http.expectOne('/api/settings/enterprise').flush(enterprise);
     http.expectOne('/api/settings/accounting').flush(accounting);
     http.expectOne('/api/settings/document-numbering').flush([rule]);
+    http.expectOne(req => req.url === '/api/reference-data/currencies').flush({ items: [], total: 0 });
     http.expectOne(negativePath).flush([]);
     await fixture.whenStable();
     expect(container.getAttribute('aria-busy')).toBe('false');
@@ -257,6 +260,7 @@ describe('enterprise settings', () => {
     http.expectOne('/api/settings/enterprise').flush(enterprise);
     http.expectOne('/api/settings/accounting').flush(accounting);
     http.expectOne('/api/settings/document-numbering').flush([]);
+    http.expectOne(req => req.url === '/api/reference-data/currencies').flush({ items: [], total: 0 });
     http.expectOne(negativePath).flush([]);
     expect(page.state().resolved).toBe(true);
   });

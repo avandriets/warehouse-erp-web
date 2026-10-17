@@ -9,6 +9,7 @@ import type { SettingsSnapshot } from '../../types';
 import { SettingsStore } from './settings.store';
 
 const snapshot: SettingsSnapshot = {
+  currencies: [],
   enterprise: {
     id: 'enterprise',
     version: 1,
@@ -66,6 +67,7 @@ describe('SettingsStore and its aggregate adapter', () => {
     http.expectOne('/api/settings/enterprise').flush(snapshot.enterprise);
     http.expectOne('/api/settings/accounting').flush(snapshot.accounting);
     http.expectOne('/api/settings/document-numbering').flush(snapshot.numbering);
+    http.expectOne(req => req.url === '/api/reference-data/currencies').flush({ items: [], total: 0 });
     http.expectOne('/api/settings/definitions/inventory.negative_stock_allowed/values').flush(snapshot.negative);
   }
 

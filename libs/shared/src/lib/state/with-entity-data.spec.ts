@@ -1,7 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import { signalStore } from '@ngrx/signals';
 import type { Observable } from 'rxjs';
-import { of, Subject } from 'rxjs';
+import { finalize, of, Subject, throwError } from 'rxjs';
 import { vi } from 'vitest';
 
 import type { EntityDataAdapter, EntityDataPage } from '../types';
@@ -232,5 +232,115 @@ describe('withEntityData', () => {
     expect(store.saving()).toBe(true);
     subscription.unsubscribe();
     expect(store.saving()).toBe(false);
+  });
+});
+
+interface PagedQuery {
+  q?: string;
+  offset: number;
+  limit: number;
+}
+
+const pagedLoad = vi.fn<(query: PagedQuery) => Observable<EntityDataPage<TestEntity>>>();
+const PagedStore = signalStore(
+  withEntityData<TestEntity, TestPayload, PagedQuery>({
+    adapter: () => ({ load: pagedLoad }),
+    load: { pageParams: (query, offset, limit) => ({ ...query, offset, limit }) },
+    processors: { afterLoad: entities => entities.map(entity => ({ ...entity, name: entity.name.trim() })) },
+    errors: { load: 'Load failed', create: 'Create failed', update: 'Update failed', remove: 'Remove failed' },
+  }),
+);
+
+describe('withEntityData.loadAll', () => {
+  beforeEach(() => {
+    pagedLoad.mockReset();
+    TestBed.configureTestingModule({ providers: [PagedStore] });
+  });
+
+  it('loads every page through the existing adapter and commits a single complete result', () => {
+    const first = Array.from({ length: 100 }, (_, index) => ({ id: index, name: ' Item ' }));
+    const last = new Subject<EntityDataPage<TestEntity>>();
+    pagedLoad.mockReturnValueOnce(of({ entities: first, pagination: { total: 101 } })).mockReturnValueOnce(last);
+    const store = TestBed.inject(PagedStore);
+    const result = vi.fn();
+    const request = store.loadAll({ q: 'item', offset: 999, limit: 1 });
+    expect(pagedLoad).not.toHaveBeenCalled();
+    request.subscribe(result);
+    expect(pagedLoad.mock.calls).toEqual([
+      [{ q: 'item', offset: 0, limit: 100 }],
+      [{ q: 'item', offset: 100, limit: 100 }],
+    ]);
+    expect(store.loading()).toBe(true);
+    expect(store.loaded()).toBe(false);
+    expect(store.entities()).toEqual([]);
+    expect(result).not.toHaveBeenCalled();
+    last.next({ entities: [{ id: 100, name: ' Last ' }], pagination: { total: 101 } });
+    last.complete();
+    expect(store.entities()).toHaveLength(101);
+    expect(store.entities()[100].name).toBe('Last');
+    expect(store.pagination()).toEqual({ total: 101 });
+    expect(store.entityState()).toMatchObject({ resolved: true, pending: false, rejected: false });
+    expect(result).toHaveBeenCalledTimes(1);
+    expect(Object.values(store.loadOperations())).toEqual([
+      expect.objectContaining({ type: 'load', status: 'success' }),
+    ]);
+  });
+
+  it('preserves previous entities if a later page fails, then retries from the beginning', () => {
+    const first = Array.from({ length: 100 }, (_, index) => ({ id: index + 10, name: 'Item' }));
+    pagedLoad
+      .mockReturnValueOnce(of({ entities: first, pagination: { total: 101 } }))
+      .mockReturnValueOnce(throwError(() => new Error('Network failure')))
+      .mockReturnValueOnce(of({ entities: [secondEntity], pagination: { total: 1 } }));
+    const store = TestBed.inject(PagedStore);
+    store.replaceAll([firstEntity]);
+    store.loadAll({ offset: 0, limit: 100 }).subscribe();
+    expect(store.entities()).toEqual([firstEntity]);
+    expect(store.entityState()).toMatchObject({ rejected: true, pending: false, err: 'Load failed' });
+    store.loadAll({ offset: 0, limit: 100 }).subscribe();
+    expect(pagedLoad.mock.calls[2][0].offset).toBe(0);
+    expect(store.entities()).toEqual([secondEntity]);
+    expect(store.entityState().rejected).toBe(false);
+  });
+
+  it('cancels a pending page on reset or replacement and never commits stale entities', () => {
+    const first = Array.from({ length: 100 }, (_, index) => ({ id: index, name: 'Item' }));
+    const stale = new Subject<EntityDataPage<TestEntity>>();
+    const cancelled = vi.fn();
+    pagedLoad
+      .mockReturnValueOnce(of({ entities: first, pagination: { total: 101 } }))
+      .mockReturnValueOnce(stale.pipe(finalize(cancelled)))
+      .mockReturnValueOnce(of({ entities: [secondEntity], pagination: { total: 1 } }));
+    const store = TestBed.inject(PagedStore);
+    store.loadAll({ offset: 0, limit: 100 }).subscribe();
+    store.reset();
+    expect(cancelled).toHaveBeenCalledTimes(1);
+    expect(store.loading()).toBe(false);
+    stale.next({ entities: [firstEntity], pagination: { total: 101 } });
+    store.load({ offset: 0, limit: 25 }).subscribe();
+    expect(store.entities()).toEqual([secondEntity]);
+  });
+
+  it('cancels an unfinished loadAll when a newer load replaces it', () => {
+    const stale = new Subject<EntityDataPage<TestEntity>>();
+    const cancelled = vi.fn();
+    pagedLoad
+      .mockReturnValueOnce(stale.pipe(finalize(cancelled)))
+      .mockReturnValueOnce(of({ entities: [secondEntity], pagination: { total: 1 } }));
+    const store = TestBed.inject(PagedStore);
+    store.loadAll({ offset: 0, limit: 100 }).subscribe();
+    store.loadAll({ offset: 0, limit: 100 }).subscribe();
+    expect(cancelled).toHaveBeenCalledTimes(1);
+    stale.next({ entities: [firstEntity], pagination: { total: 1 } });
+    expect(store.entities()).toEqual([secondEntity]);
+    expect(store.error()).toBeNull();
+  });
+
+  it('fails cleanly when the adapter does not return totals', () => {
+    pagedLoad.mockReturnValueOnce(of({ entities: [firstEntity] }));
+    const store = TestBed.inject(PagedStore);
+    store.loadAll({ offset: 0, limit: 100 }).subscribe();
+    expect(store.entities()).toEqual([]);
+    expect(store.entityState()).toMatchObject({ resolved: false, rejected: true, pending: false });
   });
 });

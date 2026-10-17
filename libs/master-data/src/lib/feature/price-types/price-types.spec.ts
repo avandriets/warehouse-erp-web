@@ -176,19 +176,18 @@ describe('Price types routes and backend workflow', () => {
     expect(snackBar.open).toHaveBeenCalled();
   });
 
-  it('reactivates an archived type and changes its price entry mode using the record version', async () => {
+  it('edits an archived type without changing its status', async () => {
     const page = await harness.navigateByUrl('/custom/price-types/type-1/edit', PriceTypeEditor);
     http.expectOne(`${base}/type-1`).flush({ ...priceType, active: false });
-    page.form.patchValue({ active: true, price_entry_mode: 'TAX_EXCLUSIVE' });
+    page.form.patchValue({ price_entry_mode: 'TAX_EXCLUSIVE' });
     page.save();
     const request = http.expectOne(`${base}/type-1`);
     expect(request.request.body).toEqual({
       name: 'Retail',
-      active: true,
       price_entry_mode: 'TAX_EXCLUSIVE',
       expected_version: 3,
     });
-    request.flush({ ...priceType, active: true, price_entry_mode: 'TAX_EXCLUSIVE', version: 4 });
+    request.flush({ ...priceType, active: false, price_entry_mode: 'TAX_EXCLUSIVE', version: 4 });
     await harness.fixture.whenStable();
     http.expectOne(req => req.url === base).flush({ items: [priceType], total: 1 });
   });
@@ -204,7 +203,6 @@ describe('Price types routes and backend workflow', () => {
     expect(update.request.body).toEqual({
       name: 'Changed type',
       price_entry_mode: 'TAX_INCLUSIVE',
-      active: true,
       expected_version: 3,
     });
     expect(update.request.body.code).toBeUndefined();
@@ -324,7 +322,7 @@ describe('Price type archive dialog', () => {
     expect(snackBar.open).toHaveBeenCalled();
     page.confirm();
     http.expectOne(`${base}/type-1`).flush({ ...priceType, active: false, version: 4 });
-    expect(dialogRef.close).toHaveBeenCalledWith(true);
+    expect(dialogRef.close).toHaveBeenCalledWith({ ...priceType, active: false, version: 4 });
     expect(snackBar.open).toHaveBeenCalledWith('Price type archived.', 'Dismiss', { duration: 4000 });
   });
 });
