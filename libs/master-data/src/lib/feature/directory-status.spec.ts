@@ -22,20 +22,18 @@ const cases = [
     name: 'adjustment reasons',
     routes: ADJUSTMENT_REASONS_ROUTES,
     endpoint: '/api/reference-data/adjustment-reasons',
-    versioned: true,
   },
-  { name: 'price types', routes: PRICE_TYPES_ROUTES, endpoint: '/api/reference-data/price-types', versioned: true },
-  { name: 'currencies', routes: CURRENCIES_ROUTES, endpoint: '/api/reference-data/currencies', versioned: true },
-  { name: 'VAT rates', routes: VAT_RATES_ROUTES, endpoint: '/api/reference-data/vat-rates', versioned: true },
-  { name: 'categories', routes: CATEGORIES_ROUTES, endpoint: '/api/catalog/categories', versioned: false },
+  { name: 'price types', routes: PRICE_TYPES_ROUTES, endpoint: '/api/reference-data/price-types' },
+  { name: 'currencies', routes: CURRENCIES_ROUTES, endpoint: '/api/reference-data/currencies' },
+  { name: 'VAT rates', routes: VAT_RATES_ROUTES, endpoint: '/api/reference-data/vat-rates' },
+  { name: 'categories', routes: CATEGORIES_ROUTES, endpoint: '/api/catalog/categories' },
   {
     name: 'counterparties',
     routes: COUNTERPARTIES_ROUTES,
     endpoint: '/api/reference-data/counterparties',
-    versioned: true,
   },
-  { name: 'units', routes: UNITS_ROUTES, endpoint: '/api/catalog/units', versioned: false },
-  { name: 'warehouses', routes: WAREHOUSES_ROUTES, endpoint: '/api/warehouses', versioned: false },
+  { name: 'units', routes: UNITS_ROUTES, endpoint: '/api/catalog/units' },
+  { name: 'warehouses', routes: WAREHOUSES_ROUTES, endpoint: '/api/warehouses' },
 ];
 const record = {
   id: 'record',
@@ -77,7 +75,7 @@ const record = {
   updated_by: null,
 };
 
-describe.each(cases)('$name status workflow', ({ routes, endpoint, versioned }) => {
+describe.each(cases)('$name status workflow', ({ routes, endpoint }) => {
   let http: HttpTestingController;
   let harness: RouterTestingHarness;
   const dialog = { open: vi.fn() };
@@ -118,7 +116,7 @@ describe.each(cases)('$name status workflow', ({ routes, endpoint, versioned }) 
     );
   }
 
-  it('changes status independently, preserves drafts and uses the latest version for subsequent saves', async () => {
+  it('changes status independently and preserves drafts for subsequent saves', async () => {
     await openEditor();
     const page = harness.routeDebugElement!.componentInstance;
     expect(action('Reload record')).toBeUndefined();
@@ -127,7 +125,7 @@ describe.each(cases)('$name status workflow', ({ routes, endpoint, versioned }) 
     action('Restore')!.click();
     action('Restore')!.click();
     const failed = http.expectOne(`${endpoint}/record`);
-    expect(failed.request.body).toEqual({ active: true, ...(versioned ? { expected_version: 3 } : {}) });
+    expect(failed.request.body).toEqual({ active: true });
     failed.flush({ detail: 'Status conflict' }, { status: 409, statusText: 'Conflict' });
     harness.detectChanges();
     expect(page.form.controls.name.value).toBe('Unsaved draft');
@@ -157,9 +155,6 @@ describe.each(cases)('$name status workflow', ({ routes, endpoint, versioned }) 
     const edit = http.expectOne(`${endpoint}/record`);
     expect(edit.request.body.name).toBe('Unsaved draft');
     expect(edit.request.body.active).toBeUndefined();
-    if (versioned) {
-      expect(edit.request.body.expected_version).toBe(5);
-    }
     edit.flush({ detail: 'Keep draft' }, { status: 409, statusText: 'Conflict' });
   });
 
@@ -178,7 +173,7 @@ describe.each(cases)('$name status workflow', ({ routes, endpoint, versioned }) 
     restore.click();
     restore.click();
     const update = http.expectOne(`${endpoint}/record`);
-    expect(update.request.body).toEqual({ active: true, ...(versioned ? { expected_version: 3 } : {}) });
+    expect(update.request.body).toEqual({ active: true });
     update.flush({ ...record, active: true, version: 4 });
     const refresh = http.expectOne(req => req.url === endpoint);
     expect(refresh.request.params.get('active')).toBe('false');

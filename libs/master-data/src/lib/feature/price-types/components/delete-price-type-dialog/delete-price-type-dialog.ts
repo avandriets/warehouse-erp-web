@@ -38,7 +38,7 @@ export class DeletePriceTypeDialog {
 
     this.dialogRef.disableClose = true;
     this.store
-      .update({ id: this.record.id, payload: { active: false, expected_version: this.record.version } })
+      .update({ id: this.record.id, payload: { active: false } })
       .pipe(
         finalize(() => {
           this.dialogRef.disableClose = false;

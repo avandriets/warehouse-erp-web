@@ -23,10 +23,9 @@ export class CurrenciesApiService {
     return this.http.get<CurrencyRatesOverview>(this.ratesBase);
   }
 
-  loadRates(baseCurrencyId: string, expectedVersion: number): Observable<CurrencyRatesOverview> {
+  loadRates(baseCurrencyId: string): Observable<CurrencyRatesOverview> {
     return this.http.post<CurrencyRatesOverview>(`${this.ratesBase}/load`, {
       base_currency_id: baseCurrencyId,
-      expected_version: expectedVersion,
     });
   }
 

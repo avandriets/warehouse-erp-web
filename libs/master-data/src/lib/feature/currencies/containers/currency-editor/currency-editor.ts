@@ -52,8 +52,7 @@ export class CurrencyEditor {
     pending: (): boolean => !!this.state().pending,
     canEdit: () => this.config.hasPermission('settings.manage'),
     archiveDialog: DeleteCurrencyDialog,
-    restore: record =>
-      this.store.update({ id: record.id, payload: { active: true, expected_version: record.version } }),
+    restore: record => this.store.update({ id: record.id, payload: { active: true } }),
     accept: record => this.store.upsert(record),
   });
   readonly state = computed<UIStateStatus<string>>(() =>
@@ -142,7 +141,6 @@ export class CurrencyEditor {
             display_decimal_places: values.display_decimal_places,
             rounding_decimal_places: values.rounding_decimal_places,
             rounding_mode: values.rounding_mode,
-            expected_version: record.version,
           },
         })
       : this.store.create({ ...values, active: true });

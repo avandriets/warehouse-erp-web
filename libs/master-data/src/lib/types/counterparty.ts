@@ -27,7 +27,7 @@ export interface CounterpartiesPage {
   total: number;
 }
 
-export type CounterpartyUpdate = Partial<Omit<CounterpartyCreate, 'code'>> & { expected_version: number };
+export type CounterpartyUpdate = Partial<Omit<CounterpartyCreate, 'code'>>;
 
 export interface CounterpartiesQuery {
   q?: string;

@@ -25,7 +25,7 @@ export const CurrencyRatesStore = signalStore(
 
       return {
         load: () => api.rates(),
-        save: update => api.loadRates(update.base_currency_id, update.expected_version),
+        save: update => api.loadRates(update.base_currency_id),
       };
     },
     error: 'Could not load accounting currency and saved rates.',

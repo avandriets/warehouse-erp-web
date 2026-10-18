@@ -12,10 +12,6 @@ import type { SettingsSaveRequest, SettingsSnapshot, SettingsUpdate } from '../.
 import { SettingsAdapterService } from '../services';
 
 function settingsError(error: unknown): string {
-  if (error instanceof HttpErrorResponse && error.status === 409) {
-    return `${apiError(error)} Your entries have been kept. Reload settings to read the latest version; reloading discards unsaved changes.`;
-  }
-
   return error instanceof Error && !(error instanceof HttpErrorResponse) ? error.message : apiError(error);
 }
 

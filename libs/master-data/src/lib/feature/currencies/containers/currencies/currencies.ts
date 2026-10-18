@@ -73,8 +73,7 @@ export class Currencies {
     canEdit: () => this.canEdit(),
     canArchive: record => this.rates()?.base_currency?.id !== record.id,
     archiveDialog: DeleteCurrencyDialog,
-    restore: record =>
-      this.store.update({ id: record.id, payload: { active: true, expected_version: record.version } }),
+    restore: record => this.store.update({ id: record.id, payload: { active: true } }),
     accept: () => {
       if (this.requestParams().active !== undefined && this.records().length === 1 && this.offset() > 0) {
         void this.page({ pageIndex: this.pageIndex() - 1, pageSize: this.pageSize(), length: this.total() });
@@ -149,9 +148,7 @@ export class Currencies {
       return;
     }
 
-    this.ratesStore
-      .save({ type: 'rates', base_currency_id: overview.base_currency.id, expected_version: overview.settings_version })
-      .subscribe();
+    this.ratesStore.save({ type: 'rates', base_currency_id: overview.base_currency.id }).subscribe();
   }
 
   rateFor(record: Currency): CurrencyRate | undefined {

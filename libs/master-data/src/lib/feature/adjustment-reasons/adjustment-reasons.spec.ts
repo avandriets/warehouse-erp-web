@@ -189,7 +189,7 @@ describe('Adjustment reasons routes and backend workflow', () => {
     expect(guard).toHaveBeenCalled();
   });
 
-  it('preserves input after version conflict, keeps code immutable, and uses the refreshed version after reload', async () => {
+  it('preserves input after rejection and keeps code immutable after reload', async () => {
     const page = await harness.navigateByUrl('/custom/reasons/reason-1/edit', AdjustmentReasonEditor);
     http.expectOne(`${base}/reason-1`).flush(reason);
     expect(page.form.controls.code.disabled).toBe(true);
@@ -200,14 +200,13 @@ describe('Adjustment reasons routes and backend workflow', () => {
     expect(update.request.body).toEqual({
       name: 'Changed reason',
       operation: 'SPOILAGE',
-      expected_version: 3,
     });
     expect(update.request.body.code).toBeUndefined();
-    update.flush({ detail: 'Version conflict' }, { status: 409, statusText: 'Conflict' });
+    update.flush({ detail: 'Record is referenced' }, { status: 409, statusText: 'Conflict' });
     expect(page.form.controls.name.value).toBe('Changed reason');
     expect(page.form.controls.name.enabled).toBe(true);
     expect(page.form.controls.code.disabled).toBe(true);
-    expect(page.actionError()).toContain('Reload');
+    expect(page.actionError()).toContain('Record is referenced');
     harness.detectChanges();
     expect(harness.routeNativeElement?.querySelectorAll('[role="alert"]')).toHaveLength(1);
     expect(harness.routeNativeElement?.textContent).toContain('Dismiss');
@@ -219,7 +218,6 @@ describe('Adjustment reasons routes and backend workflow', () => {
     page.form.patchValue({ name: 'Retry' });
     page.save();
     const retry = http.expectOne(`${base}/reason-1`);
-    expect(retry.request.body.expected_version).toBe(4);
     retry.flush({ ...reason, version: 5, name: 'Retry' });
     await harness.fixture.whenStable();
     http.expectOne(req => req.url === base).flush({ items: [reason], total: 1 });
@@ -309,13 +307,13 @@ describe('Adjustment reason archive dialog', () => {
     page.confirm();
     const request = http.expectOne(`${base}/reason-1`);
     expect(request.request.method).toBe('PATCH');
-    expect(request.request.body).toEqual({ active: false, expected_version: 3 });
+    expect(request.request.body).toEqual({ active: false });
     expect(dialogRef.disableClose).toBe(true);
     expect(page.state().pending).toBe(true);
-    request.flush({ detail: 'Version conflict' }, { status: 409, statusText: 'Conflict' });
+    request.flush({ detail: 'Record is referenced' }, { status: 409, statusText: 'Conflict' });
     expect(dialogRef.close).not.toHaveBeenCalled();
     expect(dialogRef.disableClose).toBe(false);
-    expect(page.actionError()).toContain('Version conflict');
+    expect(page.actionError()).toContain('Record is referenced');
     expect(snackBar.open).toHaveBeenCalled();
     page.confirm();
     http.expectOne(`${base}/reason-1`).flush({ ...reason, active: false, version: 4 });

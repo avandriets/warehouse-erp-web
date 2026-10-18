@@ -31,7 +31,7 @@ describe('Currency rate store notifications', () => {
     const scope = Injector.create({ parent: TestBed.inject(Injector), providers: [CurrencyRatesStore] });
     try {
       const other = scope.get(CurrencyRatesStore);
-      owner.save({ type: 'rates', base_currency_id: 'eur', expected_version: 1 }).subscribe();
+      owner.save({ type: 'rates', base_currency_id: 'eur' }).subscribe();
       expect(snack.open).toHaveBeenCalledExactlyOnceWith('Exchange rates loaded.', 'Dismiss', { duration: 4000 });
       snack.open.mockClear();
       api.rates.mockReturnValueOnce(throwError(() => new Error('Offline')));
@@ -40,7 +40,7 @@ describe('Currency rate store notifications', () => {
       expect(snack.open).toHaveBeenCalledWith(expect.any(String), 'Dismiss', { duration: 6000 });
       snack.open.mockClear();
       api.loadRates.mockReturnValueOnce(throwError(() => new Error('Offline')));
-      owner.save({ type: 'rates', base_currency_id: 'eur', expected_version: 1 }).subscribe();
+      owner.save({ type: 'rates', base_currency_id: 'eur' }).subscribe();
       expect(snack.open).toHaveBeenCalledTimes(1);
       expect(snack.open).toHaveBeenCalledWith(expect.any(String), 'Dismiss', { duration: 6000 });
     } finally {
@@ -52,7 +52,7 @@ describe('Currency rate store notifications', () => {
     const pending = new Subject<CurrencyRatesOverview>();
     api.loadRates.mockReturnValueOnce(pending);
     const store = TestBed.inject(CurrencyRatesStore);
-    const request = store.save({ type: 'rates', base_currency_id: 'eur', expected_version: 1 }).subscribe();
+    const request = store.save({ type: 'rates', base_currency_id: 'eur' }).subscribe();
     request.unsubscribe();
     pending.next(overview);
     pending.complete();

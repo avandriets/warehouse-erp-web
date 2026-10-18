@@ -11,7 +11,6 @@ import type {
   EnterpriseSettings,
   NegativeStockValue,
   NumberingFields,
-  SettingsPatch,
 } from '../../types';
 
 @Injectable({ providedIn: 'root' })
@@ -23,7 +22,7 @@ export class SettingsApiService {
     return this.http.get<EnterpriseSettings>(`${this.base}/enterprise`);
   }
 
-  saveEnterprise(payload: SettingsPatch<EnterpriseEditableFields>): Observable<EnterpriseSettings> {
+  saveEnterprise(payload: Partial<EnterpriseEditableFields>): Observable<EnterpriseSettings> {
     return this.http.patch<EnterpriseSettings>(`${this.base}/enterprise`, payload);
   }
 
@@ -31,7 +30,7 @@ export class SettingsApiService {
     return this.http.get<AccountingSettings>(`${this.base}/accounting`);
   }
 
-  saveAccounting(payload: SettingsPatch<AccountingFields>): Observable<AccountingSettings> {
+  saveAccounting(payload: Partial<AccountingFields>): Observable<AccountingSettings> {
     return this.http.patch<AccountingSettings>(`${this.base}/accounting`, payload);
   }
 
@@ -39,7 +38,7 @@ export class SettingsApiService {
     return this.http.get<DocumentNumbering[]>(`${this.base}/document-numbering`);
   }
 
-  saveNumbering(type: string, payload: SettingsPatch<NumberingFields>): Observable<DocumentNumbering> {
+  saveNumbering(type: string, payload: Partial<NumberingFields>): Observable<DocumentNumbering> {
     return this.http.patch<DocumentNumbering>(`${this.base}/document-numbering/${encodeURIComponent(type)}`, payload);
   }
 
@@ -47,12 +46,11 @@ export class SettingsApiService {
     return this.http.get<NegativeStockValue[]>(`${this.base}/definitions/inventory.negative_stock_allowed/values`);
   }
 
-  saveNegativeStock(value: boolean, version?: number): Observable<NegativeStockValue> {
+  saveNegativeStock(value: boolean): Observable<NegativeStockValue> {
     return this.http.put<NegativeStockValue>(`${this.base}/definitions/inventory.negative_stock_allowed/values`, {
       scope_type: 'GLOBAL',
       scope_id: null,
       value,
-      ...(version === undefined ? {} : { expected_version: version }),
     });
   }
 }

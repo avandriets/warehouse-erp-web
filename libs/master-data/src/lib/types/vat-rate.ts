@@ -31,7 +31,6 @@ export interface VatRatesPage {
 }
 
 export interface VatRateUpdate {
-  expected_version: number;
   name?: string;
   treatment?: TaxTreatment;
   rate?: string;

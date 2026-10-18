@@ -185,14 +185,13 @@ describe('Price types routes and backend workflow', () => {
     expect(request.request.body).toEqual({
       name: 'Retail',
       price_entry_mode: 'TAX_EXCLUSIVE',
-      expected_version: 3,
     });
     request.flush({ ...priceType, active: false, price_entry_mode: 'TAX_EXCLUSIVE', version: 4 });
     await harness.fixture.whenStable();
     http.expectOne(req => req.url === base).flush({ items: [priceType], total: 1 });
   });
 
-  it('preserves input after version conflict, keeps code immutable, and uses the refreshed version after reload', async () => {
+  it('preserves input after rejection and keeps code immutable after reload', async () => {
     const page = await harness.navigateByUrl('/custom/price-types/type-1/edit', PriceTypeEditor);
     http.expectOne(`${base}/type-1`).flush(priceType);
     expect(page.form.controls.code.disabled).toBe(true);
@@ -203,14 +202,13 @@ describe('Price types routes and backend workflow', () => {
     expect(update.request.body).toEqual({
       name: 'Changed type',
       price_entry_mode: 'TAX_INCLUSIVE',
-      expected_version: 3,
     });
     expect(update.request.body.code).toBeUndefined();
-    update.flush({ detail: 'Version conflict' }, { status: 409, statusText: 'Conflict' });
+    update.flush({ detail: 'Record is referenced' }, { status: 409, statusText: 'Conflict' });
     expect(page.form.controls.name.value).toBe('Changed type');
     expect(page.form.controls.name.enabled).toBe(true);
     expect(page.form.controls.code.disabled).toBe(true);
-    expect(page.actionError()).toContain('Reload');
+    expect(page.actionError()).toContain('Record is referenced');
     harness.detectChanges();
     expect(harness.routeNativeElement?.querySelectorAll('[role="alert"]')).toHaveLength(1);
     expect(harness.routeNativeElement?.textContent).toContain('Dismiss');
@@ -222,7 +220,6 @@ describe('Price types routes and backend workflow', () => {
     page.form.patchValue({ name: 'Retry' });
     page.save();
     const retry = http.expectOne(`${base}/type-1`);
-    expect(retry.request.body.expected_version).toBe(4);
     retry.flush({ ...priceType, version: 5, name: 'Retry' });
     await harness.fixture.whenStable();
     http.expectOne(req => req.url === base).flush({ items: [priceType], total: 1 });
@@ -312,13 +309,13 @@ describe('Price type archive dialog', () => {
     page.confirm();
     const request = http.expectOne(`${base}/type-1`);
     expect(request.request.method).toBe('PATCH');
-    expect(request.request.body).toEqual({ active: false, expected_version: 3 });
+    expect(request.request.body).toEqual({ active: false });
     expect(dialogRef.disableClose).toBe(true);
     expect(page.state().pending).toBe(true);
-    request.flush({ detail: 'Version conflict' }, { status: 409, statusText: 'Conflict' });
+    request.flush({ detail: 'Record is referenced' }, { status: 409, statusText: 'Conflict' });
     expect(dialogRef.close).not.toHaveBeenCalled();
     expect(dialogRef.disableClose).toBe(false);
-    expect(page.actionError()).toContain('Version conflict');
+    expect(page.actionError()).toContain('Record is referenced');
     expect(snackBar.open).toHaveBeenCalled();
     page.confirm();
     http.expectOne(`${base}/type-1`).flush({ ...priceType, active: false, version: 4 });

@@ -52,8 +52,7 @@ export class AdjustmentReasonEditor {
     pending: (): boolean => !!this.state().pending,
     canEdit: () => this.config.hasPermission('settings.manage'),
     archiveDialog: DeleteReasonDialog,
-    restore: record =>
-      this.store.update({ id: record.id, payload: { active: true, expected_version: record.version } }),
+    restore: record => this.store.update({ id: record.id, payload: { active: true } }),
     accept: record => this.store.upsert(record),
   });
   readonly state = computed<UIStateStatus<string>>(() =>
@@ -122,7 +121,6 @@ export class AdjustmentReasonEditor {
           payload: {
             name: values.name,
             operation: values.operation,
-            expected_version: record.version,
           },
         })
       : this.store.create({ ...values, active: true });

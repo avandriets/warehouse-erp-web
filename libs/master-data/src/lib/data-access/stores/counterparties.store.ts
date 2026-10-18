@@ -1,4 +1,3 @@
-import { HttpErrorResponse } from '@angular/common/http';
 import { DestroyRef, inject, InjectionToken } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { MatSnackBar } from '@angular/material/snack-bar';
@@ -54,10 +53,7 @@ export const CounterpartiesStore = signalStore(
       };
     },
     events: counterpartiesEvents,
-    errorMessage: error =>
-      error instanceof HttpErrorResponse && error.status === 409 && /concurrent|version/i.test(apiError(error))
-        ? `${apiError(error)} Your entries have been kept. Reload to get the latest version; reloading discards unsaved changes.`
-        : apiError(error),
+    errorMessage: apiError,
     errors: {
       load: 'Could not load counterparties.',
       getById: 'Could not load the counterparty.',

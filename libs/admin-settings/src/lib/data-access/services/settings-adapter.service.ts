@@ -30,9 +30,7 @@ export class SettingsAdapterService implements RequestDataAdapter<SettingsSnapsh
           const changes = changedFields(update.values, snapshot.enterprise);
 
           return Object.keys(changes).length
-            ? this.api
-                .saveEnterprise({ ...changes, expected_version: snapshot.enterprise.version })
-                .pipe(map(enterprise => ({ ...snapshot, enterprise })))
+            ? this.api.saveEnterprise({ ...changes }).pipe(map(enterprise => ({ ...snapshot, enterprise })))
             : EMPTY;
         }
         case 'accounting': {
@@ -48,9 +46,7 @@ export class SettingsAdapterService implements RequestDataAdapter<SettingsSnapsh
           const changes = changedFields(update.values, snapshot.accounting);
 
           return Object.keys(changes).length
-            ? this.api
-                .saveAccounting({ ...changes, expected_version: snapshot.accounting.version })
-                .pipe(map(accounting => ({ ...snapshot, accounting })))
+            ? this.api.saveAccounting({ ...changes }).pipe(map(accounting => ({ ...snapshot, accounting })))
             : EMPTY;
         }
         case 'negative': {
@@ -61,7 +57,7 @@ export class SettingsAdapterService implements RequestDataAdapter<SettingsSnapsh
           const original = snapshot.negative.find(value => value.scope_type === 'GLOBAL' && value.scope_id === null);
 
           return update.value !== (original?.value ?? false)
-            ? this.api.saveNegativeStock(update.value, original?.version).pipe(
+            ? this.api.saveNegativeStock(update.value).pipe(
                 map(value => ({
                   ...snapshot,
                   negative: [...snapshot.negative.filter(item => item !== original), value],
@@ -78,7 +74,7 @@ export class SettingsAdapterService implements RequestDataAdapter<SettingsSnapsh
           const changes = changedFields(update.values, original);
 
           return Object.keys(changes).length
-            ? this.api.saveNumbering(update.documentType, { ...changes, expected_version: original.version }).pipe(
+            ? this.api.saveNumbering(update.documentType, { ...changes }).pipe(
                 map(rule => ({
                   ...snapshot,
                   numbering: snapshot.numbering.map(item => (item.document_type === rule.document_type ? rule : item)),

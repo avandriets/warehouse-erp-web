@@ -6,13 +6,13 @@ both the navigation entry and direct route access. The backend separately enforc
 
 Enterprise details, accounting, the global negative-stock policy, and each document numbering
 rule save independently through the existing settings API. PATCH requests contain only changed
-fields and `expected_version`; clearing nullable fields sends null. Errors preserve form values.
-Reloading reads current versions and discards unsaved changes. Identifier captions are fixed in
+fields; clearing nullable fields sends null. Errors preserve form values.
+Reloading reads current values and discards unsaved changes. Identifier captions are fixed in
 print templates, so the editor exposes only their numbers and omits caption fields from updates.
 
 Cost accounting makes the negative-stock control unavailable. Enabling cost accounting requires
 all saved negative-stock overrides to be false; scoped overrides are reported but are outside
-this global-policy editor. The Accounting tab exposes an accounting-currency selector with bounded server-side code/name search over active currencies; the current currency is resolved by id even when outside the search results. It saves `currency_id` through the existing accounting PATCH and version check. Default VAT references are preserved.
+this global-policy editor. The Accounting tab exposes an accounting-currency selector with parent-loaded dictionary options filtered locally, including the saved archived currency. It saves `currency_id` through the existing accounting PATCH. Default VAT references are preserved.
 
 `SettingsApiService` owns stateless HTTP transport. `SettingsAdapterService` implements the
 shared request adapter: it loads the complete `SettingsSnapshot`, computes changed fields and

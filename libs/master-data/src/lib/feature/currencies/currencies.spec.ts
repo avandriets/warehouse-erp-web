@@ -134,7 +134,7 @@ describe('Currencies workflow', () => {
     download.click();
     const request = http.expectOne(`${ratesBase}/load`);
     expect(request.request.method).toBe('POST');
-    expect(request.request.body).toEqual({ base_currency_id: 'eur', expected_version: 2 });
+    expect(request.request.body).toEqual({ base_currency_id: 'eur' });
     request.flush({ detail: 'Provider unavailable' }, { status: 503, statusText: 'Unavailable' });
     expect(page.rates()?.batch?.id).toBe('batch-1');
     expect(page.ratesError()).toBe('Provider unavailable');
@@ -186,7 +186,7 @@ describe('Currencies workflow', () => {
     expect(TestBed.inject(Router).url).toBe('/custom/currencies');
   });
 
-  it('keeps edit input on conflict and excludes the immutable code from versioned updates', async () => {
+  it('keeps edit input on conflict and excludes the immutable code from updates', async () => {
     const page = await harness.navigateByUrl('/custom/currencies/eur/edit', CurrencyEditor);
     http.expectOne(`${base}/eur`).flush(eur);
     page.form.patchValue({ rounding_mode: 'HALF_EVEN', rounding_decimal_places: 4 });
@@ -194,9 +194,8 @@ describe('Currencies workflow', () => {
     const request = http.expectOne(`${base}/eur`);
     expect(request.request.method).toBe('PATCH');
     expect(request.request.body.code).toBeUndefined();
-    expect(request.request.body.expected_version).toBe(3);
     expect(request.request.body.rounding_mode).toBe('HALF_EVEN');
-    request.flush({ detail: 'Configuration version does not match' }, { status: 409, statusText: 'Conflict' });
+    request.flush({ detail: 'Record is referenced' }, { status: 409, statusText: 'Conflict' });
     expect(page.form.controls.rounding_decimal_places.value).toBe(4);
     expect(page.form.controls.code.disabled).toBe(true);
     harness.detectChanges();
@@ -254,7 +253,7 @@ describe('Currency archive dialog', () => {
     const page = TestBed.createComponent(DeleteCurrencyDialog).componentInstance;
     page.confirm();
     const request = http.expectOne(`${base}/eur`);
-    expect(request.request.body).toEqual({ active: false, expected_version: 3 });
+    expect(request.request.body).toEqual({ active: false });
     request.flush(
       { detail: 'Record is selected in settings; replace the reference first' },
       { status: 409, statusText: 'Conflict' },

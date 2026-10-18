@@ -72,8 +72,7 @@ export class VatRates {
     pending: () => !!this.store.entityState().pending || this.store.saving(),
     canEdit: () => this.canEdit(),
     archiveDialog: DeleteVatRateDialog,
-    restore: record =>
-      this.store.update({ id: record.id, payload: { active: true, expected_version: record.version } }),
+    restore: record => this.store.update({ id: record.id, payload: { active: true } }),
     accept: () => {
       if (this.requestParams().active !== undefined && this.records().length === 1 && this.offset() > 0) {
         void this.page({ pageIndex: this.pageIndex() - 1, pageSize: this.pageSize(), length: this.total() });

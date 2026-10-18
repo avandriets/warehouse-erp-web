@@ -1,4 +1,3 @@
-import { HttpErrorResponse } from '@angular/common/http';
 import { inject, InjectionToken } from '@angular/core';
 import { signalStore, type } from '@ngrx/signals';
 import { eventGroup } from '@ngrx/signals/events';
@@ -45,10 +44,7 @@ export const VatRatesStore = signalStore(
     },
     load: { pageParams: (query, offset, limit) => ({ ...query, offset, limit }) },
     events: vatRatesEvents,
-    errorMessage: error =>
-      error instanceof HttpErrorResponse && error.status === 409 && /concurrent|version/i.test(apiError(error))
-        ? `${apiError(error)} Your entries have been kept. Reload to get the latest version; reloading discards unsaved changes.`
-        : apiError(error),
+    errorMessage: apiError,
     errors: {
       load: 'Could not load VAT rates.',
       getById: 'Could not load the VAT rate.',

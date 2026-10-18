@@ -113,11 +113,11 @@ describe('VAT store event notifications', () => {
     http.expectOne(base).flush(record);
     expect(snackBar.open).toHaveBeenCalledExactlyOnceWith('VAT rate created.', 'Dismiss', { duration: 4000 });
     snackBar.open.mockClear();
-    editor.store.update({ id: record.id, payload: { name: 'Updated', expected_version: 1 } }).subscribe();
+    editor.store.update({ id: record.id, payload: { name: 'Updated' } }).subscribe();
     http.expectOne(`${base}/${record.id}`).flush({ ...record, name: 'Updated', version: 2 });
     expect(snackBar.open).toHaveBeenCalledExactlyOnceWith('VAT rate saved.', 'Dismiss', { duration: 4000 });
     snackBar.open.mockClear();
-    archive.store.update({ id: record.id, payload: { active: false, expected_version: 2 } }).subscribe();
+    archive.store.update({ id: record.id, payload: { active: false } }).subscribe();
     http.expectOne(`${base}/${record.id}`).flush({ ...record, active: false, version: 3 });
     expect(snackBar.open).toHaveBeenCalledExactlyOnceWith('VAT rate archived.', 'Dismiss', { duration: 4000 });
   });

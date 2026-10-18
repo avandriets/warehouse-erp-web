@@ -80,13 +80,13 @@ describe('enterprise settings', () => {
     page.saveEnterprise();
     const request = http.expectOne('/api/settings/enterprise');
     expect(request.request.method).toBe('PATCH');
-    expect(request.request.body).toEqual({ expected_version: 3, tax_identifier: null, display_name: 'New name' });
+    expect(request.request.body).toEqual({ tax_identifier: null, display_name: 'New name' });
     expect(page.enterpriseForm.disabled).toBe(true);
-    request.flush({ detail: 'Version conflict' }, { status: 409, statusText: 'Conflict' });
+    request.flush({ detail: 'Record is referenced' }, { status: 409, statusText: 'Conflict' });
     expect(snackBar.open).not.toHaveBeenCalled();
     expect(page.enterpriseForm.controls.display_name.value).toBe('New name');
     expect(page.enterpriseForm.enabled).toBe(true);
-    expect(page.actionError()).toContain('Reload');
+    expect(page.actionError()).toContain('Record is referenced');
     page.load();
     http.expectOne('/api/settings/enterprise').flush({ ...enterprise, version: 4 });
     http.expectOne('/api/settings/accounting').flush(accounting);
@@ -96,7 +96,6 @@ describe('enterprise settings', () => {
     page.enterpriseForm.patchValue({ display_name: 'Retry' });
     page.saveEnterprise();
     const retry = http.expectOne('/api/settings/enterprise');
-    expect(retry.request.body.expected_version).toBe(4);
     retry.flush({ ...enterprise, version: 5, display_name: 'Retry' });
     expect(page.enterpriseForm.pristine).toBe(true);
   });
@@ -106,8 +105,8 @@ describe('enterprise settings', () => {
     page.accountingForm.controls.currency_id.setValue('eur');
     page.saveAccounting();
     const request = http.expectOne('/api/settings/accounting');
-    expect(request.request.body).toEqual({ currency_id: 'eur', expected_version: 5 });
-    request.flush({ detail: 'Version conflict' }, { status: 409, statusText: 'Conflict' });
+    expect(request.request.body).toEqual({ currency_id: 'eur' });
+    request.flush({ detail: 'Record is referenced' }, { status: 409, statusText: 'Conflict' });
     expect(page.accountingForm.controls.currency_id.value).toBe('eur');
     expect(page.accountingForm.enabled).toBe(true);
     page.saveAccounting();
@@ -116,7 +115,7 @@ describe('enterprise settings', () => {
     page.accountingForm.controls.currency_id.setValue(null);
     page.saveAccounting();
     const clear = http.expectOne('/api/settings/accounting');
-    expect(clear.request.body).toEqual({ currency_id: null, expected_version: 6 });
+    expect(clear.request.body).toEqual({ currency_id: null });
     clear.flush({ ...accounting, version: 7 });
   });
 
@@ -129,7 +128,7 @@ describe('enterprise settings', () => {
     http.expectNone(negativePath);
     page.saveAccounting();
     const request = http.expectOne('/api/settings/accounting');
-    expect(request.request.body).toEqual({ expected_version: 5, cost_accounting_enabled: false });
+    expect(request.request.body).toEqual({ cost_accounting_enabled: false });
     request.flush({ ...accounting, version: 6 });
     expect(page.negativeForm.controls.allowed.enabled).toBe(true);
     page.accountingForm.controls.cost_accounting_enabled.setValue(true);
@@ -158,7 +157,7 @@ describe('enterprise settings', () => {
     page.negativeForm.controls.allowed.setValue(false);
     page.saveNegative();
     const update = http.expectOne(negativePath);
-    expect(update.request.body).toEqual({ scope_type: 'GLOBAL', scope_id: null, value: false, expected_version: 1 });
+    expect(update.request.body).toEqual({ scope_type: 'GLOBAL', scope_id: null, value: false });
     update.flush({ id: 'negative', version: 2, scope_type: 'GLOBAL', scope_id: null, value: false });
   });
 
@@ -181,7 +180,7 @@ describe('enterprise settings', () => {
     editor.form.patchValue({ numeric_width: 8, reset_annually: false });
     page.saveNumbering(editor);
     const request = http.expectOne('/api/settings/document-numbering/GOODS_RECEIPT');
-    expect(request.request.body).toEqual({ expected_version: 2, numeric_width: 8, reset_annually: false });
+    expect(request.request.body).toEqual({ numeric_width: 8, reset_annually: false });
     request.flush({ ...rule, numeric_width: 8, reset_annually: false, version: 3 });
     expect(editor.record.version).toBe(3);
     expect(editor.form.pristine).toBe(true);
@@ -210,7 +209,6 @@ describe('enterprise settings', () => {
     page.saveAccounting();
     const request = http.expectOne('/api/settings/accounting');
     expect(request.request.body).toEqual({
-      expected_version: 5,
       accounting_timezone: 'Unknown/Zone',
       changes_locked_through: '2026-10-01',
       vat_enabled: true,

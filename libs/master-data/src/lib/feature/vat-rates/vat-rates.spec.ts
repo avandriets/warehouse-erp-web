@@ -188,7 +188,6 @@ describe('VAT rates routes and backend workflow', () => {
       name: 'VAT standard',
       treatment: 'NO_VAT',
       rate: '0',
-      expected_version: 3,
     });
     request.flush({ ...vatRate, active: false, treatment: 'NO_VAT', rate: '0', version: 4 });
     await harness.fixture.whenStable();
@@ -245,7 +244,7 @@ describe('VAT rates routes and backend workflow', () => {
     http.expectOne(req => req.url === base).flush({ items: [], total: 0 });
   });
 
-  it('preserves input after version conflict, keeps code immutable, and uses the refreshed version after reload', async () => {
+  it('preserves input after rejection and keeps code immutable after reload', async () => {
     const page = await harness.navigateByUrl('/custom/vat-rates/vat-1/edit', VatRateEditor);
     http.expectOne(`${base}/vat-1`).flush(vatRate);
     expect(page.form.controls.code.disabled).toBe(true);
@@ -257,14 +256,13 @@ describe('VAT rates routes and backend workflow', () => {
       name: 'Changed rate',
       treatment: 'TAXABLE',
       rate: '20.1234',
-      expected_version: 3,
     });
     expect(update.request.body.code).toBeUndefined();
-    update.flush({ detail: 'Version conflict' }, { status: 409, statusText: 'Conflict' });
+    update.flush({ detail: 'Record is referenced' }, { status: 409, statusText: 'Conflict' });
     expect(page.form.controls.name.value).toBe('Changed rate');
     expect(page.form.controls.name.enabled).toBe(true);
     expect(page.form.controls.code.disabled).toBe(true);
-    expect(page.actionError()).toContain('Reload');
+    expect(page.actionError()).toContain('Record is referenced');
     harness.detectChanges();
     expect(harness.routeNativeElement?.querySelectorAll('[role="alert"]')).toHaveLength(1);
     expect(harness.routeNativeElement?.textContent).toContain('Dismiss');
@@ -276,7 +274,6 @@ describe('VAT rates routes and backend workflow', () => {
     page.form.patchValue({ name: 'Retry' });
     page.save();
     const retry = http.expectOne(`${base}/vat-1`);
-    expect(retry.request.body.expected_version).toBe(4);
     retry.flush({ ...vatRate, version: 5, name: 'Retry' });
     await harness.fixture.whenStable();
     http.expectOne(req => req.url === base).flush({ items: [vatRate], total: 1 });
@@ -366,13 +363,13 @@ describe('VAT rate archive dialog', () => {
     page.confirm();
     const request = http.expectOne(`${base}/vat-1`);
     expect(request.request.method).toBe('PATCH');
-    expect(request.request.body).toEqual({ active: false, expected_version: 3 });
+    expect(request.request.body).toEqual({ active: false });
     expect(dialogRef.disableClose).toBe(true);
     expect(page.state().pending).toBe(true);
-    request.flush({ detail: 'Version conflict' }, { status: 409, statusText: 'Conflict' });
+    request.flush({ detail: 'Record is referenced' }, { status: 409, statusText: 'Conflict' });
     expect(dialogRef.close).not.toHaveBeenCalled();
     expect(dialogRef.disableClose).toBe(false);
-    expect(page.actionError()).toContain('Version conflict');
+    expect(page.actionError()).toContain('Record is referenced');
     expect(snackBar.open).toHaveBeenCalled();
     page.confirm();
     http.expectOne(`${base}/vat-1`).flush({ ...vatRate, active: false, version: 4 });

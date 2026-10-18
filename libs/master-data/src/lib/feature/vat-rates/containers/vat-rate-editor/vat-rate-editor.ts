@@ -52,8 +52,7 @@ export class VatRateEditor {
     pending: (): boolean => !!this.state().pending,
     canEdit: () => this.config.hasPermission('settings.manage'),
     archiveDialog: DeleteVatRateDialog,
-    restore: record =>
-      this.store.update({ id: record.id, payload: { active: true, expected_version: record.version } }),
+    restore: record => this.store.update({ id: record.id, payload: { active: true } }),
     accept: record => this.store.upsert(record),
   });
   readonly state = computed<UIStateStatus<string>>(() =>
@@ -133,7 +132,6 @@ export class VatRateEditor {
             name: values.name,
             treatment: values.treatment,
             rate: values.treatment === 'TAXABLE' ? values.rate : '0',
-            expected_version: record.version,
           },
         })
       : this.store.create({ ...values, active: true, rate: values.treatment === 'TAXABLE' ? values.rate : '0' });

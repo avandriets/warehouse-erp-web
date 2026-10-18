@@ -107,7 +107,7 @@ describe('SettingsStore and its aggregate adapter', () => {
     expect(store.requestState()).toMatchObject({ resolved: true, pending: false, rejected: false });
   });
 
-  it('merges an update into the snapshot, uses its latest version, and blocks duplicate writes and reloads', () => {
+  it('merges an update into the snapshot, blocks duplicate writes and reloads', () => {
     store.reload().subscribe();
     flushLoad();
     const before = store.data()!;
@@ -119,7 +119,7 @@ describe('SettingsStore and its aggregate adapter', () => {
     expect(store.savingSection()).toBe('enterprise');
     expect(store.state()).toMatchObject({ resolved: true, pending: true, savingSection: 'enterprise' });
     const request = http.expectOne('/api/settings/enterprise');
-    expect(request.request.body).toEqual({ display_name: 'Updated', expected_version: 1 });
+    expect(request.request.body).toEqual({ display_name: 'Updated' });
     store.update(update).subscribe();
     store.reload().subscribe();
     http.expectNone(() => true);
@@ -132,21 +132,20 @@ describe('SettingsStore and its aggregate adapter', () => {
     expect(store.state().pending).toBe(false);
     store.update({ section: 'enterprise', values: { ...store.data()!.enterprise, display_name: 'Next' } }).subscribe();
     const next = http.expectOne('/api/settings/enterprise');
-    expect(next.request.body.expected_version).toBe(2);
     next.flush({ ...before.enterprise, display_name: 'Next', version: 3 });
   });
 
-  it('keeps the snapshot and load state when a write fails and allows retry with unchanged version', () => {
+  it('keeps the snapshot and load state when a write fails and allows retry without version preconditions', () => {
     store.reload().subscribe();
     flushLoad();
     const before = store.data();
     store.update({ section: 'accounting', values: { ...snapshot.accounting, vat_enabled: true } }).subscribe();
     http
       .expectOne('/api/settings/accounting')
-      .flush({ detail: 'Version conflict' }, { status: 409, statusText: 'Conflict' });
+      .flush({ detail: 'Record is referenced' }, { status: 409, statusText: 'Conflict' });
     expect(store.data()).toBe(before);
     expect(store.requestState()).toMatchObject({ resolved: true, rejected: false });
-    expect(store.actionError()).toContain('Reload settings');
+    expect(store.actionError()).toContain('Record is referenced');
     expect(store.saving()).toBe(false);
     store.dismissActionError();
     expect(store.actionError()).toBeNull();

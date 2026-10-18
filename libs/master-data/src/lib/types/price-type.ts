@@ -29,7 +29,6 @@ export interface PriceTypesPage {
 }
 
 export interface PriceTypeUpdate {
-  expected_version: number;
   name?: string;
   price_entry_mode?: PriceEntryMode;
   active?: boolean;

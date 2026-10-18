@@ -33,7 +33,6 @@ export interface CurrenciesPage {
 }
 
 export interface CurrencyUpdate {
-  expected_version: number;
   name?: string;
   symbol?: string;
   display_decimal_places?: number;
@@ -76,5 +75,4 @@ export interface CurrencyRatesOverview {
 export interface CurrencyRatesUpdate {
   type: 'rates';
   base_currency_id: string;
-  expected_version: number;
 }

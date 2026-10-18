@@ -31,7 +31,6 @@ export interface AdjustmentReasonsPage {
 }
 
 export interface AdjustmentReasonUpdate {
-  expected_version: number;
   name?: string;
   operation?: AdjustmentOperation;
   active?: boolean;

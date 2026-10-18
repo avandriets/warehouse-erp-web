@@ -181,12 +181,11 @@ describe('counterparty directory workflow', () => {
       tax_identifier: null,
       is_supplier: true,
       is_customer: false,
-      expected_version: 3,
     });
-    update.flush({ detail: 'Version conflict' }, { status: 409, statusText: 'Conflict' });
+    update.flush({ detail: 'Record is referenced' }, { status: 409, statusText: 'Conflict' });
     expect(page.form.controls.name.value).toBe('Changed');
     expect(page.form.controls.code.disabled).toBe(true);
-    expect(page.actionError()).toContain('Reload');
+    expect(page.actionError()).toContain('Record is referenced');
     expect(page.state().pending).toBe(false);
   });
 
@@ -265,8 +264,8 @@ describe('counterparty archive dialog', () => {
     page.confirm();
     page.confirm();
     const request = http.expectOne(`${base}/party-1`);
-    expect(request.request.body).toEqual({ active: false, expected_version: 3 });
-    request.flush({ detail: 'Version conflict' }, { status: 409, statusText: 'Conflict' });
+    expect(request.request.body).toEqual({ active: false });
+    request.flush({ detail: 'Record is referenced' }, { status: 409, statusText: 'Conflict' });
     expect(ref.close).not.toHaveBeenCalled();
     expect(ref.disableClose).toBe(false);
     page.confirm();

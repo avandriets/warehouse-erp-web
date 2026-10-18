@@ -63,8 +63,7 @@ export class CounterpartyEditor {
     pending: (): boolean => !!this.state().pending,
     canEdit: () => this.config.hasPermission('catalog.edit'),
     archiveDialog: DeleteCounterpartyDialog,
-    restore: record =>
-      this.store.update({ id: record.id, payload: { active: true, expected_version: record.version } }),
+    restore: record => this.store.update({ id: record.id, payload: { active: true } }),
     accept: record => this.store.upsert(record),
   });
   readonly state = computed<UIStateStatus<string>>(() =>
@@ -188,7 +187,7 @@ export class CounterpartyEditor {
     const { code, ...update } = values;
 
     return record
-      ? this.store.update({ id: record.id, payload: { ...update, expected_version: record.version } })
+      ? this.store.update({ id: record.id, payload: { ...update } })
       : this.store.create({ ...update, code, active: true });
   }
 

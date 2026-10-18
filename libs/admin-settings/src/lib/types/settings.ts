@@ -53,8 +53,6 @@ export interface NegativeStockValue extends VersionedRecord {
   value: boolean;
 }
 
-export type SettingsPatch<T> = Partial<T> & { expected_version: number };
-
 export interface SettingsSnapshot {
   currencies: ReferenceOption[];
   enterprise: EnterpriseSettings;
