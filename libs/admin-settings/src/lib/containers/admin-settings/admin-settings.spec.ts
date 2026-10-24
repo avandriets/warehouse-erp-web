@@ -38,10 +38,9 @@ const accounting: AccountingSettings = {
 const rule = {
   id: 'rule',
   version: 2,
-  document_type: 'GOODS_RECEIPT',
+  document_type: 'STOCK_RECEIPT',
   prefix: 'GR-',
   numeric_width: 6,
-  reset_annually: true,
 };
 const negativePath = '/api/settings/definitions/inventory.negative_stock_allowed/values';
 
@@ -176,12 +175,12 @@ describe('enterprise settings', () => {
     const editor = page.numbering()[0];
     editor.form.patchValue({ numeric_width: 19 });
     page.saveNumbering(editor);
-    http.expectNone('/api/settings/document-numbering/GOODS_RECEIPT');
-    editor.form.patchValue({ numeric_width: 8, reset_annually: false });
+    http.expectNone('/api/settings/document-numbering/STOCK_RECEIPT');
+    editor.form.patchValue({ prefix: 'OPR-', numeric_width: 8 });
     page.saveNumbering(editor);
-    const request = http.expectOne('/api/settings/document-numbering/GOODS_RECEIPT');
-    expect(request.request.body).toEqual({ numeric_width: 8, reset_annually: false });
-    request.flush({ ...rule, numeric_width: 8, reset_annually: false, version: 3 });
+    const request = http.expectOne('/api/settings/document-numbering/STOCK_RECEIPT');
+    expect(request.request.body).toEqual({ prefix: 'OPR-', numeric_width: 8 });
+    request.flush({ ...rule, prefix: 'OPR-', numeric_width: 8, version: 3 });
     expect(editor.record.version).toBe(3);
     expect(editor.form.pristine).toBe(true);
   });

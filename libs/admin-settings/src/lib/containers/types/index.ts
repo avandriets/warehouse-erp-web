@@ -7,6 +7,5 @@ export interface NumberingEditor {
   form: FormGroup<{
     prefix: FormControl<string>;
     numeric_width: FormControl<number>;
-    reset_annually: FormControl<boolean>;
   }>;
 }

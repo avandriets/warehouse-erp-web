@@ -40,7 +40,6 @@ export interface AccountingSettings extends AccountingFields, VersionedRecord {
 export interface NumberingFields {
   prefix: string;
   numeric_width: number;
-  reset_annually: boolean;
 }
 
 export interface DocumentNumbering extends NumberingFields, VersionedRecord {

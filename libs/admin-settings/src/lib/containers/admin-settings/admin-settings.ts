@@ -213,7 +213,6 @@ export class AdminSettings {
             nonNullable: true,
             validators: [Validators.required, Validators.min(1), Validators.max(18), Validators.pattern(/^\d+$/)],
           }),
-          reset_annually: new FormControl(record.reset_annually, { nonNullable: true }),
         }),
       })),
     );

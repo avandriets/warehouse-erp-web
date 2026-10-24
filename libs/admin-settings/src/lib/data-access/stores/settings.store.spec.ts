@@ -37,9 +37,7 @@ const snapshot: SettingsSnapshot = {
     vat_enabled: false,
     price_entry_mode: 'TAX_EXCLUSIVE',
   },
-  numbering: [
-    { id: 'rule', version: 1, document_type: 'GOODS_ISSUE', prefix: '', numeric_width: 6, reset_annually: true },
-  ],
+  numbering: [{ id: 'rule', version: 1, document_type: 'GOODS_ISSUE', prefix: '', numeric_width: 6 }],
   negative: [],
 };
 
